@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Annotated
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, Query, UploadFile
 from fastapi.responses import FileResponse
 from sqlalchemy import or_
 
@@ -26,6 +26,18 @@ def get_project(db: DB, pid: int) -> Project:
     return p
 
 
+def save_upload(file: UploadFile, dest: Path) -> None:
+    """Stream the upload to disk and refuse files above MAX_UPLOAD_MB (413) without reading them completely."""
+    limit = settings.max_upload_mb * 1024 * 1024
+    written = 0
+    with dest.open("wb") as out:
+        while chunk := file.file.read(1024 * 1024):
+            written += len(chunk)
+            if written > limit:
+                raise HTTPException(413, f"Die Datei ist zu groß (maximal {settings.max_upload_mb} MB).")
+            out.write(chunk)
+
+
 @router.get("", response_model=list[ProjectOut], summary="Search and filter projects")
 def list_projects(
     db: DB,
@@ -39,6 +51,7 @@ def list_projects(
     term: str = "",
     date_from: datetime | None = None,
     date_to: datetime | None = None,
+    limit: Annotated[int, Query(ge=1, le=1000)] = 500,
 ) -> list[Project]:
     """`archived`: no | only | all. `term` searches inside original and translated text."""
     query = db.query(Project)
@@ -70,7 +83,7 @@ def list_projects(
         }
         query = query.filter(Project.id.in_(ids))
     found = query.order_by(Project.updated_at.desc()).all()
-    return [p for p in found if not lang or lang in (*p.target_langs, p.source_lang, p.detected_lang)]
+    return [p for p in found if not lang or lang in (*p.target_langs, p.source_lang, p.detected_lang)][:limit]
 
 
 @router.post("", response_model=ProjectOut, summary="Upload a file – the project is created automatically")
@@ -83,13 +96,18 @@ def create_project(
     source_lang: Annotated[str, Form()] = "auto",
     target_langs: Annotated[str, Form(description="comma separated, e.g. 'en,de'")] = "",
 ) -> Project:
-    filename = file.filename or "upload"
+    filename = Path(file.filename or "upload").name[:255]  # display name only; the stored file gets a random name
+    if source_lang != "auto" and source_lang not in LANGS:
+        raise HTTPException(400, "Ungültige Ausgangssprache.")
     stored = settings.data_dir / "uploads" / f"{uuid.uuid4().hex}{Path(filename).suffix.lower()}"
     try:
         ftype = parsing.file_type(filename)
-        with stored.open("wb") as f:
-            shutil.copyfileobj(file.file, f)
+        save_upload(file, stored)
+        parsing.check_signature(stored, ftype)
         parts, structure = parsing.parse_file(stored, ftype)
+    except HTTPException:
+        stored.unlink(missing_ok=True)
+        raise
     except ValueError as e:
         stored.unlink(missing_ok=True)
         raise HTTPException(400, str(e)) from None
@@ -102,8 +120,8 @@ def create_project(
     detected = detect_language([p.text for p in parts])
     targets = [t for t in target_langs.split(",") if t in LANGS] or [next(x for x in LANGS if x != detected)]
     project = Project(
-        name=name.strip() or Path(filename).stem,
-        customer=customer.strip(),
+        name=(name.strip() or Path(filename).stem)[:200],
+        customer=customer.strip()[:200],
         filename=filename,
         file_path=str(stored),
         file_type=ftype,
@@ -192,7 +210,9 @@ def copy_project(db: DB, user: Translator, pid: int, with_translations: bool = F
 def delete_project(db: DB, _: Admin, pid: int) -> dict[str, bool]:
     p = get_project(db, pid)
     db.query(Release).filter(Release.project_id == pid).delete()
-    db.query(ExportFile).filter(ExportFile.project_id == pid).delete()
+    for export_file in db.query(ExportFile).filter(ExportFile.project_id == pid):
+        Path(export_file.path).unlink(missing_ok=True)
+        db.delete(export_file)
     Path(p.file_path).unlink(missing_ok=True)
     db.delete(p)
     db.commit()

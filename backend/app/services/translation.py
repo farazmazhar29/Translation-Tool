@@ -84,7 +84,7 @@ def translate_segments(
             ]
             tr = s.translation(tgt)
             if tr is None:
-                tr = Translation(lang=tgt)
+                tr = Translation.empty(tgt)
                 s.translations.append(tr)
             tr.text = tr.original_text = text
             tr.terms = [t.model_dump() for t in terms]
@@ -107,7 +107,7 @@ def run_project_translation(project_id: int) -> None:
             provider = get_provider(rt.get("llm_provider"), rt.get("llm_model"))
             if not p.source:
                 raise LLMError("Ausgangssprache konnte nicht erkannt werden – bitte manuell wählen.")
-            targets = [t for t in p.target_langs if t != p.source]
+            targets = p.targets
             total = max(1, len(p.segments) * len(targets))
             for n, tgt in enumerate(targets):
 

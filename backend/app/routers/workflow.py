@@ -10,12 +10,14 @@ from ..auth import Me, Reviewer, Translator
 from ..db import DB
 from ..models import ExportFile, ExportTemplate, GlossaryVersion, Project, Release, Segment, Translation
 from ..schemas import (
+    ExcelLayout,
     ExportFileOut,
     ExportIn,
     HistoryOut,
     JobStatus,
     ProjectOut,
     QualityOut,
+    ReleaseDetail,
     SegmentEdit,
     SegmentOut,
     TemplateIn,
@@ -26,7 +28,7 @@ from ..schemas import (
 from ..services import export as exporter
 from ..services import quality
 from ..services.llm import LLMError, get_provider
-from ..services.translation import LANGS, run_project_translation, runtime_settings, translate_segments
+from ..services.translation import run_project_translation, runtime_settings, translate_segments
 from .projects import get_project
 
 router = APIRouter(prefix="/api", tags=["Workflow"])
@@ -52,7 +54,7 @@ def glossary_version(db: DB) -> int:
     return last.id if last else 0
 
 
-# ---------------------------------------------------------------- translate + edit
+# translate + edit
 @router.post("/projects/{pid}/translate", response_model=ProjectOut, summary="Start the PREVIEW translation")
 def start_translation(db: DB, _: Translator, pid: int, bg: BackgroundTasks, body: TranslateIn | None = None) -> Project:
     """Only creates a preview. The final translation is produced on approval."""
@@ -62,7 +64,7 @@ def start_translation(db: DB, _: Translator, pid: int, bg: BackgroundTasks, body
     if body and body.source_lang:
         p.source_lang = body.source_lang
     if body and body.target_langs is not None:
-        p.target_langs = [t for t in body.target_langs if t in LANGS]
+        p.target_langs = list(body.target_langs)
     if not p.target_langs:
         raise HTTPException(400, "Bitte mindestens eine Zielsprache wählen.")
     p.job_state, p.job_progress, p.job_error = "running", 0, ""
@@ -81,7 +83,7 @@ def edit_segment(db: DB, user: Translator, sid: int, lang: str, body: SegmentEdi
     seg = get_segment(db, sid)
     tr = seg.translation(lang)
     if tr is None:
-        tr = Translation(lang=lang)
+        tr = Translation.empty(lang)
         seg.translations.append(tr)
     if body.text is not None and body.text != tr.text:
         tr.text, tr.edited, tr.edited_by = body.text, body.text != tr.original_text, user.username
@@ -126,8 +128,8 @@ def replace_term(db: DB, user: Translator, pid: int, body: TermReplace) -> dict[
     return {"replaced_in_segments": changed}
 
 
-# ---------------------------------------------------------------- quality + approval
-@router.get("/projects/{pid}/quality", response_model=QualityOut)
+# quality + approval
+@router.get("/projects/{pid}/quality")
 def quality_check(db: DB, _: Me, pid: int, lang: str | None = None) -> QualityOut:
     warnings = quality.check_project(get_project(db, pid), lang)
     return QualityOut(
@@ -162,7 +164,7 @@ def approve(db: DB, user: Reviewer, pid: int) -> Project:
     if p.status not in ("preview_ready", "in_review"):
         raise HTTPException(409, "Projekt kann in diesem Status nicht freigegeben werden.")
     missing = [
-        s.idx + 1 for s in p.segments for lang in p.target_langs if not ((t := s.translation(lang)) and t.text.strip())
+        s.idx + 1 for s in p.segments for lang in p.targets if not ((t := s.translation(lang)) and t.text.strip())
     ]
     if missing:
         raise HTTPException(400, f"Segment(e) {missing[:10]} haben keine Übersetzung.")
@@ -193,14 +195,15 @@ def reopen(db: DB, _: Translator, pid: int) -> Project:
     return p
 
 
-# ---------------------------------------------------------------- export + history
+# export + history
 @router.post("/projects/{pid}/export", response_model=ExportFileOut, summary="Export an approved translation")
 def export_project(db: DB, user: Translator, pid: int, body: ExportIn) -> ExportFile:
     p = get_project(db, pid)
     if p.status not in ("approved", "archived"):
         raise HTTPException(409, "Export ist erst nach der Freigabe möglich.")
     template = db.get(ExportTemplate, body.template_id) if body.template_id else None
-    config = template.config if template else body.config
+    layout = ExcelLayout.model_validate(template.config) if template else body.config
+    config = layout.model_dump() if layout else None
     opts = {"include_report": body.include_report, "include_comments": body.include_comments}
     warnings = quality.check_project(p, body.lang) if body.include_report else []
     path = exporter.EXPORTERS[body.format](p, body.lang, body.mode, opts, warnings, config)
@@ -211,7 +214,7 @@ def export_project(db: DB, user: Translator, pid: int, body: ExportIn) -> Export
         format=body.format,
         lang=body.lang,
         mode=body.mode,
-        filename=path.name,
+        filename=exporter.download_name(p, body.lang, body.mode, body.format),
         path=str(path),
         created_by=user.username,
     )
@@ -230,7 +233,15 @@ def download_export(db: DB, _: Me, eid: int) -> FileResponse:
     return FileResponse(ef.path, filename=ef.filename)
 
 
-@router.get("/projects/{pid}/history", response_model=HistoryOut, summary="Releases and exports of a project")
+@router.get("/releases/{rid}", summary="Preview and final text of one approved version")
+def release_detail(db: DB, _: Me, rid: int) -> ReleaseDetail:
+    release = db.get(Release, rid)
+    if release is None:
+        raise HTTPException(404, "Version nicht gefunden")
+    return ReleaseDetail.model_validate(release)
+
+
+@router.get("/projects/{pid}/history", summary="Releases and exports of a project")
 def history(db: DB, _: Me, pid: int) -> HistoryOut:
     p = get_project(db, pid)
     return HistoryOut.model_validate(
@@ -243,7 +254,7 @@ def history(db: DB, _: Me, pid: int) -> HistoryOut:
     )
 
 
-# ---------------------------------------------------------------- export templates
+# export templates
 @router.get("/export-templates", response_model=list[TemplateOut], tags=["Export templates"])
 def list_templates(db: DB, _: Me) -> list[ExportTemplate]:
     return db.query(ExportTemplate).all()
@@ -251,7 +262,7 @@ def list_templates(db: DB, _: Me) -> list[ExportTemplate]:
 
 @router.post("/export-templates", response_model=TemplateOut, tags=["Export templates"])
 def create_template(db: DB, _: Translator, body: TemplateIn) -> ExportTemplate:
-    t = ExportTemplate(**body.model_dump())
+    t = ExportTemplate(name=body.name, format=body.format, config=body.config.model_dump())
     db.add(t)
     db.commit()
     return t

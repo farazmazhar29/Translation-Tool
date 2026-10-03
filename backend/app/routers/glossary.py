@@ -2,7 +2,7 @@ import io
 import re
 from typing import Annotated
 
-from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi import APIRouter, File, HTTPException, Query, UploadFile
 from fastapi.responses import StreamingResponse
 from openpyxl import Workbook, load_workbook
 
@@ -87,7 +87,9 @@ def find(db: DB, eid: int) -> GlossaryEntry:
 
 
 @router.get("", response_model=list[GlossaryOut])
-def list_entries(db: DB, _: Me, q: str = "", status: str = "", category: str = "") -> list[GlossaryEntry]:
+def list_entries(
+    db: DB, _: Me, q: str = "", status: str = "", category: str = "", limit: Annotated[int, Query(ge=1, le=5000)] = 2000
+) -> list[GlossaryEntry]:
     def text(e: GlossaryEntry) -> str:
         return " ".join([*e.terms.values(), *(s for v in e.synonyms.values() for s in v), e.description]).lower()
 
@@ -95,7 +97,7 @@ def list_entries(db: DB, _: Me, q: str = "", status: str = "", category: str = "
         e
         for e in db.query(GlossaryEntry).order_by(GlossaryEntry.id.desc())
         if (not status or e.status == status) and (not category or e.category == category) and q.lower() in text(e)
-    ]
+    ][:limit]
 
 
 @router.post("", response_model=GlossaryOut, summary="Create an entry (translators create drafts)")
@@ -160,7 +162,7 @@ def versions(db: DB, _: Me, eid: int) -> list[GlossaryVersion]:
     return db.query(GlossaryVersion).filter(GlossaryVersion.entry_id == eid).order_by(GlossaryVersion.id.desc()).all()
 
 
-@router.get("/duplicates/scan", response_model=list[DuplicateGroup], summary="Find duplicate terms")
+@router.get("/duplicates/scan", summary="Find duplicate terms")
 def scan_duplicates(db: DB, _: Me) -> list[DuplicateGroup]:
     seen: dict[tuple[str, str], int] = {}
     groups: list[DuplicateGroup] = []
@@ -174,8 +176,7 @@ def scan_duplicates(db: DB, _: Me) -> list[DuplicateGroup]:
 @router.get("/export/xlsx", response_class=StreamingResponse, summary="Export the glossary to Excel")
 def export_xlsx(db: DB, _: Me) -> StreamingResponse:
     wb = Workbook()
-    ws = wb.active
-    assert ws is not None
+    ws = wb.active or wb.create_sheet()
     ws.title = "Glossar"
     ws.append(COLUMNS)
     for e in db.query(GlossaryEntry).order_by(GlossaryEntry.id):
@@ -199,7 +200,7 @@ def export_xlsx(db: DB, _: Me) -> StreamingResponse:
     )
 
 
-@router.post("/import/xlsx", response_model=ImportResult, summary="Import glossary entries from Excel")
+@router.post("/import/xlsx", summary="Import glossary entries from Excel")
 def import_xlsx(
     db: DB, user: Reviewer, file: Annotated[UploadFile, File()], update_existing: bool = False
 ) -> ImportResult:
@@ -247,7 +248,7 @@ def import_xlsx(
                 synonyms=syn,
                 description=r.get("beschreibung", ""),
                 do_not_translate=dnt,
-                category=r.get("kategorie") or "technical",
+                category=cat if (cat := r.get("kategorie", "").lower()) in ("technical", "product") else "technical",
                 status=status or "approved",
                 updated_by=user.username,
             )

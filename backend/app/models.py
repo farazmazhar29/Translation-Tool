@@ -49,6 +49,11 @@ class Project(Base):
     def source(self) -> str:
         return self.detected_lang if self.source_lang == "auto" else self.source_lang
 
+    @property
+    def targets(self) -> list[str]:
+        """Languages that are actually translated: a source-language "target" would make no sense."""
+        return [t for t in self.target_langs if t != self.source]
+
 
 class Segment(Base):
     __tablename__ = "segments"
@@ -77,6 +82,11 @@ class Translation(Base):
     edited_by: Mapped[str] = mapped_column(default="")
     updated_at: Mapped[datetime] = mapped_column(default=now, onupdate=now)
     segment: Mapped[Segment] = relationship(back_populates="translations")
+
+    @classmethod
+    def empty(cls, lang: str) -> "Translation":
+        """Column defaults only apply on INSERT; a new object must be usable before it is flushed."""
+        return cls(lang=lang, text="", original_text="", terms=[], comment="", edited=False, edited_by="")
 
 
 class GlossaryEntry(Base):

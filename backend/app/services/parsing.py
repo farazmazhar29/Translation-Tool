@@ -32,11 +32,22 @@ def file_type(filename: str) -> str:
     return FILE_TYPES[ext]
 
 
+SIGNATURES = {"docx": b"PK\x03\x04", "xlsx": b"PK\x03\x04", "pdf": b"%PDF-"}  # Office files are zip archives
+
+
+def check_signature(path: Path, ftype: str) -> None:
+    """The extension alone proves nothing: make sure the content looks like what it claims to be."""
+    with path.open("rb") as f:
+        head = f.read(8)
+    if not head.startswith(SIGNATURES[ftype]):
+        raise ValueError(f"Die Datei ist keine gültige {ftype.upper()}-Datei (Inhalt passt nicht zur Endung).")
+
+
 def _translatable(text: str) -> bool:
     return bool(LETTER.search(text))
 
 
-# ---------------------------------------------------------------- docx
+# docx
 def _paragraphs(path: Path) -> tuple[Any, list[Paragraph]]:
     doc = Document(str(path))
     return doc, [Paragraph(cast(CT_P, p), doc) for p in doc.element.iter(qn("w:p"))]  # incl. table cells
@@ -62,7 +73,7 @@ def write_docx(src: Path, dst: Path, repl: dict[int, str]) -> None:
     doc.save(str(dst))
 
 
-# ---------------------------------------------------------------- xlsx
+# xlsx
 def parse_xlsx(path: Path) -> tuple[list[Part], dict[str, Any]]:
     parts: list[Part] = []
     sheets: list[dict[str, Any]] = []
@@ -85,7 +96,7 @@ def write_xlsx(src: Path, dst: Path, repl: dict[tuple[str, str], str]) -> None:
     wb.save(dst)
 
 
-# ---------------------------------------------------------------- pdf
+# pdf
 def parse_pdf(path: Path) -> tuple[list[Part], dict[str, Any]]:
     parts: list[Part] = []
     with pymupdf.open(path) as pdf:

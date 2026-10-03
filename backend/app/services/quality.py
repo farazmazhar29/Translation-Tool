@@ -4,7 +4,7 @@ import re
 from collections import defaultdict
 
 from ..models import Project, Segment
-from ..schemas import Severity, Term, Warning
+from ..schemas import QualityWarning, Severity, Term
 
 ORDER: dict[Severity, int] = {"error": 0, "warning": 1, "info": 2}
 
@@ -13,12 +13,12 @@ def _numbers(s: str) -> list[str]:
     return sorted(n.replace(",", ".") for n in re.findall(r"\d+(?:[.,]\d+)?", s))
 
 
-def check_project(p: Project, lang: str | None = None) -> list[Warning]:
-    out: list[Warning] = []
-    for tgt in [lang] if lang else p.target_langs:
+def check_project(p: Project, lang: str | None = None) -> list[QualityWarning]:
+    out: list[QualityWarning] = []
+    for tgt in [lang] if lang else p.targets:
 
         def warn(idx: int, seg_id: int | None, kind: str, sev: Severity, msg: str, tgt: str = tgt) -> None:
-            out.append(Warning(segment_id=seg_id, idx=idx, lang=tgt, type=kind, severity=sev, message=msg))
+            out.append(QualityWarning(segment_id=seg_id, idx=idx, lang=tgt, type=kind, severity=sev, message=msg))
 
         variants: dict[str, dict[str, int]] = defaultdict(dict)  # source term -> {translation: first segment idx}
         unlisted: dict[str, int] = defaultdict(int)
@@ -35,7 +35,7 @@ def check_project(p: Project, lang: str | None = None) -> list[Warning]:
             if (
                 tr.text.strip().lower() == seg.source_text.strip().lower()
                 and len(seg.source_text.split()) > 2
-                and not all(t.category == "protected" for t in terms)
+                and not (terms and all(t.category == "protected" for t in terms))  # only codes: may stay as is
             ):
                 w("untranslated", "warning", "Text ist identisch mit dem Original (nicht übersetzt?).")
             for t in terms:

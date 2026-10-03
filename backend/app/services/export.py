@@ -5,6 +5,8 @@ opts   include_report (quality report), include_comments
 config Excel layout ("Erweiterte Einstellungen"): free choice of source/target/comment/position columns
 """
 
+import re
+import uuid
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -22,7 +24,7 @@ from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, Tabl
 
 from ..config import settings
 from ..models import Project
-from ..schemas import Warning
+from ..schemas import QualityWarning
 from . import parsing
 
 XLSX_DEFAULTS: dict[str, Any] = {
@@ -34,7 +36,7 @@ XLSX_DEFAULTS: dict[str, Any] = {
     "start_row": 2,
     "header": True,
 }
-Exporter = Callable[[Project, str, str, dict[str, bool], list[Warning], dict[str, Any] | None], Path]
+Exporter = Callable[[Project, str, str, dict[str, bool], list[QualityWarning], dict[str, Any] | None], Path]
 
 
 def rows(p: Project, lang: str) -> list[dict[str, Any]]:
@@ -51,24 +53,31 @@ def rows(p: Project, lang: str) -> list[dict[str, Any]]:
     ]
 
 
-def out_path(p: Project, lang: str, ext: str, mode: str) -> Path:
-    return settings.data_dir / "exports" / f"{Path(p.filename).stem or f'projekt-{p.id}'}_{lang}_{mode}.{ext}"
+def out_path(ext: str) -> Path:
+    """Stored exports get a unique name: two projects with the same filename must never overwrite each other."""
+    return settings.data_dir / "exports" / f"{uuid.uuid4().hex}.{ext}"
 
 
-def report_lines(warnings: list[Warning]) -> list[str]:
+def download_name(p: Project, lang: str, mode: str, ext: str) -> str:
+    """What the user sees when downloading (sanitised, since the original filename is user input)."""
+    stem = re.sub(r"[^\w.-]+", "_", Path(p.filename).stem).strip("._") or f"projekt-{p.id}"
+    return f"{stem[:80]}_{lang}_{mode}.{ext}"
+
+
+def report_lines(warnings: list[QualityWarning]) -> list[str]:
     return [f"[{w.severity.upper()}] Segment {w.idx + 1 if w.idx >= 0 else '-'}: {w.message}" for w in warnings]
 
 
-# ---------------------------------------------------------------- Word
+# Word
 def to_docx(
     p: Project,
     lang: str,
     mode: str,
     opts: dict[str, bool],
-    warnings: list[Warning],
-    config: dict[str, Any] | None = None,
+    warnings: list[QualityWarning],
+    _config: dict[str, Any] | None = None,
 ) -> Path:
-    data, path = rows(p, lang), out_path(p, lang, "docx", mode)
+    data, path = rows(p, lang), out_path("docx")
     if mode == "translation" and p.file_type == "docx" and not any(opts.values()):
         parsing.write_docx(Path(p.file_path), path, {r["locator"]["p"]: r["target"] for r in data if r["target"]})
         return path  # original layout and formatting stay intact
@@ -98,16 +107,16 @@ def to_docx(
     return path
 
 
-# ---------------------------------------------------------------- Excel
+# Excel
 def to_xlsx(
     p: Project,
     lang: str,
     mode: str,
     opts: dict[str, bool],
-    warnings: list[Warning],
+    warnings: list[QualityWarning],
     config: dict[str, Any] | None = None,
 ) -> Path:
-    data, path = rows(p, lang), out_path(p, lang, "xlsx", mode)
+    data, path = rows(p, lang), out_path("xlsx")
     if mode == "translation" and p.file_type == "xlsx" and not config and not opts["include_report"]:
         parsing.write_xlsx(
             Path(p.file_path),
@@ -117,8 +126,7 @@ def to_xlsx(
         return path
     cfg = {**XLSX_DEFAULTS, **(config or {})}
     wb = Workbook()
-    ws = wb.active
-    assert ws is not None
+    ws = wb.active or wb.create_sheet()
     ws.title = str(cfg["sheet_name"])[:31] or "Übersetzung"
     layout = [(str(cfg["source_col"]), "Original", "source")] if mode == "both" else []
     layout.append((str(cfg["target_col"]), f"Übersetzung ({lang.upper()})", "target"))
@@ -143,16 +151,16 @@ def to_xlsx(
     return path
 
 
-# ---------------------------------------------------------------- PDF
+# PDF
 def to_pdf(
     p: Project,
     lang: str,
     mode: str,
     opts: dict[str, bool],
-    warnings: list[Warning],
-    config: dict[str, Any] | None = None,
+    warnings: list[QualityWarning],
+    _config: dict[str, Any] | None = None,
 ) -> Path:
-    data, path = rows(p, lang), out_path(p, lang, "pdf", mode)
+    data, path = rows(p, lang), out_path("pdf")
     styles = getSampleStyleSheet()
     small = styles["BodyText"].clone("small", fontSize=9, leading=11)
 

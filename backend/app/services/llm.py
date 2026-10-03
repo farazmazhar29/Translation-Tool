@@ -104,7 +104,9 @@ class Gemini(LLMProvider):
 
     def _throttle(self) -> None:  # the free tier is rate limited
         with self._lock:
-            time.sleep(max(0.0, settings.llm_min_interval - (time.time() - Gemini._last)))
+            wait = settings.llm_min_interval - (time.time() - Gemini._last)
+            if wait > 0:
+                time.sleep(wait)
             Gemini._last = time.time()
 
     def translate_batch(self, src: str, tgt: str, segments: list[LLMSegment]) -> list[LLMResult]:
