@@ -1,0 +1,324 @@
+"""Export: every format and mode, the Excel layout, templates, and the safety of stored files."""
+
+import io
+from pathlib import Path
+from typing import Any
+from urllib.parse import quote
+
+import pymupdf
+import pytest
+from conftest import Headers, docx_bytes, upload
+from docx import Document
+from fastapi.testclient import TestClient
+from openpyxl import load_workbook
+from openpyxl.worksheet.worksheet import Worksheet
+
+from app.config import settings
+from app.db import SessionLocal
+from app.models import ExportFile
+
+FORMATS = ("docx", "xlsx", "pdf")
+
+
+@pytest.fixture
+def approved(client: TestClient, reviewer: Headers, translated_project: int) -> int:
+    assert client.post(f"/api/projects/{translated_project}/approve", headers=reviewer).status_code == 200
+    return translated_project
+
+
+def export(client: TestClient, headers: Headers, pid: int, **over: Any) -> dict[str, Any]:
+    body = {"lang": "en", "format": "docx", "mode": "translation", "archive_after": False} | over
+    r = client.post(f"/api/projects/{pid}/export", headers=headers, json=body)
+    assert r.status_code == 200, r.text
+    return r.json()
+
+
+def download(client: TestClient, headers: Headers, export_id: int) -> bytes:
+    r = client.get(f"/api/exports/{export_id}/download", headers=headers)
+    assert r.status_code == 200
+    return r.content
+
+
+def sheet(content: bytes, name: str | None = None) -> Worksheet:
+    wb = load_workbook(io.BytesIO(content))
+    ws = wb[name] if name else wb.active
+    assert isinstance(ws, Worksheet)
+    return ws
+
+
+def pdf_text(content: bytes) -> str:
+    with pymupdf.open(stream=content, filetype="pdf") as pdf:
+        return "".join(page.get_text("text") for page in pdf)
+
+
+# Every format and mode produces a valid file
+@pytest.mark.parametrize("fmt", FORMATS)
+@pytest.mark.parametrize("mode", ["translation", "both"])
+def test_every_format_and_mode_yields_a_readable_file_with_the_translation(
+    client: TestClient, translator: Headers, approved: int, fmt: str, mode: str
+) -> None:
+    result = export(client, translator, approved, format=fmt, mode=mode, include_report=True, include_comments=True)
+    content = download(client, translator, result["id"])
+    if fmt == "docx":
+        doc = Document(io.BytesIO(content))
+        text = "\n".join(p.text for p in doc.paragraphs) + "\n".join(
+            c.text for t in doc.tables for r in t.rows for c in r.cells
+        )
+    elif fmt == "xlsx":
+        ws = sheet(content)
+        text = "\n".join(str(c.value) for row in ws.iter_rows() for c in row if c.value)
+    else:
+        assert content.startswith(b"%PDF-")
+        text = pdf_text(content)
+    assert "carcass" in text  # the translated term made it into the file
+    assert ("Der Korpus" in text) == (mode == "both")  # the original only when asked for
+
+
+def test_export_records_who_what_and_when_in_the_history(
+    client: TestClient, translator: Headers, approved: int
+) -> None:
+    export(client, translator, approved, format="pdf", mode="both")
+    (entry, *_) = client.get(f"/api/projects/{approved}/history", headers=translator).json()["exports"]
+    assert (entry["format"], entry["lang"], entry["mode"], entry["created_by"]) == ("pdf", "en", "both", "translator")
+    assert entry["filename"].endswith("_en_both.pdf")
+
+
+# Word: formatting survives
+def test_word_export_keeps_the_original_formatting(client: TestClient, translator: Headers, reviewer: Headers) -> None:
+    pid = upload(
+        client,
+        translator,
+        "fmt.docx",
+        docx_bytes("Der Korpus ist weiß und die Tür ist neu.", bold_first=True),
+        target_langs="en",
+    )["id"]
+    client.post(f"/api/projects/{pid}/translate", headers=translator)
+    client.post(f"/api/projects/{pid}/approve", headers=reviewer)
+    doc = Document(io.BytesIO(download(client, translator, export(client, translator, pid)["id"])))
+    assert doc.paragraphs[0].text.startswith("The carcass is white")
+    assert doc.paragraphs[0].runs[0].bold is True
+
+
+def test_word_side_by_side_table_has_the_expected_columns(
+    client: TestClient, translator: Headers, approved: int
+) -> None:
+    content = download(
+        client, translator, export(client, translator, approved, mode="both", include_comments=True)["id"]
+    )
+    header = [c.text for c in Document(io.BytesIO(content)).tables[0].rows[0].cells]
+    assert header == ["#", "Original", "Übersetzung", "Kommentar"]
+
+
+def test_report_and_comments_are_included_on_request(
+    client: TestClient, translator: Headers, reviewer: Headers, translated_project: int
+) -> None:
+    sid = client.get(f"/api/projects/{translated_project}", headers=translator).json()["segments"][0]["id"]
+    client.put(f"/api/segments/{sid}/en", headers=translator, json={"comment": "Prüfen: Maße"})
+    client.post(f"/api/projects/{translated_project}/approve", headers=reviewer)
+    plain = Document(io.BytesIO(download(client, translator, export(client, translator, translated_project)["id"])))
+    rich = Document(
+        io.BytesIO(
+            download(
+                client,
+                translator,
+                export(client, translator, translated_project, include_report=True, include_comments=True)["id"],
+            )
+        )
+    )
+    text = "\n".join(p.text for p in rich.paragraphs)
+    assert "Prüfbericht" in text
+    assert "Kommentar: Prüfen: Maße" in text
+    assert "Prüfbericht" not in "\n".join(p.text for p in plain.paragraphs)
+
+
+# Excel layout ("Erweiterte Einstellungen")
+def test_excel_layout_defaults_and_custom_columns(client: TestClient, translator: Headers, approved: int) -> None:
+    default = sheet(
+        download(client, translator, export(client, translator, approved, format="xlsx", mode="both")["id"])
+    )
+    assert default.title == "Übersetzung"
+    assert [c.value for c in default[1]][:2] == ["Original", "Übersetzung (EN)"]  # header row
+    assert default["A2"].value == "Montageanleitung"
+
+    layout = {
+        "sheet_name": "Export",
+        "source_col": "c",
+        "target_col": "F",
+        "comment_col": "",
+        "location_col": "H",
+        "start_row": 4,
+        "header": True,
+    }
+    custom = sheet(
+        download(
+            client, translator, export(client, translator, approved, format="xlsx", mode="both", config=layout)["id"]
+        ),
+        "Export",
+    )
+    assert custom["C3"].value == "Original"  # the header sits right above the first data row
+    assert custom["C4"].value == "Montageanleitung"
+    assert custom["F4"].value == "Montageanleitung"  # the mock leaves unknown words unchanged
+    assert custom["H4"].value == "Absatz 1"
+    assert custom["A4"].value is None
+    assert custom["B4"].value is None
+
+
+def test_excel_layout_without_header_row(client: TestClient, translator: Headers, approved: int) -> None:
+    ws = sheet(
+        download(
+            client,
+            translator,
+            export(client, translator, approved, format="xlsx", config={"header": False, "start_row": 1})["id"],
+        )
+    )
+    assert ws["B1"].value  # data starts in the first row
+
+
+def test_excel_report_goes_to_a_separate_sheet(client: TestClient, translator: Headers, approved: int) -> None:
+    wb = load_workbook(
+        io.BytesIO(
+            download(client, translator, export(client, translator, approved, format="xlsx", include_report=True)["id"])
+        )
+    )
+    assert wb.sheetnames[-1] == "Prüfbericht"
+
+
+@pytest.mark.parametrize(
+    "layout",
+    [
+        {"target_col": "1"},  # not a column
+        {"target_col": ""},  # required
+        {"source_col": "AAAA"},  # too long
+        {"target_col": "ZZZ"},  # beyond Excel's last column (XFD)
+        {"source_col": "B", "target_col": "b"},  # the same column twice would overwrite data
+        {"start_row": 0},
+        {"sheet_name": ""},
+        {"sheet_name": "x" * 32},  # Excel's limit is 31
+        {"sheet_name": "bad/name"},
+    ],
+)
+def test_invalid_excel_layouts_are_rejected_with_422(
+    client: TestClient, translator: Headers, approved: int, layout: dict[str, Any]
+) -> None:
+    body = {"lang": "en", "format": "xlsx", "config": layout}
+    assert client.post(f"/api/projects/{approved}/export", headers=translator, json=body).status_code == 422
+
+
+@pytest.mark.parametrize(
+    "body", [{"format": "odt"}, {"mode": "everything"}, {"lang": "en", "format": "docx", "template_id": "x"}]
+)
+def test_invalid_export_requests_are_rejected(
+    client: TestClient, translator: Headers, approved: int, body: dict[str, Any]
+) -> None:
+    assert (
+        client.post(f"/api/projects/{approved}/export", headers=translator, json={"lang": "en"} | body).status_code
+        == 422
+    )
+
+
+# Templates
+def test_export_template_lifecycle_and_use(
+    client: TestClient, translator: Headers, reviewer: Headers, approved: int
+) -> None:
+    layout = {
+        "sheet_name": "Vorlage",
+        "source_col": "A",
+        "target_col": "D",
+        "comment_col": "E",
+        "location_col": "",
+        "start_row": 3,
+        "header": True,
+    }
+    created = client.post(
+        "/api/export-templates", headers=translator, json={"name": "Kundenformat", "format": "xlsx", "config": layout}
+    )
+    assert created.status_code == 200
+    tid = created.json()["id"]
+    assert created.json()["config"]["target_col"] == "D"
+    assert "Kundenformat" in [t["name"] for t in client.get("/api/export-templates", headers=translator).json()]
+
+    ws = sheet(
+        download(
+            client, translator, export(client, translator, approved, format="xlsx", mode="both", template_id=tid)["id"]
+        ),
+        "Vorlage",
+    )
+    assert ws["A2"].value == "Original"  # header row sits right above the first data row (start_row 3)
+    assert ws["D3"].value  # the template's target column
+
+    assert client.delete(f"/api/export-templates/{tid}", headers=translator).status_code == 403  # reviewers delete
+    assert client.delete(f"/api/export-templates/{tid}", headers=reviewer).status_code == 200
+    assert tid not in [t["id"] for t in client.get("/api/export-templates", headers=translator).json()]
+    assert client.delete(f"/api/export-templates/{tid}", headers=reviewer).status_code == 200  # idempotent
+
+
+def test_templates_must_have_a_valid_layout(client: TestClient, translator: Headers) -> None:
+    bad = {"name": "kaputt", "format": "xlsx", "config": {"target_col": "1"}}
+    assert client.post("/api/export-templates", headers=translator, json=bad).status_code == 422
+    assert (
+        client.post(
+            "/api/export-templates", headers=translator, json={"name": "x", "format": "docx", "config": {}}
+        ).status_code
+        == 422
+    )
+
+
+# Archiving after export, and the safety of stored files
+def test_export_archives_the_project_when_asked(client: TestClient, translator: Headers, approved: int) -> None:
+    export(client, translator, approved, archive_after=True)
+    project = client.get(f"/api/projects/{approved}", headers=translator).json()
+    assert (project["status"], project["archived"]) == ("archived", True)
+    export(client, translator, approved, archive_after=False)  # exporting again from an archived project is allowed
+
+
+def test_same_filename_in_two_projects_never_overwrites_an_export(
+    client: TestClient, translator: Headers, reviewer: Headers
+) -> None:
+    """Regression: exports used to be stored as <filename>_<lang>_<mode>.<ext>, so equal filenames collided."""
+    ids: list[int] = []
+    for text in ("Der Korpus ist weiß und gut.", "Die Frontblende ist neu und gut."):
+        pid = upload(client, translator, "plan.docx", docx_bytes(text), target_langs="en")["id"]
+        client.post(f"/api/projects/{pid}/translate", headers=translator)
+        client.post(f"/api/projects/{pid}/approve", headers=reviewer)
+        ids.append(export(client, translator, pid)["id"])
+    first, second = (Document(io.BytesIO(download(client, translator, i))).paragraphs[0].text for i in ids)
+    assert "carcass" in first
+    assert "front panel" in second
+    with SessionLocal() as db:
+        paths = [db.get(ExportFile, i).path for i in ids]  # pyright: ignore[reportOptionalMemberAccess]
+    assert len(set(paths)) == 2
+    assert all(Path(p).parent == settings.data_dir / "exports" for p in paths)
+
+
+@pytest.mark.parametrize(
+    ("filename", "expected"),
+    [
+        ("Mein Plan (v2).docx", "Mein_Plan_v2_en_translation.docx"),
+        ("../../evil.docx", "evil_en_translation.docx"),
+        ("äöü?*.docx", "äöü_en_translation.docx"),
+    ],
+)
+def test_download_names_are_sanitised_user_input(
+    client: TestClient, translator: Headers, reviewer: Headers, filename: str, expected: str
+) -> None:
+    pid = upload(client, translator, filename, docx_bytes("Der Korpus ist weiß und gut."), target_langs="en")["id"]
+    client.post(f"/api/projects/{pid}/translate", headers=translator)
+    client.post(f"/api/projects/{pid}/approve", headers=reviewer)
+    assert export(client, translator, pid)["filename"] == expected
+    r = client.get(f"/api/exports/{export(client, translator, pid)['id']}/download", headers=translator)
+    assert (
+        quote(expected) in r.headers["content-disposition"] or expected in r.headers["content-disposition"]
+    )  # RFC 5987 for non-ASCII
+
+
+def test_downloading_unknown_or_deleted_exports_is_404(client: TestClient, translator: Headers, approved: int) -> None:
+    assert client.get("/api/exports/999999/download", headers=translator).status_code == 404
+    result = export(client, translator, approved)
+    with SessionLocal() as db:
+        Path(db.get(ExportFile, result["id"]).path).unlink()  # pyright: ignore[reportOptionalMemberAccess]
+    assert client.get(f"/api/exports/{result['id']}/download", headers=translator).status_code == 404
+
+
+def test_export_of_an_unknown_project_and_unauthenticated_access(client: TestClient, translator: Headers) -> None:
+    assert client.post("/api/projects/999999/export", headers=translator, json={"lang": "en"}).status_code == 404
+    assert client.get("/api/exports/1/download").status_code == 401

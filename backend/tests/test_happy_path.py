@@ -1,11 +1,11 @@
 import io
 from typing import Any
 
+from conftest import Headers, upload
 from docx import Document
 from fastapi.testclient import TestClient
 from openpyxl import Workbook, load_workbook
 
-Headers = dict[str, str]
 TEXT = "Der Korpus und die Frontblende sind mit Art. AB-1234 für die Küche. Preis 49,90 EUR."
 
 
@@ -29,12 +29,6 @@ def make_xlsx() -> bytes:
     return buf.getvalue()
 
 
-def upload(c: TestClient, h: Headers, fname: str, data: bytes, **form: str) -> dict[str, Any]:
-    r = c.post("/api/projects", headers=h, files={"file": (fname, data)}, data=form)
-    assert r.status_code == 200, r.text
-    return r.json()
-
-
 def test_login_and_permissions(client: TestClient, translator: Headers) -> None:
     assert client.post("/api/auth/login", data={"username": "admin", "password": "x"}).status_code == 401
     assert client.get("/api/projects").status_code == 401
@@ -44,22 +38,27 @@ def test_login_and_permissions(client: TestClient, translator: Headers) -> None:
 
 def test_upload_rejects_unsupported(client: TestClient, translator: Headers) -> None:
     r = client.post("/api/projects", headers=translator, files={"file": ("a.imdd", b"x")})
-    assert r.status_code == 400 and "InDesign" in r.json()["detail"]
+    assert r.status_code == 400
+    assert "InDesign" in r.json()["detail"]
     assert client.post("/api/projects", headers=translator, files={"file": ("a.docx", b"broken")}).status_code == 400
 
 
 def test_full_workflow(client: TestClient, translator: Headers, reviewer: Headers) -> None:
     p = upload(client, translator, "anleitung.docx", make_docx(), name="Test", customer="ACME", target_langs="en")
-    assert p["detected_lang"] == "de" and p["target_langs"] == ["en"] and p["status"] == "new"
+    assert p["detected_lang"] == "de"
+    assert p["target_langs"] == ["en"]
+    assert p["status"] == "new"
     pid = p["id"]
 
     # preview only -> export must be blocked until approval
     assert client.post(f"/api/projects/{pid}/translate", headers=translator).status_code == 200
     detail = client.get(f"/api/projects/{pid}", headers=translator).json()
-    assert detail["status"] == "preview_ready" and len(detail["segments"]) == 2
+    assert detail["status"] == "preview_ready"
+    assert len(detail["segments"]) == 2
     seg = detail["segments"][1]
     tr = seg["translations"]["en"]
-    assert "carcass" in tr["text"] and "front panel" in tr["text"]  # glossary enforced
+    assert "carcass" in tr["text"]
+    assert "front panel" in tr["text"]
     assert {"glossary", "protected"} <= {t["category"] for t in tr["terms"]}
     assert any(t["source"] == "AB-1234" and t["dnt"] for t in tr["terms"])
     body = {"lang": "en", "format": "docx"}
@@ -89,7 +88,8 @@ def test_full_workflow(client: TestClient, translator: Headers, reviewer: Header
             assert r.status_code == 200, r.text
             assert client.get(f"/api/exports/{r.json()['id']}/download", headers=translator).content
     hist = client.get(f"/api/projects/{pid}/history", headers=translator).json()
-    assert len(hist["releases"]) == 1 and len(hist["exports"]) == 6
+    assert len(hist["releases"]) == 1
+    assert len(hist["exports"]) == 6
     assert hist["releases"][0]["approved_by"] == "reviewer"
 
     # archive, search, copy, reopen
@@ -98,7 +98,8 @@ def test_full_workflow(client: TestClient, translator: Headers, reviewer: Header
     params = {"archived": "only", "term": "carcass", "customer": "acme"}
     assert [x["id"] for x in client.get("/api/projects", params=params, headers=translator).json()] == [pid]
     copy = client.post(f"/api/projects/{pid}/copy", headers=translator, params={"with_translations": True}).json()
-    assert copy["status"] == "preview_ready" and copy["name"].endswith("(Kopie)")
+    assert copy["status"] == "preview_ready"
+    assert copy["name"].endswith("(Kopie)")
     assert client.post(f"/api/projects/{pid}/reopen", headers=translator).json()["status"] == "preview_ready"
 
 
@@ -112,19 +113,24 @@ def test_xlsx_project_and_custom_columns(client: TestClient, translator: Headers
     assert r.status_code == 200
     content = client.get(f"/api/exports/{r.json()['id']}/download", headers=translator).content
     ws = load_workbook(io.BytesIO(content))["Export"]
-    assert ws["B3"].value == "Der Griff ist weiß" and ws["D3"].value == "The Handle is white" and ws["D2"].value
+    assert ws["B3"].value == "Der Griff ist weiß"
+    assert ws["D3"].value == "The Handle is white"
+    assert ws["D2"].value
     # translation-only keeps the original workbook (formula and number untouched)
     r = client.post(f"/api/projects/{pid}/export", headers=translator, json=body)
     orig = load_workbook(
         io.BytesIO(client.get(f"/api/exports/{r.json()['id']}/download", headers=translator).content)
     ).active
-    assert orig is not None and orig["A1"].value == "The Handle is white" and orig["C1"].value == "=B1*2"
+    assert orig is not None
+    assert orig["A1"].value == "The Handle is white"
+    assert orig["C1"].value == "=B1*2"
 
 
 def test_glossary(client: TestClient, admin: Headers, translator: Headers) -> None:
     new = {"terms": {"de": "Wangenblende", "en": "end panel"}, "synonyms": {"en": ["side panel"]}}
     r = client.post("/api/glossary", headers=translator, json=new)
-    assert r.status_code == 200 and r.json()["status"] == "draft"  # translators propose, reviewers publish
+    assert r.status_code == 200
+    assert r.json()["status"] == "draft"
     assert client.post("/api/glossary", headers=translator, json=new).status_code == 409  # duplicate check
     eid = r.json()["id"]
     assert client.put(f"/api/glossary/{eid}", headers=translator, json=new).status_code == 403
@@ -148,14 +154,17 @@ def test_glossary(client: TestClient, admin: Headers, translator: Headers) -> No
     wb.save(buf)
     res = client.post("/api/glossary/import/xlsx", headers=admin, files={"file": ("g.xlsx", buf.getvalue())}).json()
     reasons = [r["reason"] for r in res["skipped_rows"]]  # re-imported export rows are duplicates too
-    assert res["created"] == 1 and "Begriff oder Übersetzung fehlt" in reasons and "Dublette: Wangenblende" in reasons
+    assert res["created"] == 1
+    assert "Begriff oder Übersetzung fehlt" in reasons
+    assert "Dublette: Wangenblende" in reasons
     assert client.delete(f"/api/glossary/{eid}", headers=translator).status_code == 403
     assert client.delete(f"/api/glossary/{eid}", headers=admin).status_code == 200
 
 
 def test_dashboard_and_settings(client: TestClient, admin: Headers, translator: Headers) -> None:
     d = client.get("/api/dashboard", headers=translator).json()
-    assert d["stats"]["projects_total"] >= 2 and d["top_terms"]
+    assert d["stats"]["projects_total"] >= 2
+    assert d["top_terms"]
     assert client.put("/api/settings", headers=translator, json={}).status_code == 403
     s = client.put("/api/settings", headers=admin, json={"default_export_format": "pdf", "evil": 1}).json()
     assert s["default_export_format"] == "pdf"
