@@ -1,9 +1,10 @@
 services:
   db:
     image: postgres:16-alpine
+    restart: unless-stopped
     environment:
       POSTGRES_USER: rotpunkt
-      POSTGRES_PASSWORD: rotpunkt
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-rotpunkt} # development default; set a real password in production
       POSTGRES_DB: translation
     volumes: [pgdata:/var/lib/postgresql/data]
     healthcheck:
@@ -13,15 +14,17 @@ services:
 
   app:
     build: .
+    restart: unless-stopped
     depends_on:
       db: { condition: service_healthy }
     env_file:
-      - path: .env # GEMINI_API_KEY, SECRET_KEY, ... (optional: LLM_PROVIDER=mock works without a key)
+      - path: .env # GEMINI_API_KEY, SECRET_KEY, ... (LLM_PROVIDER=mock works without a key)
         required: false
     environment:
-      DATABASE_URL: postgresql+psycopg2://rotpunkt:rotpunkt@db:5432/translation
+      DATABASE_URL: postgresql+psycopg2://rotpunkt:${POSTGRES_PASSWORD:-rotpunkt}@db:5432/translation
+      LOG_FORMAT: ${LOG_FORMAT:-json}
     volumes: [appdata:/data]
-    ports: ["8000:8000"]
+    ports: ["${APP_PORT:-8000}:8000"]
 
 volumes:
   pgdata:
