@@ -15,6 +15,8 @@ cp .env.example .env        # add GEMINI_API_KEY (free: https://aistudio.google.
 docker compose up --build   # → http://localhost:8000   (API docs / Swagger: http://localhost:8000/docs)
 ```
 
+The database is migrated automatically at start-up. A database created by an earlier version is adopted without data loss.
+
 **Local development (SQLite, no Docker):**
 
 ```bash
@@ -23,9 +25,26 @@ cd backend && python -m venv .venv && .venv/Scripts/pip install -r requirements-
 cd frontend && npm install && npm run dev                                                  # UI on :5173 (proxies /api)
 ```
 
-Demo users: `translator/translator123`, `reviewer/reviewer123`, `admin/admin123`. Sample files are in [`samples/`](samples)
-(a German assembly manual, a price list, a glossary to import). With `LLM_PROVIDER=mock` the whole app runs offline with a
-tiny dictionary translator, which is what the automated tests use.
+Demo users (development only): `translator/translator123`, `reviewer/reviewer123`, `admin/admin123`. Sample files are in
+[`samples/`](samples) (a German assembly manual, a price list, an English PDF, a glossary to import). With
+`LLM_PROVIDER=mock` the whole app runs offline with a tiny dictionary translator, which is what the automated tests use.
+
+### Configuration
+
+Everything is configured through environment variables or a `.env` file (see [`.env.example`](.env.example)).
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `GEMINI_API_KEY`, `GEMINI_MODEL` | – / `gemini-flash-lite-latest` | Free Gemini key; the alias survives model retirements, overloaded models fall back automatically |
+| `LLM_PROVIDER` | `gemini` | `gemini` or `mock` (offline) |
+| `ENVIRONMENT` | `development` | `production` **refuses to start** without a strong `SECRET_KEY` and with demo data on |
+| `SECRET_KEY` | dev value | Random, >= 32 characters in production |
+| `SEED_DEMO_DATA` | `true` | Demo users and sample glossary. Must be `false` in production |
+| `BOOTSTRAP_ADMIN_USERNAME/PASSWORD` | – | First administrator, created only when no user exists |
+| `DATABASE_URL` | SQLite in `DATA_DIR` | e.g. `postgresql+psycopg2://user:pass@host/db` |
+| `MAX_UPLOAD_MB` | `20` | Larger uploads are refused with 413 |
+| `LOG_FORMAT`, `LOG_LEVEL` | `text`, `INFO` | `json` for log collectors |
+| `ENABLE_HSTS`, `DOCS_ENABLED`, `AUTO_MIGRATE` | `false`, `true`, `true` | HTTPS header, Swagger UI, migrate at start-up |
 
 ## Workflow
 
@@ -66,11 +85,12 @@ flowchart LR
   L --> Mock[Mock / offline]
 ```
 
-* **Backend:** Python 3.12, FastAPI, SQLAlchemy 2, Pydantic v2 · python-docx, openpyxl, PyMuPDF, ReportLab.
+* **Backend:** Python 3.12, FastAPI, SQLAlchemy 2, Alembic, Pydantic v2 · python-docx, openpyxl, PyMuPDF, ReportLab.
 * **Frontend:** React 19, TypeScript (strict), React Query, Tailwind. API types are **generated from the Swagger schema**
   (`python backend/export_openapi.py && npm --prefix frontend run gen:api`), so frontend and backend cannot drift.
-* **API docs:** Swagger UI at `/docs`, ReDoc at `/redoc`.
-* **Deployment:** one Docker image serves API and built UI (central server, no client install); Compose adds PostgreSQL.
+* **API docs:** Swagger UI at `/docs`, ReDoc at `/redoc`. Operations endpoints: `/api/health` (liveness), `/api/ready` (database).
+* **Deployment:** one Docker image serves API and built UI (central server, no client install); the app runs as a non-root
+  user; Compose adds PostgreSQL. Dependencies are installed from a hash-locked file.
 * Long translations run as a background job with a progress bar; Gemini's free-tier rate limit is handled by throttling
   and retry with backoff.
 
@@ -106,20 +126,30 @@ Word paragraph only the first run's formatting is kept; no real-time multi-user 
 
 * No data leaves the server except the text sent to the configured LLM. For production use an **EU-hosted or on-premise
   model** (provider interface); the Gemini *free tier* may use inputs for training – use it with fictional data only.
-* Secrets only via environment variables; passwords hashed (PBKDF2-SHA256); JWT auth; role checks on every endpoint;
-  all edits, approvals and exports record the user and time.
-* Put a reverse proxy with HTTPS in front (Caddy/Nginx); replace `SECRET_KEY`; change the demo passwords.
-* Next steps: Alembic migrations, SSO (Entra ID), translation memory with pgvector (Phase 2), OCR, InDesign via IDML,
-  job queue (Celery/RQ), evaluation set (glossary compliance, COMET) to compare models.
+* **Security measures:** Argon2id password hashing (old hashes are upgraded at next login), login rate limiting,
+  required-claim JWTs, role checks on every endpoint, strict Content-Security-Policy and further security headers, upload
+  size limit and file-signature check, a request id in every response and log line, no internals in error responses.
+  Production refuses to start with the development secret or with demo accounts (see Configuration).
+* All edits, approvals and exports record the user and time; every approved version is kept (preview and final text).
+* Put a reverse proxy with HTTPS in front (Caddy/Nginx) and set `ENABLE_HSTS=true`; set a real `POSTGRES_PASSWORD`.
+* **Known limits:** the login limiter and background jobs live in one process (use Redis and a queue for several workers);
+  tokens have no revocation or refresh. The full list is in the [engineering log](docs/ENGINEERING.md#7-status-and-roadmap).
+* Next steps: SSO (Entra ID), translation memory with pgvector (Phase 2), OCR, InDesign via IDML, job queue (Celery/RQ),
+  evaluation set (glossary compliance, COMET) to compare models.
 
 ## Quality gates
 
 ```bash
-cd backend  && ruff check . && ruff format --check . && pyright -p .. && pytest        # pyright: strict
+cd backend  && ruff check . && ruff format --check . && pyright -p .. && pytest   # strict types; 287 tests, coverage gate 95 %
+cd backend  && pip-audit -r requirements.lock --no-deps --disable-pip             # known vulnerabilities
 cd frontend && npm run check                      # tsc + ESLint (strictTypeChecked + a11y) + 50 unit/component tests
-cd frontend && npm run knip && npm run format:check && npm audit --audit-level=high
+cd frontend && npm run knip && npm run format:check && npm audit --omit=dev --audit-level=high
 cd frontend && npm run e2e                        # Playwright end-to-end + axe accessibility scan (own backend, mock translator)
 ```
 
-CI runs the same commands ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)); Git hooks (Husky) format staged files,
-enforce Conventional Commits and run the frontend checks before a push. Why each tool was chosen: [engineering log](docs/ENGINEERING.md).
+Changing `backend/requirements.txt`? Regenerate the lock:
+`uv pip compile requirements.txt --universal --generate-hashes --python-version 3.12 -o requirements.lock`.
+Changing a model? Add an Alembic migration (`alembic revision --autogenerate -m "..."`); a test fails otherwise.
+
+CI runs the same commands plus a container smoke test ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)); Git hooks (Husky)
+format staged files, enforce Conventional Commits and run the frontend and backend checks before a push. Why each tool was chosen: [engineering log](docs/ENGINEERING.md).
