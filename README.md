@@ -6,10 +6,6 @@ final without a **human approval**. Implemented for **German ↔ English** (take
 
 > **Why was each tool and library chosen?** See the [engineering log](docs/ENGINEERING.md) (decisions, standards, quality gates).
 
-| Preview with term highlighting | Term details & direct editing |
-|---|---|
-| ![preview](docs/screenshots/preview.png) | ![term](docs/screenshots/term-dialog.png) |
-
 ## Quick start
 
 **Docker (one central server, PostgreSQL):**
