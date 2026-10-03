@@ -6,7 +6,7 @@ import { LANGS } from '@/shared/constants'
 import { LangCheckboxes, SelectField, TextField } from '@/shared/components/form'
 import { Form, PageHeader } from '@/shared/components/layout'
 import { Card } from '@/shared/components/ui'
-import { useAction } from '@/shared/lib/hooks'
+import { useAction, useFields } from '@/shared/lib/hooks'
 import { optionsOf, useSettings } from '@/shared/lib/ui'
 
 const NewProject = () => {
@@ -14,24 +14,26 @@ const NewProject = () => {
   const navigate = useNavigate()
   const settings = useSettings()
   const [file, setFile] = useState<File | null>(null)
-  const [name, setName] = useState('')
-  const [customer, setCustomer] = useState('')
-  const [source, setSource] = useState('auto')
-  const [targets, setTargets] = useState<Lang[]>([])
+  const { values: f, set } = useFields<{ name: string; customer: string; source: string; targets: Lang[] }>({
+    name: '',
+    customer: '',
+    source: 'auto',
+    targets: [],
+  })
   const create = useAction(
     () => {
       const fd = new FormData()
       if (file) fd.append('file', file)
-      fd.append('name', name)
-      fd.append('customer', customer)
-      fd.append('source_lang', source)
-      fd.append('target_langs', targets.join(','))
+      fd.append('name', f.name)
+      fd.append('customer', f.customer)
+      fd.append('source_lang', f.source)
+      fd.append('target_langs', f.targets.join(','))
       return post<S['ProjectOut']>('/projects', fd)
     },
     { onSuccess: (p) => void navigate(`/projects/${p.id}`) },
   )
   // until the user chooses, the default of the settings is shown as selected (and used by the server)
-  const chosen = targets.length ? targets : ((settings?.default_target_langs ?? []) as Lang[])
+  const chosen = f.targets.length ? f.targets : ((settings?.default_target_langs ?? []) as Lang[])
 
   return (
     <Form
@@ -68,15 +70,15 @@ const NewProject = () => {
         <p className="mt-2 text-xs text-slate-600">{t('new.hint')}</p>
       </Card>
       <Card className="grid gap-3 md:grid-cols-2">
-        <TextField label={t('new.name')} placeholder={t('new.namePlaceholder')} value={name} onChange={setName} />
-        <TextField label={t('new.customer')} value={customer} onChange={setCustomer} />
+        <TextField label={t('new.name')} placeholder={t('new.namePlaceholder')} value={f.name} onChange={set('name')} />
+        <TextField label={t('new.customer')} value={f.customer} onChange={set('customer')} />
         <SelectField
           label={t('new.sourceLang')}
-          value={source}
-          onChange={setSource}
+          value={f.source}
+          onChange={set('source')}
           options={optionsOf(LANGS, (l) => t(`common:lang.${l}`), ['auto', t('new.autoDetect')])}
         />
-        <LangCheckboxes label={t('new.targetLangs')} value={chosen} onChange={setTargets} />
+        <LangCheckboxes label={t('new.targetLangs')} value={chosen} onChange={set('targets')} />
       </Card>
     </Form>
   )

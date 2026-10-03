@@ -19,9 +19,7 @@ interface Props {
 export const SegmentRow = ({ seg, lang, editable, onTerm, onSave, onRegenerate, busy }: Props) => {
   const { t } = useTranslation(['projects', 'common'])
   const tr = seg.translations[lang]
-  const [editing, setEditing] = useState(false)
-  const [draft, setDraft] = useState<string | null>(null)
-  const text = draft ?? tr?.text ?? ''
+  const [draft, setDraft] = useState<string | null>(null) // the text being edited; null while not editing
   const [showComment, setShowComment] = useState(!!tr?.comment)
   const [comment, setComment] = useState(tr?.comment ?? '')
   const terms = tr?.terms ?? []
@@ -55,7 +53,7 @@ export const SegmentRow = ({ seg, lang, editable, onTerm, onSave, onRegenerate, 
                 type="button"
                 className="hover:text-red-700"
                 onClick={() => {
-                  setEditing(!editing)
+                  setDraft(draft === null ? tr.text : null)
                 }}
               >
                 {t('row.edit')}
@@ -83,22 +81,21 @@ export const SegmentRow = ({ seg, lang, editable, onTerm, onSave, onRegenerate, 
           )}
         </div>
         {!tr && <p className="text-sm italic text-slate-600">{t('row.notTranslated')}</p>}
-        {tr && editing ? (
+        {tr && draft !== null ? (
           <div className="space-y-2">
             <TextArea
               hideLabel
               label={t('row.editTranslation')}
-              rows={Math.max(2, Math.ceil(text.length / 60))}
-              value={text}
+              rows={Math.max(2, Math.ceil(draft.length / 60))}
+              value={draft}
               onChange={setDraft}
             />
             <div className="flex gap-2">
               <Btn
                 variant="primary"
                 onClick={() => {
-                  onSave(seg, { text })
+                  onSave(seg, { text: draft })
                   setDraft(null)
-                  setEditing(false)
                 }}
               >
                 {t('row.apply')}
@@ -106,7 +103,6 @@ export const SegmentRow = ({ seg, lang, editable, onTerm, onSave, onRegenerate, 
               <Btn
                 onClick={() => {
                   setDraft(null)
-                  setEditing(false)
                 }}
               >
                 {t('common:cancel')}

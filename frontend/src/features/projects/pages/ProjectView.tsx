@@ -25,8 +25,7 @@ const ProjectView = () => {
   const { user } = useAuth()
   const [picked, setLang] = useState('')
   const [panel, setPanel] = useState<Panel>(null)
-  const [dialog, setDialog] = useState<{ seg: Segment; term: S['Term'] } | null>(null)
-  const [exporting, setExporting] = useState(false)
+  const [modal, setModal] = useState<{ kind: 'term'; seg: Segment; term: S['Term'] } | { kind: 'export' } | null>(null)
 
   const { data: p, error } = useQuery({
     queryKey: ['project', id],
@@ -65,7 +64,7 @@ const ProjectView = () => {
             onLang={setLang}
             onPanel={setPanel}
             onExport={() => {
-              setExporting(true)
+              setModal({ kind: 'export' })
             }}
           />
           <TermLegend />
@@ -81,7 +80,7 @@ const ProjectView = () => {
           editable={canEdit}
           busy={act.isPending}
           onTerm={(seg, term) => {
-            setDialog({ seg, term })
+            setModal({ kind: 'term', seg, term })
           }}
           onSave={save}
           onRegenerate={(seg) => {
@@ -100,34 +99,34 @@ const ProjectView = () => {
         </Card>
       )}
 
-      {dialog && (
+      {modal?.kind === 'term' && (
         <TermDialog
-          term={dialog.term}
-          seg={dialog.seg}
+          term={modal.term}
+          seg={modal.seg}
           lang={lang}
           src={srcLang}
           projectId={id}
           editable={canEdit}
           onClose={() => {
-            setDialog(null)
+            setModal(null)
           }}
           onSegmentText={(text) => {
-            save(dialog.seg, { text })
+            save(modal.seg, { text })
           }}
           onChanged={() => {
             void refresh()
           }}
         />
       )}
-      {exporting && (
+      {modal?.kind === 'export' && (
         <ExportDialog
           project={p}
           lang={lang}
           onClose={() => {
-            setExporting(false)
+            setModal(null)
           }}
           onDone={() => {
-            setExporting(false)
+            setModal(null)
             void refresh()
           }}
         />
