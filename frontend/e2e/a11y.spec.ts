@@ -1,4 +1,4 @@
-import { test } from '@playwright/test'
+import { test } from './fixtures'
 import { createProject, expectAccessible, login } from './helpers'
 
 test.describe('accessibility (axe, WCAG 2.x A/AA)', () => {

@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test } from './fixtures'
 import { createProject, login } from './helpers'
 
 test('translator → reviewer: upload, preview, edit, approve, export', async ({ page }) => {
@@ -79,4 +79,25 @@ test('login rejects wrong credentials', async ({ page }) => {
   await page.getByLabel('Passwort').fill('wrong')
   await page.getByRole('button', { name: 'Anmelden' }).click()
   await expect(page.getByText('Benutzername oder Passwort falsch')).toBeVisible()
+})
+
+test('the app is served with security headers and a strict content security policy', async ({ page }) => {
+  const response = await page.goto('/login')
+  const headers = response?.headers() ?? {}
+  expect(headers['content-security-policy']).toContain("default-src 'self'")
+  expect(headers['content-security-policy']).toContain("frame-ancestors 'none'")
+  expect(headers['x-content-type-options']).toBe('nosniff')
+  expect(headers['x-frame-options']).toBe('DENY')
+  expect(headers['x-request-id']).toBeTruthy()
+  // the page itself must work under that policy (the console guard fails on any CSP violation)
+  await expect(page.getByRole('button', { name: 'Anmelden' })).toBeVisible()
+})
+
+test('login is rate limited after repeated failures', async ({ page }) => {
+  await page.goto('/login')
+  await page.getByLabel('Benutzername').fill('rate-limit-victim') // a throw-away name: real users must not be locked out
+  await page.getByLabel('Passwort').fill('wrong-password')
+  for (let i = 0; i < 5; i++) await page.getByRole('button', { name: 'Anmelden' }).click()
+  await page.getByRole('button', { name: 'Anmelden' }).click()
+  await expect(page.getByText(/Zu viele Fehlversuche/)).toBeVisible()
 })
