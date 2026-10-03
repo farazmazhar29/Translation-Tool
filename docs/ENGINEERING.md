@@ -248,6 +248,8 @@ Format: **decision → why → alternatives → consequence**.
 
 **D-36 - Full test run and polish after the refactoring (2026-10-03).** All of D-30 to D-35 was first checked only statically (types, lint, Knip, build), as agreed; the tests were run at the end: 109 unit/component tests (was 50) and 10 Playwright tests (was 8), all green. Two failures were found and fixed, both in a test I had just written (it did not wait for the asynchronous login before looking for role-dependent buttons); no production code needed a change. Added: (1) an end-to-end spec for the interface language (an unsupported browser language gets English; the switch works, is remembered after a reload and sets `<html lang>`); (2) `i18n-keys.test.ts`, which fails when a German text has no use in the code (checked by temporarily adding a dead key); it reads the sources with `fs`, not `import.meta.glob`, because loading sources through Vite hid the untested files from the coverage report and inflated it from 57 % to 81 %, which was caught and corrected; (3) lazy loading of the pages with `React.lazy` + `Suspense` (each feature becomes its own chunk). *Honest result:* lazy loading only reduced the first download from 432 kB to 397 kB, because most of the weight is libraries (React, Router, TanStack Query, i18next), not pages. The coverage guard was raised from 40/40/30/30 to 55/55/45/48 (lines/statements/functions/branches), just below the measured 58/57/50/51.
 
+**D-37 - Review of component state (2026-10-03).** Every `useState`, `useEffect`, `useRef`, `useMemo` and `useCallback` was reviewed with the question "could this be derived or merged?". Result: the code was already lean (28 `useState`, one `useEffect` for the dialog's Escape listener, no `useMemo`/`useCallback` because nothing needs them), and four places were simplified: the login form and the new-project form keep their text fields in one `useFields` record instead of 2 and 4 separate states; the segment row has one `draft` state (`null` = not editing) instead of `editing` + `draft`, which also removes the state "editing without a draft"; the project screen has one `modal` state (term dialog, export dialog or none) instead of `dialog` + `exporting`, so two dialogs can no longer be open at once. Kept on purpose: the "picked" values in `TranslationSetup` and `ProjectView` (`null` until the user chooses, otherwise derived from the server data, so nothing has to be synchronised in an effect), and the import/duplicate-scan message in the glossary (two actions share one message line).
+
 ## 6. Problems found and how they were fixed
 
 | Problem | Cause | Fix |
@@ -324,6 +326,7 @@ TanStack Query lint, Knip, `prettier --check` + `npm audit` in CI, Husky + lint-
 * **2026-10-03** - Frontend: interface in German and English with i18next, typed keys, language switch (D-34).
 * **2026-10-03** - Frontend: `ProjectView` split into eight components (D-35).
 * **2026-10-03** - Frontend: full test run (109 unit + 10 end-to-end tests green), language end-to-end test, unused-translation-key test, lazy-loaded pages, coverage guard raised (D-36).
+* **2026-10-03** - Frontend: component state reviewed and four places simplified (D-37).
 
 ## 9. Sources (research, 2026-10-01 and 2026-10-03)
 
