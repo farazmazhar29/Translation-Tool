@@ -1,0 +1,2 @@
+# Same fast gates as CI for the frontend: types, lint, unit/component tests.
+npm --prefix frontend run check

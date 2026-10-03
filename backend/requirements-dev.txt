@@ -1,0 +1,7 @@
+-r requirements.txt
+pytest==8.3.4
+pyright
+ruff
+types-openpyxl
+types-reportlab
+lxml-stubs

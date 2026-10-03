@@ -1,0 +1,28 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: rotpunkt
+      POSTGRES_PASSWORD: rotpunkt
+      POSTGRES_DB: translation
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U rotpunkt -d translation]
+      interval: 3s
+      retries: 20
+
+  app:
+    build: .
+    depends_on:
+      db: { condition: service_healthy }
+    env_file:
+      - path: .env # GEMINI_API_KEY, SECRET_KEY, ... (optional: LLM_PROVIDER=mock works without a key)
+        required: false
+    environment:
+      DATABASE_URL: postgresql+psycopg2://rotpunkt:rotpunkt@db:5432/translation
+    volumes: [appdata:/data]
+    ports: ["8000:8000"]
+
+volumes:
+  pgdata:
+  appdata:

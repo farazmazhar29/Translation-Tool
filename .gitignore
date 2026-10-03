@@ -216,3 +216,16 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Project
+data/
+node_modules/
+frontend/dist/
+
+# Tooling output
+coverage/
+playwright-report/
+test-results/
+
+# Employer task description (not mine to publish)
+Übersetzungstool*.pdf
