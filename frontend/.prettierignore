@@ -1,5 +1,5 @@
 # Generated or build output: never formatted by hand
-src/api/schema.d.ts
+src/shared/api/schema.d.ts
 openapi.json
 dist
 coverage
