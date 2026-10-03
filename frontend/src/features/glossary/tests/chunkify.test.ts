@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { term } from '../test/fixtures'
-import { chunkify } from './chunkify'
+import { term } from '@/testing/fixtures'
+import { chunkify } from '../lib/chunkify'
 
 describe('chunkify', () => {
   it('returns one plain chunk when there are no terms', () => {

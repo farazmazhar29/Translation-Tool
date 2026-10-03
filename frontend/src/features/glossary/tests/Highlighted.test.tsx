@@ -1,9 +1,9 @@
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
-import { term } from '../test/fixtures'
-import { renderApp } from '../test/render'
-import { Highlighted } from './Highlighted'
+import { term } from '@/testing/fixtures'
+import { renderApp } from '@/testing/render'
+import { Highlighted } from '../components/Highlighted'
 
 describe('Highlighted', () => {
   it('renders plain text without terms', () => {

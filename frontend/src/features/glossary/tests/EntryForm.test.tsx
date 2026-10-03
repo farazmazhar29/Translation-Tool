@@ -2,13 +2,13 @@ import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { HttpResponse, http } from 'msw'
 import { describe, expect, it, vi } from 'vitest'
-import type { S } from '../api/client'
-import { setToken } from '../api/client'
-import { AuthProvider } from '../auth'
+import type { S } from '@/shared/api/client'
+import { setToken } from '@/shared/api/client'
+import { AuthProvider } from '@/features/auth'
 import { EMPTY } from '../lib/entry'
-import { renderApp } from '../test/render'
-import { server } from '../test/server'
-import { EntryForm } from './EntryForm'
+import { renderApp } from '@/testing/render'
+import { server } from '@/testing/server'
+import { EntryForm } from '../components/EntryForm'
 
 const duplicate: S['GlossaryOut'] = {
   id: 2,
@@ -23,7 +23,7 @@ const duplicate: S['GlossaryOut'] = {
   updated_at: '2026-10-01T10:00:00',
 }
 
-function setup(role: 'translator' | 'reviewer' = 'translator') {
+const setup = (role: 'translator' | 'reviewer' = 'translator') => {
   setToken('t')
   server.use(
     http.get('*/api/auth/me', () => HttpResponse.json({ id: 1, username: 'u', full_name: '', role, active: true })),

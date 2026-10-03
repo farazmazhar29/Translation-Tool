@@ -2,11 +2,11 @@ import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { HttpResponse, http } from 'msw'
 import { describe, expect, it, vi } from 'vitest'
-import type { S } from '../api/client'
-import { segment, term } from '../test/fixtures'
-import { renderApp } from '../test/render'
-import { server } from '../test/server'
-import { TermDialog } from './TermDialog'
+import type { S } from '@/shared/api/client'
+import { segment, term } from '@/testing/fixtures'
+import { renderApp } from '@/testing/render'
+import { server } from '@/testing/server'
+import { TermDialog } from '../components/TermDialog'
 
 const entry: S['GlossaryOut'] = {
   id: 5,
@@ -21,7 +21,7 @@ const entry: S['GlossaryOut'] = {
   updated_at: '2026-10-01T10:00:00',
 }
 
-function setup(over: { term?: Partial<S['Term']>; editable?: boolean } = {}) {
+const setup = (over: { term?: Partial<S['Term']>; editable?: boolean } = {}) => {
   const props = {
     term: term({ glossary_id: 5, description: 'Tragender Kasten', alternatives: ['cabinet body'], ...over.term }),
     seg: segment(),

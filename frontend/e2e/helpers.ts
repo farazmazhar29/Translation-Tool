@@ -4,7 +4,7 @@ import { expect, type Page } from '@playwright/test'
 
 const SAMPLE = resolve('..', 'samples', 'Montageanleitung_Unterschrank.docx')
 
-export async function login(page: Page, user: 'translator' | 'reviewer' | 'admin'): Promise<void> {
+export const login = async (page: Page, user: 'translator' | 'reviewer' | 'admin'): Promise<void> => {
   await page.goto('/login')
   await page.getByLabel('Benutzername').fill(user)
   await page.getByLabel('Passwort').fill(`${user}123`)
@@ -13,7 +13,7 @@ export async function login(page: Page, user: 'translator' | 'reviewer' | 'admin
 }
 
 /** Creates a project from the sample file through the UI and returns its URL. */
-export async function createProject(page: Page, name: string): Promise<string> {
+export const createProject = async (page: Page, name: string): Promise<string> => {
   await page.goto('/projects/new')
   await page.locator('input[type=file]').setInputFiles(SAMPLE)
   await page.getByPlaceholder('Standard: Dateiname').fill(name)
@@ -23,7 +23,7 @@ export async function createProject(page: Page, name: string): Promise<string> {
 }
 
 /** Fails with a readable list when axe finds WCAG 2.x A/AA violations. */
-export async function expectAccessible(page: Page, where: string): Promise<void> {
+export const expectAccessible = async (page: Page, where: string): Promise<void> => {
   const result = await new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
     .analyze()

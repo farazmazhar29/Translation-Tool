@@ -1,8 +1,8 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
-import { ErrorBoundary } from './ErrorBoundary'
+import { ErrorBoundary } from '../components/ErrorBoundary'
 
-function Boom(): never {
+const Boom = (): never => {
   throw new Error('kaputt')
 }
 

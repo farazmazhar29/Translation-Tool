@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import type { S } from '../api/client'
-import { EMPTY, toBody, toForm } from './entry'
+import type { S } from '@/shared/api/client'
+import { EMPTY, toBody, toForm } from '../lib/entry'
 
 describe('glossary form mapping', () => {
   it('trims terms, drops empty languages and splits synonyms', () => {

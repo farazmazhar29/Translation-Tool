@@ -1,4 +1,4 @@
-import type { S } from '../api/client'
+import type { S } from '@/shared/api/client'
 
 export const settings = (): S['SettingsOut'] => ({
   llm_provider: 'mock',
@@ -59,5 +59,11 @@ export const project = (over: Partial<S['ProjectOut']> = {}): S['ProjectOut'] =>
   created_by: 'translator',
   created_at: '2026-10-01T10:00:00',
   updated_at: '2026-10-01T10:00:00',
+  ...over,
+})
+
+export const projectDetail = (over: Partial<S['ProjectDetail']> = {}): S['ProjectDetail'] => ({
+  ...project(),
+  segments: [segment()],
   ...over,
 })

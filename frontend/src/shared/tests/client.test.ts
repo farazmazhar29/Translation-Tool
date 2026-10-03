@@ -1,7 +1,7 @@
 import { HttpResponse, http } from 'msw'
 import { describe, expect, it, vi } from 'vitest'
-import { server } from '../test/server'
-import { ApiError, can, get, getToken, post, qs, session, setToken } from './client'
+import { server } from '@/testing/server'
+import { ApiError, can, get, getToken, post, qs, session, setToken } from '../api/client'
 
 describe('qs', () => {
   it('skips empty values and encodes the rest', () => {

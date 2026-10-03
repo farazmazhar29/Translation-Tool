@@ -2,10 +2,10 @@ import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { HttpResponse, http } from 'msw'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { project } from '../test/fixtures'
-import { renderApp } from '../test/render'
-import { server } from '../test/server'
-import { ExportDialog } from './ExportDialog'
+import { project } from '@/testing/fixtures'
+import { renderApp } from '@/testing/render'
+import { server } from '@/testing/server'
+import { ExportDialog } from '../components/ExportDialog'
 
 const createObjectURL = vi.fn(() => 'blob:test')
 

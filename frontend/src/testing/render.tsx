@@ -4,7 +4,7 @@ import type { ReactElement } from 'react'
 import { MemoryRouter } from 'react-router-dom'
 
 /** Render with the same providers as the real app (React Query + Router), fresh cache per test. */
-export function renderApp(ui: ReactElement) {
+export const renderApp = (ui: ReactElement) => {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
   return render(
     <QueryClientProvider client={client}>

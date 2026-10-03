@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { escapeRe, replaceFirst } from './text'
+import { escapeRe, replaceFirst } from '../lib/text'
 
 describe('text helpers', () => {
   it('escapes regex metacharacters', () => {

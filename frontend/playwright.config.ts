@@ -23,6 +23,7 @@ export default defineConfig({
   retries: process.env['CI'] ? 1 : 0,
   reporter: process.env['CI'] ? [['github'], ['html', { open: 'never' }]] : 'list',
   use: {
+    locale: 'de-DE', // the specs read the German texts
     baseURL: `http://localhost:${String(PORT)}`,
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',

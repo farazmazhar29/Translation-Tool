@@ -2,14 +2,14 @@ import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { HttpResponse, http } from 'msw'
 import { describe, expect, it } from 'vitest'
-import { setToken } from '../api/client'
-import { AuthProvider } from '../auth'
-import { project } from '../test/fixtures'
-import { renderApp } from '../test/render'
-import { server } from '../test/server'
-import Projects from './Projects'
+import { setToken } from '@/shared/api/client'
+import { AuthProvider } from '@/features/auth'
+import { project } from '@/testing/fixtures'
+import { renderApp } from '@/testing/render'
+import { server } from '@/testing/server'
+import Projects from '../pages/Projects'
 
-function setup(role: 'translator' | 'admin' = 'translator') {
+const setup = (role: 'translator' | 'admin' = 'translator') => {
   setToken('t')
   const urls: string[] = []
   server.use(
