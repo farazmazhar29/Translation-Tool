@@ -3,13 +3,45 @@ line-length = 120
 target-version = "py312"
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
-ignore = ["SIM905", "RUF001", "RUF002", "RUF003", "B008"]
+select = [
+  "E", "W", "F",  # pycodestyle, pyflakes
+  "I",            # import order
+  "UP",           # modern Python syntax
+  "B",            # bugbear: likely bugs
+  "S",            # bandit: security
+  "SIM", "C4", "PIE", "RET", "PERF",  # simplification and performance
+  "N", "A",       # naming, shadowed builtins
+  "ARG",          # unused arguments
+  "T20",          # no print()
+  "ERA",          # no commented-out code
+  "DTZ",          # timezone-aware datetimes
+  "LOG", "G",     # logging usage
+  "PT",           # pytest style
+  "FAST",         # FastAPI-specific
+  "PLC", "PLE", "PLW",  # pylint (conventions, errors, warnings)
+  "RUF",
+]
+ignore = [
+  "SIM905",                    # readable word lists
+  "RUF001", "RUF002", "RUF003",  # German text contains typographic characters on purpose
+  "B008",                      # FastAPI uses function calls in defaults (Depends/File/Form)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["E501", "S101", "S105", "S106", "ARG001", "PLR"]  # asserts, demo passwords and long lines are fine in tests
+"make_samples.py" = ["E501", "S101"]
+"typings/*" = ["A001"]  # stub of a third-party module that defines `open`
+"migrations/*" = ["E501", "ERA001", "N999"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+addopts = "-ra --strict-markers --cov=app --cov-branch --cov-report=term-missing:skip-covered"
+filterwarnings = ["ignore::DeprecationWarning"]
 
-[tool.ruff.lint.per-file-ignores]
-"tests/*" = ["E501"]
-"make_samples.py" = ["E501"]
+[tool.coverage.run]
+source = ["app"]
+
+[tool.coverage.report]
+fail_under = 95
+exclude_also = ["if TYPE_CHECKING:", "raise NotImplementedError"]
