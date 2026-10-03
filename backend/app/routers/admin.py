@@ -2,17 +2,20 @@ from collections import Counter
 from datetime import UTC, datetime, timedelta
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import func
 
-from ..auth import Admin, Me, create_token, hash_password, verify_password
+from ..auth import DUMMY_HASH, Admin, Me, create_token, hash_password, needs_rehash, verify_password
 from ..config import settings
 from ..db import DB
 from ..models import AppSetting, GlossaryEntry, Project, Release, Segment, Translation, User
 from ..schemas import DashboardOut, LoginOut, SettingsOut, UserIn, UserOut
+from ..services.ratelimit import FailureLimiter, RateLimited
 
 router = APIRouter(prefix="/api", tags=["Admin"])
+MIN_PASSWORD_LENGTH = 10
+login_limiter = FailureLimiter(settings.login_max_failures, settings.login_window_minutes * 60)
 
 DEFAULTS: dict[str, Any] = {
     "llm_provider": settings.llm_provider,
@@ -31,11 +34,26 @@ DEFAULTS: dict[str, Any] = {
 }
 
 
-@router.post("/auth/login", response_model=LoginOut, tags=["Auth"])
-def login(db: DB, form: Annotated[OAuth2PasswordRequestForm, Depends()]) -> LoginOut:
+@router.post("/auth/login", tags=["Auth"], summary="Log in (rate limited per IP and username)")
+def login(db: DB, request: Request, form: Annotated[OAuth2PasswordRequestForm, Depends()]) -> LoginOut:
+    key = f"{request.client.host if request.client else '-'}|{form.username.lower()}"
+    try:
+        login_limiter.check(key)
+    except RateLimited as e:
+        raise HTTPException(
+            429,
+            f"Zu viele Fehlversuche. Bitte in {e.retry_after // 60 + 1} Minute(n) erneut versuchen.",
+            headers={"Retry-After": str(e.retry_after)},
+        ) from None
     u = db.query(User).filter(User.username == form.username, User.active).first()
-    if u is None or not verify_password(form.password, u.password_hash):
+    # Always verify a hash, so unknown users cost the same time as wrong passwords.
+    if not verify_password(form.password, u.password_hash if u else DUMMY_HASH) or u is None:
+        login_limiter.fail(key)
         raise HTTPException(401, "Benutzername oder Passwort falsch")
+    login_limiter.reset(key)
+    if needs_rehash(u.password_hash):  # transparently upgrade legacy PBKDF2 / outdated Argon2 parameters
+        u.password_hash = hash_password(form.password)
+        db.commit()
     return LoginOut(access_token=create_token(u), user=UserOut.model_validate(u))
 
 
@@ -44,7 +62,7 @@ def me(user: Me) -> User:
     return user
 
 
-# ---------------------------------------------------------------- users (admin)
+# Users (admin only)
 @router.get("/users", response_model=list[UserOut], tags=["Users"])
 def list_users(db: DB, _: Admin) -> list[User]:
     return db.query(User).order_by(User.id).all()
@@ -57,8 +75,8 @@ def user_names(db: DB, _: Me) -> list[str]:
 
 @router.post("/users", response_model=UserOut, tags=["Users"])
 def create_user(db: DB, _: Admin, body: UserIn) -> User:
-    if len(body.password) < 6:
-        raise HTTPException(400, "Passwort muss mindestens 6 Zeichen haben")
+    if len(body.password) < MIN_PASSWORD_LENGTH:
+        raise HTTPException(400, f"Passwort muss mindestens {MIN_PASSWORD_LENGTH} Zeichen haben")
     if db.query(User).filter(User.username == body.username).first():
         raise HTTPException(409, "Benutzername existiert bereits")
     u = User(
@@ -82,12 +100,14 @@ def update_user(db: DB, admin: Admin, uid: int, body: UserIn) -> User:
         raise HTTPException(400, "Die eigene Admin-Rolle kann nicht entfernt werden")
     u.full_name, u.role, u.active = body.full_name, body.role, body.active
     if body.password:
+        if len(body.password) < MIN_PASSWORD_LENGTH:
+            raise HTTPException(400, f"Passwort muss mindestens {MIN_PASSWORD_LENGTH} Zeichen haben")
         u.password_hash = hash_password(body.password)
     db.commit()
     return u
 
 
-# ---------------------------------------------------------------- settings
+# settings
 def read_settings(db: DB) -> SettingsOut:
     row = db.get(AppSetting, "general")
     return SettingsOut.model_validate(
@@ -95,12 +115,12 @@ def read_settings(db: DB) -> SettingsOut:
     )
 
 
-@router.get("/settings", response_model=SettingsOut, tags=["Settings"])
+@router.get("/settings", tags=["Settings"])
 def get_settings(db: DB, _: Me) -> SettingsOut:
     return read_settings(db)
 
 
-@router.put("/settings", response_model=SettingsOut, tags=["Settings"])
+@router.put("/settings", tags=["Settings"])
 def put_settings(db: DB, _: Admin, body: dict[str, Any]) -> SettingsOut:
     values = {k: v for k, v in body.items() if k in DEFAULTS}
     row = db.get(AppSetting, "general") or AppSetting(key="general", value={})
@@ -110,8 +130,8 @@ def put_settings(db: DB, _: Admin, body: dict[str, Any]) -> SettingsOut:
     return read_settings(db)
 
 
-# ---------------------------------------------------------------- dashboard
-@router.get("/dashboard", response_model=DashboardOut, tags=["Dashboard"])
+# dashboard
+@router.get("/dashboard", tags=["Dashboard"])
 def dashboard(db: DB, _: Me) -> DashboardOut:
     projects = db.query(Project).all()
     today = datetime.now(UTC).replace(tzinfo=None, hour=0, minute=0, second=0, microsecond=0)

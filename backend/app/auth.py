@@ -1,11 +1,12 @@
 import hashlib
 import hmac
-import os
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
 import jwt
+from argon2 import PasswordHasher
+from argon2.exceptions import InvalidHashError, VerificationError
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 
@@ -16,19 +17,40 @@ from .models import User
 oauth2 = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 RANK = {"translator": 1, "reviewer": 2, "admin": 3}  # role hierarchy
 
-
-def _digest(password: str, salt: bytes) -> str:
-    return hashlib.pbkdf2_hmac("sha256", password.encode(), salt, 120_000).hex()
+# Argon2id with the library defaults (RFC 9106 "low memory" profile) – above OWASP's minimum (19 MiB, t=2, p=1).
+_hasher = PasswordHasher()
+_LEGACY_ITERATIONS = 120_000  # first version used PBKDF2-SHA256 ("salt$digest"); still verified, then upgraded
 
 
 def hash_password(password: str) -> str:
-    salt = os.urandom(16)
-    return f"{salt.hex()}${_digest(password, salt)}"
+    return _hasher.hash(password)
+
+
+def _verify_legacy(password: str, stored: str) -> bool:
+    salt, _, digest = stored.partition("$")
+    try:
+        candidate = hashlib.pbkdf2_hmac("sha256", password.encode(), bytes.fromhex(salt), _LEGACY_ITERATIONS).hex()
+    except ValueError:
+        return False
+    return bool(digest) and hmac.compare_digest(candidate, digest)
 
 
 def verify_password(password: str, stored: str) -> bool:
-    salt, _, digest = stored.partition("$")
-    return bool(digest) and hmac.compare_digest(_digest(password, bytes.fromhex(salt)), digest)
+    if not stored.startswith("$argon2"):
+        return _verify_legacy(password, stored)
+    try:
+        return _hasher.verify(stored, password)
+    except (VerificationError, InvalidHashError):
+        return False
+
+
+def needs_rehash(stored: str) -> bool:
+    """True for legacy PBKDF2 hashes and for Argon2 hashes created with outdated parameters."""
+    return not stored.startswith("$argon2") or _hasher.check_needs_rehash(stored)
+
+
+# Verified for unknown usernames so that "no such user" and "wrong password" take the same time.
+DUMMY_HASH = hash_password("timing-equalisation-only")
 
 
 def create_token(user: User) -> str:
@@ -38,10 +60,10 @@ def create_token(user: User) -> str:
 
 def current_user(token: Annotated[str, Depends(oauth2)], db: DB) -> User:
     try:
-        name = str(jwt.decode(token, settings.secret_key, algorithms=["HS256"])["sub"])
-    except (jwt.PyJWTError, KeyError):
+        claims = jwt.decode(token, settings.secret_key, algorithms=["HS256"], options={"require": ["exp", "sub"]})
+    except jwt.PyJWTError:
         raise HTTPException(401, "Nicht angemeldet") from None
-    user = db.query(User).filter(User.username == name, User.active).first()
+    user = db.query(User).filter(User.username == str(claims["sub"]), User.active).first()
     if user is None:
         raise HTTPException(401, "Nicht angemeldet")
     return user

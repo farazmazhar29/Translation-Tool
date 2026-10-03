@@ -1,8 +1,9 @@
-"""Demo users and a small kitchen glossary (fictional demo data)."""
+"""Demo data (fictional) for development, and an optional first admin for production."""
 
 from sqlalchemy.orm import Session
 
 from .auth import hash_password
+from .config import settings
 from .models import GlossaryEntry, GlossaryVersion, User
 
 USERS = [
@@ -86,35 +87,57 @@ GLOSSARY: list[tuple[str, str, list[str], list[str], str, bool, str]] = [
 ]
 
 
-def seed(db: Session) -> None:
-    if not db.query(User).count():
+def seed_users(db: Session) -> None:
+    """Only when the database has no users yet."""
+    if db.query(User).count():
+        return
+    if settings.seed_demo_data:
         db.add_all(User(username=n, full_name=f, role=r, password_hash=hash_password(p)) for n, f, r, p in USERS)
-    if not db.query(GlossaryEntry).count():
-        for de, en, sde, sen, desc, dnt, cat in GLOSSARY:
-            e = GlossaryEntry(
-                terms={"de": de, "en": en},
-                synonyms={"de": sde, "en": sen},
-                description=desc,
-                do_not_translate=dnt,
-                category=cat,
-                updated_by="seed",
+    elif settings.bootstrap_admin_username and settings.bootstrap_admin_password:
+        db.add(
+            User(
+                username=settings.bootstrap_admin_username,
+                full_name="Administrator",
+                role="admin",
+                password_hash=hash_password(settings.bootstrap_admin_password),
             )
-            db.add(e)
-            db.flush()
-            db.add(
-                GlossaryVersion(
-                    entry_id=e.id,
-                    entry_version=1,
-                    action="create",
-                    changed_by="seed",
-                    data={
-                        "terms": e.terms,
-                        "synonyms": e.synonyms,
-                        "description": desc,
-                        "category": cat,
-                        "do_not_translate": dnt,
-                        "status": "approved",
-                    },
-                )
+        )
+
+
+def seed_glossary(db: Session) -> None:
+    if db.query(GlossaryEntry).count():
+        return
+    for de, en, sde, sen, desc, dnt, cat in GLOSSARY:
+        e = GlossaryEntry(
+            terms={"de": de, "en": en},
+            synonyms={"de": sde, "en": sen},
+            description=desc,
+            do_not_translate=dnt,
+            category=cat,
+            updated_by="seed",
+        )
+        db.add(e)
+        db.flush()
+        db.add(
+            GlossaryVersion(
+                entry_id=e.id,
+                entry_version=1,
+                action="create",
+                changed_by="seed",
+                data={
+                    "terms": e.terms,
+                    "synonyms": e.synonyms,
+                    "description": desc,
+                    "category": cat,
+                    "do_not_translate": dnt,
+                    "status": "approved",
+                },
             )
+        )
+
+
+def seed(db: Session) -> None:
+    seed_users(db)
+    if settings.seed_demo_data:  # the sample glossary is demo content, not something to ship to production
+        seed_glossary(db)
     db.commit()
