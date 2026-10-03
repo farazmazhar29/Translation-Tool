@@ -1,2 +1,15 @@
-# Same fast gates as CI for the frontend: types, lint, unit/component tests.
+# The same fast gates as CI, before anything leaves this machine.
+set -e
+
+# Frontend: types, lint, unit/component tests
 npm --prefix frontend run check
+
+# Backend: lint, strict types, tests with the coverage gate (uses the project's virtualenv when present)
+cd backend
+PY=.venv/Scripts/python.exe
+[ -x "$PY" ] || PY=.venv/bin/python
+[ -x "$PY" ] || PY=python
+"$PY" -m ruff check .
+"$PY" -m ruff format --check .
+"$PY" -m pyright -p ..
+"$PY" -m pytest -q
