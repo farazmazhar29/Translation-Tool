@@ -1,0 +1,7 @@
+# Generated or build output: never formatted by hand
+src/api/schema.d.ts
+openapi.json
+dist
+coverage
+playwright-report
+test-results

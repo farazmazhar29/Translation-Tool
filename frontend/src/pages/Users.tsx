@@ -118,7 +118,7 @@ export default function Users() {
                 }}
               />
             </Label>
-            <Label text={edit.id ? 'Neues Passwort (leer = unverändert)' : 'Passwort (min. 6 Zeichen)'}>
+            <Label text={edit.id ? 'Neues Passwort (leer = unverändert)' : 'Passwort (min. 10 Zeichen)'}>
               <input
                 className={input}
                 type="password"

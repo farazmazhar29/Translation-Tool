@@ -13,7 +13,7 @@ export interface paths {
     }
     get?: never
     put?: never
-    /** Login */
+    /** Log in (rate limited per IP and username) */
     post: operations['login_api_auth_login_post']
     delete?: never
     options?: never
@@ -443,6 +443,23 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/releases/{rid}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Preview and final text of one approved version */
+    get: operations['release_detail_api_releases__rid__get']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/projects/{pid}/history': {
     parameters: {
       query?: never
@@ -626,8 +643,25 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** Health */
+    /** Liveness: the process answers */
     get: operations['health_api_health_get']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/ready': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Readiness: the database is reachable */
+    get: operations['ready_api_ready_get']
     put?: never
     post?: never
     delete?: never
@@ -642,10 +676,7 @@ export interface components {
   schemas: {
     /** Body_create_project_api_projects_post */
     Body_create_project_api_projects_post: {
-      /**
-       * File
-       * Format: binary
-       */
+      /** File */
       file: string
       /**
        * Name
@@ -671,10 +702,7 @@ export interface components {
     }
     /** Body_import_xlsx_api_glossary_import_xlsx_post */
     Body_import_xlsx_api_glossary_import_xlsx_post: {
-      /**
-       * File
-       * Format: binary
-       */
+      /** File */
       file: string
     }
     /** Body_login_api_auth_login_post */
@@ -683,7 +711,10 @@ export interface components {
       grant_type?: string | null
       /** Username */
       username: string
-      /** Password */
+      /**
+       * Password
+       * Format: password
+       */
       password: string
       /**
        * Scope
@@ -692,7 +723,10 @@ export interface components {
       scope: string
       /** Client Id */
       client_id?: string | null
-      /** Client Secret */
+      /**
+       * Client Secret
+       * Format: password
+       */
       client_secret?: string | null
     }
     /** DashboardOut */
@@ -719,6 +753,47 @@ export interface components {
       lang: string
       /** Ids */
       ids: number[]
+    }
+    /**
+     * ExcelLayout
+     * @description Free choice of columns for Excel exports ("Erweiterte Einstellungen"). An empty column letter omits it.
+     */
+    ExcelLayout: {
+      /**
+       * Sheet Name
+       * @default Übersetzung
+       */
+      sheet_name: string
+      /**
+       * Source Col
+       * @default A
+       */
+      source_col: string
+      /**
+       * Target Col
+       * @default B
+       */
+      target_col: string
+      /**
+       * Comment Col
+       * @default C
+       */
+      comment_col: string
+      /**
+       * Location Col
+       * @default
+       */
+      location_col: string
+      /**
+       * Start Row
+       * @default 2
+       */
+      start_row: number
+      /**
+       * Header
+       * @default true
+       */
+      header: boolean
     }
     /** ExportFileOut */
     ExportFileOut: {
@@ -768,13 +843,8 @@ export interface components {
        * @default false
        */
       include_comments: boolean
-      /**
-       * Config
-       * @description Excel layout, e.g. {source_col:'A', target_col:'C'}
-       */
-      config?: {
-        [key: string]: unknown
-      } | null
+      /** @description Excel column layout (only used for .xlsx) */
+      config?: components['schemas']['ExcelLayout'] | null
       /** Template Id */
       template_id?: number | null
       /**
@@ -1021,18 +1091,67 @@ export interface components {
       /** Customer */
       customer?: string | null
       /** Source Lang */
-      source_lang?: string | null
+      source_lang?: ('auto' | 'de' | 'en') | null
       /** Target Langs */
-      target_langs?: string[] | null
+      target_langs?: ('de' | 'en')[] | null
     }
     /** QualityOut */
     QualityOut: {
       /** Warnings */
-      warnings: components['schemas']['Warning'][]
+      warnings: components['schemas']['QualityWarning'][]
       /** Errors */
       errors: number
       /** Glossary Version */
       glossary_version: number
+    }
+    /** QualityWarning */
+    QualityWarning: {
+      /** Segment Id */
+      segment_id: number | null
+      /** Idx */
+      idx: number
+      /** Lang */
+      lang: string
+      /** Type */
+      type: string
+      /**
+       * Severity
+       * @enum {string}
+       */
+      severity: 'error' | 'warning' | 'info'
+      /** Message */
+      message: string
+    }
+    /**
+     * ReleaseDetail
+     * @description One approved version: what the machine produced (preview) and what was approved (final), per segment id.
+     */
+    ReleaseDetail: {
+      /** Id */
+      id: number
+      /** Approved By */
+      approved_by: string
+      /** Editors */
+      editors: string[]
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string
+      /** Glossary Version */
+      glossary_version: number
+      /** Change Count */
+      change_count: number
+      /** Warnings */
+      warnings: components['schemas']['QualityWarning'][]
+      /** Preview */
+      preview: {
+        [key: string]: unknown
+      }
+      /** Final */
+      final: {
+        [key: string]: unknown
+      }
     }
     /** ReleaseOut */
     ReleaseOut: {
@@ -1052,7 +1171,7 @@ export interface components {
       /** Change Count */
       change_count: number
       /** Warnings */
-      warnings: components['schemas']['Warning'][]
+      warnings: components['schemas']['QualityWarning'][]
     }
     /** SegmentEdit */
     SegmentEdit: {
@@ -1130,13 +1249,10 @@ export interface components {
       /**
        * Format
        * @default xlsx
-       * @enum {string}
+       * @constant
        */
-      format: 'docx' | 'xlsx' | 'pdf'
-      /** Config */
-      config: {
-        [key: string]: unknown
-      }
+      format: 'xlsx'
+      config: components['schemas']['ExcelLayout']
     }
     /** TemplateOut */
     TemplateOut: {
@@ -1145,13 +1261,10 @@ export interface components {
       /**
        * Format
        * @default xlsx
-       * @enum {string}
+       * @constant
        */
-      format: 'docx' | 'xlsx' | 'pdf'
-      /** Config */
-      config: {
-        [key: string]: unknown
-      }
+      format: 'xlsx'
+      config: components['schemas']['ExcelLayout']
       /** Id */
       id: number
     }
@@ -1216,9 +1329,9 @@ export interface components {
     /** TranslateIn */
     TranslateIn: {
       /** Source Lang */
-      source_lang?: string | null
+      source_lang?: ('auto' | 'de' | 'en') | null
       /** Target Langs */
-      target_langs?: string[] | null
+      target_langs?: ('de' | 'en')[] | null
     }
     /** TranslationOut */
     TranslationOut: {
@@ -1285,24 +1398,10 @@ export interface components {
       msg: string
       /** Error Type */
       type: string
-    }
-    /** Warning */
-    Warning: {
-      /** Segment Id */
-      segment_id: number | null
-      /** Idx */
-      idx: number
-      /** Lang */
-      lang: string
-      /** Type */
-      type: string
-      /**
-       * Severity
-       * @enum {string}
-       */
-      severity: 'error' | 'warning' | 'info'
-      /** Message */
-      message: string
+      /** Input */
+      input?: unknown
+      /** Context */
+      ctx?: Record<string, never>
     }
   }
   responses: never
@@ -1561,6 +1660,7 @@ export interface operations {
         term?: string
         date_from?: string | null
         date_to?: string | null
+        limit?: number
       }
       header?: never
       path?: never
@@ -2236,6 +2336,37 @@ export interface operations {
       }
     }
   }
+  release_detail_api_releases__rid__get: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        rid: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ReleaseDetail']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
   history_api_projects__pid__history_get: {
     parameters: {
       query?: never
@@ -2359,6 +2490,7 @@ export interface operations {
         q?: string
         status?: string
         category?: string
+        limit?: number
       }
       header?: never
       path?: never
@@ -2625,6 +2757,28 @@ export interface operations {
     }
   }
   health_api_health_get: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            [key: string]: string
+          }
+        }
+      }
+    }
+  }
+  ready_api_ready_get: {
     parameters: {
       query?: never
       header?: never
