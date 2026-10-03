@@ -100,7 +100,7 @@
 | Formatting | `npm run format:check` (Prettier) | CI |
 | Dead code | `npm run knip` | CI |
 | Unit + component tests | `npm run coverage` (50 tests, coverage guard) | CI, pre-push |
-| Dependency audit | `npm audit --audit-level=high` | CI |
+| Dependency audit | `npm audit --omit=dev --audit-level=high` (blocking, production dependencies) plus a non-blocking audit of dev tooling | CI |
 | End-to-end + accessibility | `npm run e2e` (Playwright, real backend, axe on 11 screens/dialogs) | CI |
 | Staged files | ESLint/Prettier (TS), Ruff (Python) | pre-commit |
 | Commit message | commitlint, Conventional Commits | commit-msg |
@@ -168,6 +168,7 @@ Format: **decision → why → alternatives → consequence**.
 
 **D-17 - Dependency policy (2026-10-01).** Dependabot weekly (grouped minor/patch), `npm audit` in CI, `typescript-eslint` pinned exactly because its strict preset is not semver-stable, Vitest 4 to clear an advisory, jsdom 26 and Vite 6 for the Node 20.13 in use.
 *Why:* reproducible builds and no known vulnerabilities, with upgrades as reviewed PRs instead of surprises.
+*Exception (2026-10-03):* a new advisory for `braces` (denial of service through crafted glob patterns) affects **every** version, and reaches the project only through the dev tool Knip (`knip -> fast-glob -> micromatch -> braces`). No patched version exists and Knip 6 needs Node >= 20.19 (the machine has 20.13). Decision: the blocking CI audit covers **production** dependencies (what ships); dev-tooling advisories are reported without blocking. Revisit when Node is upgraded (then Knip 6).
 
 **D-18 - Dead-code detection with Knip (2026-10-01).** It found an unused helper (`patch`) and two exports that nothing imported; all removed.
 *Why:* unused code is maintenance cost and misleads readers; a graph-level tool finds what a per-file linter cannot.
@@ -198,6 +199,7 @@ Format: **decision → why → alternatives → consequence**.
 | **Accessibility: unlabeled inputs/selects, colour-only link** | Placeholder-only controls | `aria-label`s, underlined link |
 | E2E suite deleted its own database | Playwright re-evaluates the config in every worker | One temp dir shared via an environment variable |
 | E2E run used a stale UI | Tests run against the built app | `npm run e2e` always builds first |
+| **First push: CI failed, a fresh clone could not build** | The Python `.gitignore` template rule `lib/` also matched `frontend/src/lib/`, so 7 source files were never committed (everything worked locally) | Anchored the rule (`/lib/`); verified with a fresh `git clone` running every frontend gate. Lesson: always verify from a clean clone |
 | Pre-commit ESLint could not find its config | lint-staged ran from the repo root | Per-folder lint-staged configs |
 | Page declared `lang="en"`, title "frontend", Vite favicon | Template defaults never replaced | `lang="de"` (screen readers pronounce German correctly), real title and description, own favicon, unused template asset removed |
 
@@ -221,6 +223,7 @@ is ~43% because pages are covered by the end-to-end suite; pre-push hooks cover 
 * **2026-09-30** – Initial implementation: backend, frontend, glossary, quality check, export, Docker, CI, tests.
 * **2026-10-01** – Real Gemini integration verified; model alias + fallback (D-03); prompt tightened; PDF and EN → DE verified.
 * **2026-10-01** – This engineering log created; frontend research completed (sources below).
+* **2026-10-03** - First push to GitHub (public repository; secrets scanned before committing, task PDFs and `.env` excluded). CI caught a `.gitignore` bug (missing `frontend/src/lib`), fixed and verified from a fresh clone; audit gate split into blocking (production) and informational (dev tooling).
 * **2026-10-01** – Frontend professionalised: 50 unit/component tests, 6 Playwright tests incl. axe accessibility scan on 11 screens, `jsx-a11y`, TanStack Query lint, Knip, error boundary, Husky/lint-staged/commitlint, EditorConfig, Dependabot, stricter CI. Fixed the accessibility defects the scan found.
 
 ## 9. Sources (research, 2026-10-01)

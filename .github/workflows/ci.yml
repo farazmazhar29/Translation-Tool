@@ -31,7 +31,9 @@ jobs:
       - run: npm run format:check
       - run: npm run knip
       - run: npm run coverage
-      - run: npm audit --audit-level=high
+      - run: npm audit --omit=dev --audit-level=high # blocks: what ships to users
+      - run: npm audit --audit-level=high # dev tooling: informational, see docs/ENGINEERING.md (D-17)
+        continue-on-error: true
       - run: npm run build
 
   e2e:
