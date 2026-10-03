@@ -142,7 +142,7 @@ Word paragraph only the first run's formatting is kept; no real-time multi-user 
 ```bash
 cd backend  && ruff check . && ruff format --check . && pyright -p .. && pytest   # strict types; 287 tests, coverage gate 95 %
 cd backend  && pip-audit -r requirements.lock --no-deps --disable-pip             # known vulnerabilities
-cd frontend && npm run check                      # tsc + ESLint (strictTypeChecked + a11y) + 50 unit/component tests
+cd frontend && npm run check                      # tsc + ESLint (strictTypeChecked + a11y) + 109 unit/component tests
 cd frontend && npm run knip && npm run format:check && npm audit --omit=dev --audit-level=high
 cd frontend && npm run e2e                        # Playwright end-to-end + axe accessibility scan (own backend, mock translator)
 ```
