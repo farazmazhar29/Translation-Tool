@@ -4,2800 +4,2824 @@
  */
 
 export interface paths {
-  '/api/auth/login': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Log in (rate limited per IP and username) */
-    post: operations['login_api_auth_login_post']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/auth/me': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Me */
-    get: operations['me_api_auth_me_get']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/users': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** List Users */
-    get: operations['list_users_api_users_get']
-    put?: never
-    /** Create User */
-    post: operations['create_user_api_users_post']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/users/names': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Usernames (for the editor filter) */
-    get: operations['user_names_api_users_names_get']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/users/{uid}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    /** Update User */
-    put: operations['update_user_api_users__uid__put']
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/settings': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Get Settings */
-    get: operations['get_settings_api_settings_get']
-    /** Put Settings */
-    put: operations['put_settings_api_settings_put']
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/dashboard': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Dashboard */
-    get: operations['dashboard_api_dashboard_get']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/projects': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * Search and filter projects
-     * @description `archived`: no | only | all. `term` searches inside original and translated text.
-     */
-    get: operations['list_projects_api_projects_get']
-    put?: never
-    /** Upload a file – the project is created automatically */
-    post: operations['create_project_api_projects_post']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/projects/{pid}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Project Detail */
-    get: operations['project_detail_api_projects__pid__get']
-    put?: never
-    post?: never
-    /** Delete a project (admin) */
-    delete: operations['delete_project_api_projects__pid__delete']
-    options?: never
-    head?: never
-    /** Patch Project */
-    patch: operations['patch_project_api_projects__pid__patch']
-    trace?: never
-  }
-  '/api/projects/{pid}/archive': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Archive */
-    post: operations['archive_api_projects__pid__archive_post']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/projects/{pid}/unarchive': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Unarchive */
-    post: operations['unarchive_api_projects__pid__unarchive_post']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/projects/{pid}/copy': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Copy a project (optionally with translations) */
-    post: operations['copy_project_api_projects__pid__copy_post']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/projects/{pid}/original': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Download the original file */
-    get: operations['download_original_api_projects__pid__original_get']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/projects/{pid}/translate': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /**
-     * Start the PREVIEW translation
-     * @description Only creates a preview. The final translation is produced on approval.
-     */
-    post: operations['start_translation_api_projects__pid__translate_post']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/projects/{pid}/status': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Job Status */
-    get: operations['job_status_api_projects__pid__status_get']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/segments/{sid}/{lang}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    /** Edit translation text or comment */
-    put: operations['edit_segment_api_segments__sid___lang__put']
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/segments/{sid}/{lang}/retranslate': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Regenerate one segment */
-    post: operations['retranslate_api_segments__sid___lang__retranslate_post']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/projects/{pid}/replace-term': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Replace a translated term in the whole project */
-    post: operations['replace_term_api_projects__pid__replace_term_post']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/projects/{pid}/quality': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Quality Check */
-    get: operations['quality_check_api_projects__pid__quality_get']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/projects/{pid}/submit-review': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Send to a reviewer */
-    post: operations['submit_review_api_projects__pid__submit_review_post']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/projects/{pid}/reject': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Send back to the translator */
-    post: operations['reject_api_projects__pid__reject_post']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/projects/{pid}/approve': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /**
-     * 'Übersetzung freigeben'
-     * @description Stores the final translation as a release (history). Export is only possible afterwards.
-     */
-    post: operations['approve_api_projects__pid__approve_post']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/projects/{pid}/reopen': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Reopen a finished project */
-    post: operations['reopen_api_projects__pid__reopen_post']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/projects/{pid}/export': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Export an approved translation */
-    post: operations['export_project_api_projects__pid__export_post']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/exports/{eid}/download': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Download Export */
-    get: operations['download_export_api_exports__eid__download_get']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/releases/{rid}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Preview and final text of one approved version */
-    get: operations['release_detail_api_releases__rid__get']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/projects/{pid}/history': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Releases and exports of a project */
-    get: operations['history_api_projects__pid__history_get']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/export-templates': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** List Templates */
-    get: operations['list_templates_api_export_templates_get']
-    put?: never
-    /** Create Template */
-    post: operations['create_template_api_export_templates_post']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/export-templates/{tid}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    post?: never
-    /** Delete Template */
-    delete: operations['delete_template_api_export_templates__tid__delete']
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/glossary': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** List Entries */
-    get: operations['list_entries_api_glossary_get']
-    put?: never
-    /** Create an entry (translators create drafts) */
-    post: operations['create_entry_api_glossary_post']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/glossary/{eid}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    /** Update Entry */
-    put: operations['update_entry_api_glossary__eid__put']
-    post?: never
-    /** Delete Entry */
-    delete: operations['delete_entry_api_glossary__eid__delete']
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/glossary/{eid}/status': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Approve or reject an entry */
-    post: operations['set_status_api_glossary__eid__status_post']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/glossary/{eid}/versions': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Version history of an entry */
-    get: operations['versions_api_glossary__eid__versions_get']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/glossary/duplicates/scan': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Find duplicate terms */
-    get: operations['scan_duplicates_api_glossary_duplicates_scan_get']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/glossary/export/xlsx': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Export the glossary to Excel */
-    get: operations['export_xlsx_api_glossary_export_xlsx_get']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/glossary/import/xlsx': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /**
-     * Import glossary entries from Excel
-     * @description Columns: de, en, de_synonyme, en_synonyme, beschreibung, nicht_uebersetzen, kategorie, status.
-     */
-    post: operations['import_xlsx_api_glossary_import_xlsx_post']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/health': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Liveness: the process answers */
-    get: operations['health_api_health_get']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/ready': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Readiness: the database is reachable */
-    get: operations['ready_api_ready_get']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
+    "/api/auth/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Log in (rate limited per IP and username) */
+        post: operations["login_api_auth_login_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Me */
+        get: operations["me_api_auth_me_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Users */
+        get: operations["list_users_api_users_get"];
+        put?: never;
+        /** Create User */
+        post: operations["create_user_api_users_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/users/names": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Usernames (for the editor filter) */
+        get: operations["user_names_api_users_names_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/users/{uid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update User */
+        put: operations["update_user_api_users__uid__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Settings */
+        get: operations["get_settings_api_settings_get"];
+        /** Put Settings */
+        put: operations["put_settings_api_settings_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Dashboard */
+        get: operations["dashboard_api_dashboard_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Search and filter projects
+         * @description `term` searches inside original and translated text.
+         */
+        get: operations["list_projects_api_projects_get"];
+        put?: never;
+        /** Upload a file – the project is created automatically */
+        post: operations["create_project_api_projects_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{pid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Project Detail */
+        get: operations["project_detail_api_projects__pid__get"];
+        put?: never;
+        post?: never;
+        /** Delete a project (admin) */
+        delete: operations["delete_project_api_projects__pid__delete"];
+        options?: never;
+        head?: never;
+        /** Patch Project */
+        patch: operations["patch_project_api_projects__pid__patch"];
+        trace?: never;
+    };
+    "/api/projects/{pid}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Archive */
+        post: operations["archive_api_projects__pid__archive_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{pid}/unarchive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Unarchive */
+        post: operations["unarchive_api_projects__pid__unarchive_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{pid}/copy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Copy a project (optionally with translations) */
+        post: operations["copy_project_api_projects__pid__copy_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{pid}/original": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download the original file */
+        get: operations["download_original_api_projects__pid__original_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{pid}/translate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start the PREVIEW translation
+         * @description Only creates a preview. The final translation is produced on approval.
+         */
+        post: operations["start_translation_api_projects__pid__translate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{pid}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Job Status */
+        get: operations["job_status_api_projects__pid__status_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/segments/{sid}/{lang}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Edit translation text or comment */
+        put: operations["edit_segment_api_segments__sid___lang__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/segments/{sid}/{lang}/retranslate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Regenerate one segment */
+        post: operations["retranslate_api_segments__sid___lang__retranslate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{pid}/replace-term": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Replace a translated term in the whole project */
+        post: operations["replace_term_api_projects__pid__replace_term_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{pid}/quality": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Quality Check */
+        get: operations["quality_check_api_projects__pid__quality_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{pid}/submit-review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send to a reviewer */
+        post: operations["submit_review_api_projects__pid__submit_review_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{pid}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send back to the translator */
+        post: operations["reject_api_projects__pid__reject_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{pid}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 'Übersetzung freigeben'
+         * @description Stores the final translation as a release (history). Export is only possible afterwards.
+         */
+        post: operations["approve_api_projects__pid__approve_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{pid}/reopen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reopen a finished project */
+        post: operations["reopen_api_projects__pid__reopen_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{pid}/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Export an approved translation */
+        post: operations["export_project_api_projects__pid__export_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/exports/{eid}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download Export */
+        get: operations["download_export_api_exports__eid__download_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/releases/{rid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Preview and final text of one approved version */
+        get: operations["release_detail_api_releases__rid__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{pid}/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Releases and exports of a project */
+        get: operations["history_api_projects__pid__history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/export-templates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Templates */
+        get: operations["list_templates_api_export_templates_get"];
+        put?: never;
+        /** Create Template */
+        post: operations["create_template_api_export_templates_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/export-templates/{tid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Template */
+        delete: operations["delete_template_api_export_templates__tid__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/glossary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Entries */
+        get: operations["list_entries_api_glossary_get"];
+        put?: never;
+        /** Create an entry (translators create drafts) */
+        post: operations["create_entry_api_glossary_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/glossary/{eid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update Entry */
+        put: operations["update_entry_api_glossary__eid__put"];
+        post?: never;
+        /** Delete Entry */
+        delete: operations["delete_entry_api_glossary__eid__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/glossary/{eid}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Approve or reject an entry */
+        post: operations["set_status_api_glossary__eid__status_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/glossary/{eid}/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Version history of an entry */
+        get: operations["versions_api_glossary__eid__versions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/glossary/duplicates/scan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Find duplicate terms */
+        get: operations["scan_duplicates_api_glossary_duplicates_scan_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/glossary/export/xlsx": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Export the glossary to Excel */
+        get: operations["export_xlsx_api_glossary_export_xlsx_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/glossary/import/xlsx": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Import glossary entries from Excel
+         * @description Columns: de, en, de_synonyme, en_synonyme, beschreibung, nicht_uebersetzen, kategorie, status.
+         */
+        post: operations["import_xlsx_api_glossary_import_xlsx_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Liveness: the process answers */
+        get: operations["health_api_health_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/ready": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Readiness: the database is reachable */
+        get: operations["ready_api_ready_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
-export type webhooks = Record<string, never>
+export type webhooks = Record<string, never>;
 export interface components {
-  schemas: {
-    /** Body_create_project_api_projects_post */
-    Body_create_project_api_projects_post: {
-      /** File */
-      file: string
-      /**
-       * Name
-       * @default
-       */
-      name: string
-      /**
-       * Customer
-       * @default
-       */
-      customer: string
-      /**
-       * Source Lang
-       * @default auto
-       */
-      source_lang: string
-      /**
-       * Target Langs
-       * @description comma separated, e.g. 'en,de'
-       * @default
-       */
-      target_langs: string
-    }
-    /** Body_import_xlsx_api_glossary_import_xlsx_post */
-    Body_import_xlsx_api_glossary_import_xlsx_post: {
-      /** File */
-      file: string
-    }
-    /** Body_login_api_auth_login_post */
-    Body_login_api_auth_login_post: {
-      /** Grant Type */
-      grant_type?: string | null
-      /** Username */
-      username: string
-      /**
-       * Password
-       * Format: password
-       */
-      password: string
-      /**
-       * Scope
-       * @default
-       */
-      scope: string
-      /** Client Id */
-      client_id?: string | null
-      /**
-       * Client Secret
-       * Format: password
-       */
-      client_secret?: string | null
-    }
-    /** DashboardOut */
-    DashboardOut: {
-      /** Open */
-      open: number
-      /** In Review */
-      in_review: number
-      /** Approved */
-      approved: number
-      /** Edited Today */
-      edited_today: number
-      /** Recent */
-      recent: components['schemas']['ProjectOut'][]
-      /** Top Terms */
-      top_terms: components['schemas']['TopTerm'][]
-      stats: components['schemas']['Stats']
-    }
-    /** DuplicateGroup */
-    DuplicateGroup: {
-      /** Term */
-      term: string
-      /** Lang */
-      lang: string
-      /** Ids */
-      ids: number[]
-    }
-    /**
-     * ExcelLayout
-     * @description Free choice of columns for Excel exports ("Erweiterte Einstellungen"). An empty column letter omits it.
-     */
-    ExcelLayout: {
-      /**
-       * Sheet Name
-       * @default Übersetzung
-       */
-      sheet_name: string
-      /**
-       * Source Col
-       * @default A
-       */
-      source_col: string
-      /**
-       * Target Col
-       * @default B
-       */
-      target_col: string
-      /**
-       * Comment Col
-       * @default C
-       */
-      comment_col: string
-      /**
-       * Location Col
-       * @default
-       */
-      location_col: string
-      /**
-       * Start Row
-       * @default 2
-       */
-      start_row: number
-      /**
-       * Header
-       * @default true
-       */
-      header: boolean
-    }
-    /** ExportFileOut */
-    ExportFileOut: {
-      /** Id */
-      id: number
-      /** Filename */
-      filename: string
-      /** Format */
-      format: string
-      /** Lang */
-      lang: string
-      /** Mode */
-      mode: string
-      /** Created By */
-      created_by: string
-      /**
-       * Created At
-       * Format: date-time
-       */
-      created_at: string
-      /** Release Id */
-      release_id: number
-    }
-    /** ExportIn */
-    ExportIn: {
-      /** Lang */
-      lang: string
-      /**
-       * Format
-       * @default docx
-       * @enum {string}
-       */
-      format: 'docx' | 'xlsx' | 'pdf'
-      /**
-       * Mode
-       * @default translation
-       * @enum {string}
-       */
-      mode: 'translation' | 'both'
-      /**
-       * Include Report
-       * @default false
-       */
-      include_report: boolean
-      /**
-       * Include Comments
-       * @default false
-       */
-      include_comments: boolean
-      /** @description Excel column layout (only used for .xlsx) */
-      config?: components['schemas']['ExcelLayout'] | null
-      /** Template Id */
-      template_id?: number | null
-      /**
-       * Archive After
-       * @default true
-       */
-      archive_after: boolean
-    }
-    /** GlossaryIn */
-    GlossaryIn: {
-      /**
-       * Terms
-       * @description {"de": "Korpus", "en": "carcass"}
-       */
-      terms: {
-        [key: string]: string
-      }
-      /**
-       * Synonyms
-       * @default {}
-       */
-      synonyms: {
-        [key: string]: string[]
-      }
-      /**
-       * Description
-       * @default
-       */
-      description: string
-      /**
-       * Category
-       * @default technical
-       * @enum {string}
-       */
-      category: 'technical' | 'product'
-      /**
-       * Do Not Translate
-       * @default false
-       */
-      do_not_translate: boolean
-      /** Status */
-      status?: ('draft' | 'approved' | 'rejected') | null
-      /**
-       * Force
-       * @description Save even if a duplicate exists
-       * @default false
-       */
-      force: boolean
-    }
-    /** GlossaryOut */
-    GlossaryOut: {
-      /** Id */
-      id: number
-      /** Terms */
-      terms: {
-        [key: string]: string
-      }
-      /** Synonyms */
-      synonyms: {
-        [key: string]: string[]
-      }
-      /** Description */
-      description: string
-      /** Category */
-      category: string
-      /** Do Not Translate */
-      do_not_translate: boolean
-      /** Status */
-      status: string
-      /** Version */
-      version: number
-      /** Updated By */
-      updated_by: string
-      /**
-       * Updated At
-       * Format: date-time
-       */
-      updated_at: string
-    }
-    /** GlossaryVersionOut */
-    GlossaryVersionOut: {
-      /** Id */
-      id: number
-      /** Entry Version */
-      entry_version: number
-      /** Action */
-      action: string
-      /** Data */
-      data: {
-        [key: string]: unknown
-      }
-      /** Changed By */
-      changed_by: string
-      /**
-       * Changed At
-       * Format: date-time
-       */
-      changed_at: string
-    }
-    /** HTTPValidationError */
-    HTTPValidationError: {
-      /** Detail */
-      detail?: components['schemas']['ValidationError'][]
-    }
-    /** HistoryOut */
-    HistoryOut: {
-      project: components['schemas']['ProjectOut']
-      /** Releases */
-      releases: components['schemas']['ReleaseOut'][]
-      /** Exports */
-      exports: components['schemas']['ExportFileOut'][]
-    }
-    /** ImportResult */
-    ImportResult: {
-      /** Created */
-      created: number
-      /** Updated */
-      updated: number
-      /** Skipped */
-      skipped: number
-      /** Skipped Rows */
-      skipped_rows: {
-        [key: string]: unknown
-      }[]
-    }
-    /** JobStatus */
-    JobStatus: {
-      /** Job State */
-      job_state: string
-      /** Job Progress */
-      job_progress: number
-      /** Job Error */
-      job_error: string
-      /** Status */
-      status: string
-    }
-    /** LoginOut */
-    LoginOut: {
-      /** Access Token */
-      access_token: string
-      /**
-       * Token Type
-       * @default bearer
-       */
-      token_type: string
-      user: components['schemas']['UserOut']
-    }
-    /** ProjectDetail */
-    ProjectDetail: {
-      /** Id */
-      id: number
-      /** Name */
-      name: string
-      /** Customer */
-      customer: string
-      /** Filename */
-      filename: string
-      /** File Type */
-      file_type: string
-      /** Source Lang */
-      source_lang: string
-      /** Detected Lang */
-      detected_lang: string
-      /** Target Langs */
-      target_langs: string[]
-      /** Status */
-      status: string
-      /** Archived */
-      archived: boolean
-      /** Job State */
-      job_state: string
-      /** Job Progress */
-      job_progress: number
-      /** Job Error */
-      job_error: string
-      /** Structure */
-      structure: {
-        [key: string]: unknown
-      }
-      /** Created By */
-      created_by: string
-      /**
-       * Created At
-       * Format: date-time
-       */
-      created_at: string
-      /**
-       * Updated At
-       * Format: date-time
-       */
-      updated_at: string
-      /** Segments */
-      segments: components['schemas']['SegmentOut'][]
-    }
-    /** ProjectOut */
-    ProjectOut: {
-      /** Id */
-      id: number
-      /** Name */
-      name: string
-      /** Customer */
-      customer: string
-      /** Filename */
-      filename: string
-      /** File Type */
-      file_type: string
-      /** Source Lang */
-      source_lang: string
-      /** Detected Lang */
-      detected_lang: string
-      /** Target Langs */
-      target_langs: string[]
-      /** Status */
-      status: string
-      /** Archived */
-      archived: boolean
-      /** Job State */
-      job_state: string
-      /** Job Progress */
-      job_progress: number
-      /** Job Error */
-      job_error: string
-      /** Structure */
-      structure: {
-        [key: string]: unknown
-      }
-      /** Created By */
-      created_by: string
-      /**
-       * Created At
-       * Format: date-time
-       */
-      created_at: string
-      /**
-       * Updated At
-       * Format: date-time
-       */
-      updated_at: string
-    }
-    /** ProjectPatch */
-    ProjectPatch: {
-      /** Name */
-      name?: string | null
-      /** Customer */
-      customer?: string | null
-      /** Source Lang */
-      source_lang?: ('auto' | 'de' | 'en') | null
-      /** Target Langs */
-      target_langs?: ('de' | 'en')[] | null
-    }
-    /** QualityOut */
-    QualityOut: {
-      /** Warnings */
-      warnings: components['schemas']['QualityWarning'][]
-      /** Errors */
-      errors: number
-      /** Glossary Version */
-      glossary_version: number
-    }
-    /** QualityWarning */
-    QualityWarning: {
-      /** Segment Id */
-      segment_id: number | null
-      /** Idx */
-      idx: number
-      /** Lang */
-      lang: string
-      /** Type */
-      type: string
-      /**
-       * Severity
-       * @enum {string}
-       */
-      severity: 'error' | 'warning' | 'info'
-      /** Message */
-      message: string
-    }
-    /**
-     * ReleaseDetail
-     * @description One approved version: what the machine produced (preview) and what was approved (final), per segment id.
-     */
-    ReleaseDetail: {
-      /** Id */
-      id: number
-      /** Approved By */
-      approved_by: string
-      /** Editors */
-      editors: string[]
-      /**
-       * Created At
-       * Format: date-time
-       */
-      created_at: string
-      /** Glossary Version */
-      glossary_version: number
-      /** Change Count */
-      change_count: number
-      /** Warnings */
-      warnings: components['schemas']['QualityWarning'][]
-      /** Preview */
-      preview: {
-        [key: string]: unknown
-      }
-      /** Final */
-      final: {
-        [key: string]: unknown
-      }
-    }
-    /** ReleaseOut */
-    ReleaseOut: {
-      /** Id */
-      id: number
-      /** Approved By */
-      approved_by: string
-      /** Editors */
-      editors: string[]
-      /**
-       * Created At
-       * Format: date-time
-       */
-      created_at: string
-      /** Glossary Version */
-      glossary_version: number
-      /** Change Count */
-      change_count: number
-      /** Warnings */
-      warnings: components['schemas']['QualityWarning'][]
-    }
-    /** SegmentEdit */
-    SegmentEdit: {
-      /** Text */
-      text?: string | null
-      /** Comment */
-      comment?: string | null
-    }
-    /** SegmentOut */
-    SegmentOut: {
-      /** Id */
-      id: number
-      /** Idx */
-      idx: number
-      /** Source Text */
-      source_text: string
-      /** Locator */
-      locator: {
-        [key: string]: unknown
-      }
-      /** Translations */
-      translations: {
-        [key: string]: components['schemas']['TranslationOut']
-      }
-    }
-    /** SettingsOut */
-    SettingsOut: {
-      /** Llm Provider */
-      llm_provider: string
-      /** Llm Model */
-      llm_model: string
-      /** Default Source Lang */
-      default_source_lang: string
-      /** Default Target Langs */
-      default_target_langs: string[]
-      /** Default Export Format */
-      default_export_format: string
-      /** Default Export Mode */
-      default_export_mode: string
-      /** Colors */
-      colors: {
-        [key: string]: string
-      }
-      /**
-       * Gemini Key Configured
-       * @default false
-       */
-      gemini_key_configured: boolean
-    }
-    /** Stats */
-    Stats: {
-      /** Projects Total */
-      projects_total: number
-      /** Segments */
-      segments: number
-      /** Translations */
-      translations: number
-      /** Manual Edits */
-      manual_edits: number
-      /** Glossary Entries */
-      glossary_entries: number
-      /** By Language */
-      by_language: {
-        [key: string]: number
-      }
-      /** Releases Per Day */
-      releases_per_day: {
-        [key: string]: number
-      }
-    }
-    /** TemplateIn */
-    TemplateIn: {
-      /** Name */
-      name: string
-      /**
-       * Format
-       * @default xlsx
-       * @constant
-       */
-      format: 'xlsx'
-      config: components['schemas']['ExcelLayout']
-    }
-    /** TemplateOut */
-    TemplateOut: {
-      /** Name */
-      name: string
-      /**
-       * Format
-       * @default xlsx
-       * @constant
-       */
-      format: 'xlsx'
-      config: components['schemas']['ExcelLayout']
-      /** Id */
-      id: number
-    }
-    /**
-     * Term
-     * @description A highlighted term. `ok=False` means the glossary target is missing in the translation.
-     */
-    Term: {
-      /** Source */
-      source: string
-      /**
-       * Target
-       * @default
-       */
-      target: string
-      /**
-       * Category
-       * @enum {string}
-       */
-      category: 'technical' | 'glossary' | 'ambiguous' | 'unknown' | 'protected'
-      /**
-       * Alternatives
-       * @default []
-       */
-      alternatives: string[]
-      /**
-       * Description
-       * @default
-       */
-      description: string
-      /** Glossary Id */
-      glossary_id?: number | null
-      /**
-       * Dnt
-       * @default false
-       */
-      dnt: boolean
-      /**
-       * Ok
-       * @default true
-       */
-      ok: boolean
-    }
-    /** TermReplace */
-    TermReplace: {
-      /** Lang */
-      lang: string
-      /** Old */
-      old: string
-      /** New */
-      new: string
-    }
-    /** TopTerm */
-    TopTerm: {
-      /** Id */
-      id: number
-      /** Term */
-      term: string
-      /** Count */
-      count: number
-    }
-    /** TranslateIn */
-    TranslateIn: {
-      /** Source Lang */
-      source_lang?: ('auto' | 'de' | 'en') | null
-      /** Target Langs */
-      target_langs?: ('de' | 'en')[] | null
-    }
-    /** TranslationOut */
-    TranslationOut: {
-      /** Text */
-      text: string
-      /** Original Text */
-      original_text: string
-      /** Terms */
-      terms: components['schemas']['Term'][]
-      /** Comment */
-      comment: string
-      /** Edited */
-      edited: boolean
-      /** Edited By */
-      edited_by: string
-    }
-    /** UserIn */
-    UserIn: {
-      /** Username */
-      username: string
-      /**
-       * Full Name
-       * @default
-       */
-      full_name: string
-      /**
-       * Password
-       * @default
-       */
-      password: string
-      /**
-       * Role
-       * @default translator
-       * @enum {string}
-       */
-      role: 'translator' | 'reviewer' | 'admin'
-      /**
-       * Active
-       * @default true
-       */
-      active: boolean
-    }
-    /** UserOut */
-    UserOut: {
-      /** Id */
-      id: number
-      /** Username */
-      username: string
-      /** Full Name */
-      full_name: string
-      /**
-       * Role
-       * @enum {string}
-       */
-      role: 'translator' | 'reviewer' | 'admin'
-      /** Active */
-      active: boolean
-    }
-    /** ValidationError */
-    ValidationError: {
-      /** Location */
-      loc: (string | number)[]
-      /** Message */
-      msg: string
-      /** Error Type */
-      type: string
-      /** Input */
-      input?: unknown
-      /** Context */
-      ctx?: Record<string, never>
-    }
-  }
-  responses: never
-  parameters: never
-  requestBodies: never
-  headers: never
-  pathItems: never
+    schemas: {
+        /**
+         * ArchiveFilter
+         * @description Which projects the project list shows.
+         * @enum {string}
+         */
+        ArchiveFilter: "no" | "only" | "all";
+        /** Body_create_project_api_projects_post */
+        Body_create_project_api_projects_post: {
+            /** File */
+            file: string;
+            /**
+             * Name
+             * @default
+             */
+            name: string;
+            /**
+             * Customer
+             * @default
+             */
+            customer: string;
+            /**
+             * Source Lang
+             * @default auto
+             */
+            source_lang: string;
+            /**
+             * Target Langs
+             * @description comma separated, e.g. 'en,de'
+             * @default
+             */
+            target_langs: string;
+        };
+        /** Body_import_xlsx_api_glossary_import_xlsx_post */
+        Body_import_xlsx_api_glossary_import_xlsx_post: {
+            /** File */
+            file: string;
+        };
+        /** Body_login_api_auth_login_post */
+        Body_login_api_auth_login_post: {
+            /** Grant Type */
+            grant_type?: string | null;
+            /** Username */
+            username: string;
+            /**
+             * Password
+             * Format: password
+             */
+            password: string;
+            /**
+             * Scope
+             * @default
+             */
+            scope: string;
+            /** Client Id */
+            client_id?: string | null;
+            /**
+             * Client Secret
+             * Format: password
+             */
+            client_secret?: string | null;
+        };
+        /** DashboardOut */
+        DashboardOut: {
+            /** Open */
+            open: number;
+            /** In Review */
+            in_review: number;
+            /** Approved */
+            approved: number;
+            /** Edited Today */
+            edited_today: number;
+            /** Recent */
+            recent: components["schemas"]["ProjectOut"][];
+            /** Top Terms */
+            top_terms: components["schemas"]["TopTerm"][];
+            stats: components["schemas"]["Stats"];
+        };
+        /** DuplicateGroup */
+        DuplicateGroup: {
+            /** Term */
+            term: string;
+            /** Lang */
+            lang: string;
+            /** Ids */
+            ids: number[];
+        };
+        /**
+         * EntryCategory
+         * @description Category of a glossary entry.
+         * @enum {string}
+         */
+        EntryCategory: "technical" | "product";
+        /**
+         * ExcelLayout
+         * @description Free choice of columns for Excel exports ("Erweiterte Einstellungen"). An empty column letter omits it.
+         */
+        ExcelLayout: {
+            /**
+             * Sheet Name
+             * @default Übersetzung
+             */
+            sheet_name: string;
+            /**
+             * Source Col
+             * @default A
+             */
+            source_col: string;
+            /**
+             * Target Col
+             * @default B
+             */
+            target_col: string;
+            /**
+             * Comment Col
+             * @default C
+             */
+            comment_col: string;
+            /**
+             * Location Col
+             * @default
+             */
+            location_col: string;
+            /**
+             * Start Row
+             * @default 2
+             */
+            start_row: number;
+            /**
+             * Header
+             * @default true
+             */
+            header: boolean;
+        };
+        /** ExportFileOut */
+        ExportFileOut: {
+            /** Id */
+            id: number;
+            /** Filename */
+            filename: string;
+            format: components["schemas"]["FileFormat"];
+            /** Lang */
+            lang: string;
+            mode: components["schemas"]["ExportMode"];
+            /** Created By */
+            created_by: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Release Id */
+            release_id: number;
+        };
+        /** ExportIn */
+        ExportIn: {
+            /** Lang */
+            lang: string;
+            /** @default docx */
+            format: components["schemas"]["FileFormat"];
+            /** @default translation */
+            mode: components["schemas"]["ExportMode"];
+            /**
+             * Include Report
+             * @default false
+             */
+            include_report: boolean;
+            /**
+             * Include Comments
+             * @default false
+             */
+            include_comments: boolean;
+            /** @description Excel column layout (only used for .xlsx) */
+            config?: components["schemas"]["ExcelLayout"] | null;
+            /** Template Id */
+            template_id?: number | null;
+            /**
+             * Archive After
+             * @default true
+             */
+            archive_after: boolean;
+        };
+        /**
+         * ExportMode
+         * @enum {string}
+         */
+        ExportMode: "translation" | "both";
+        /**
+         * FileFormat
+         * @description File types the app reads (uploads) and writes (exports).
+         * @enum {string}
+         */
+        FileFormat: "docx" | "xlsx" | "pdf";
+        /**
+         * GlossaryAction
+         * @enum {string}
+         */
+        GlossaryAction: "create" | "update" | "delete";
+        /** GlossaryIn */
+        GlossaryIn: {
+            /**
+             * Terms
+             * @description {"de": "Korpus", "en": "carcass"}
+             */
+            terms: {
+                [key: string]: string;
+            };
+            /**
+             * Synonyms
+             * @default {}
+             */
+            synonyms: {
+                [key: string]: string[];
+            };
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /** @default technical */
+            category: components["schemas"]["EntryCategory"];
+            /**
+             * Do Not Translate
+             * @default false
+             */
+            do_not_translate: boolean;
+            status?: components["schemas"]["GlossaryStatus"] | null;
+            /**
+             * Force
+             * @description Save even if a duplicate exists
+             * @default false
+             */
+            force: boolean;
+        };
+        /** GlossaryOut */
+        GlossaryOut: {
+            /** Id */
+            id: number;
+            /** Terms */
+            terms: {
+                [key: string]: string;
+            };
+            /** Synonyms */
+            synonyms: {
+                [key: string]: string[];
+            };
+            /** Description */
+            description: string;
+            category: components["schemas"]["EntryCategory"];
+            /** Do Not Translate */
+            do_not_translate: boolean;
+            status: components["schemas"]["GlossaryStatus"];
+            /** Version */
+            version: number;
+            /** Updated By */
+            updated_by: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /**
+         * GlossaryStatus
+         * @enum {string}
+         */
+        GlossaryStatus: "draft" | "approved" | "rejected";
+        /** GlossaryVersionOut */
+        GlossaryVersionOut: {
+            /** Id */
+            id: number;
+            /** Entry Version */
+            entry_version: number;
+            action: components["schemas"]["GlossaryAction"];
+            /** Data */
+            data: {
+                [key: string]: unknown;
+            };
+            /** Changed By */
+            changed_by: string;
+            /**
+             * Changed At
+             * Format: date-time
+             */
+            changed_at: string;
+        };
+        /** HTTPValidationError */
+        HTTPValidationError: {
+            /** Detail */
+            detail?: components["schemas"]["ValidationError"][];
+        };
+        /** HistoryOut */
+        HistoryOut: {
+            project: components["schemas"]["ProjectOut"];
+            /** Releases */
+            releases: components["schemas"]["ReleaseOut"][];
+            /** Exports */
+            exports: components["schemas"]["ExportFileOut"][];
+        };
+        /** ImportResult */
+        ImportResult: {
+            /** Created */
+            created: number;
+            /** Updated */
+            updated: number;
+            /** Skipped */
+            skipped: number;
+            /** Skipped Rows */
+            skipped_rows: {
+                [key: string]: unknown;
+            }[];
+        };
+        /**
+         * JobState
+         * @enum {string}
+         */
+        JobState: "idle" | "running" | "done" | "error";
+        /** JobStatus */
+        JobStatus: {
+            job_state: components["schemas"]["JobState"];
+            /** Job Progress */
+            job_progress: number;
+            /** Job Error */
+            job_error: string;
+            status: components["schemas"]["ProjectStatus"];
+        };
+        /**
+         * Lang
+         * @description Supported translation languages (German <-> English).
+         * @enum {string}
+         */
+        Lang: "de" | "en";
+        /** LoginOut */
+        LoginOut: {
+            /** Access Token */
+            access_token: string;
+            /**
+             * Token Type
+             * @default bearer
+             */
+            token_type: string;
+            user: components["schemas"]["UserOut"];
+        };
+        /** ProjectDetail */
+        ProjectDetail: {
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
+            /** Customer */
+            customer: string;
+            /** Filename */
+            filename: string;
+            file_type: components["schemas"]["FileFormat"];
+            /** Source Lang */
+            source_lang: string;
+            /** Detected Lang */
+            detected_lang: string;
+            /** Target Langs */
+            target_langs: string[];
+            status: components["schemas"]["ProjectStatus"];
+            /** Archived */
+            archived: boolean;
+            job_state: components["schemas"]["JobState"];
+            /** Job Progress */
+            job_progress: number;
+            /** Job Error */
+            job_error: string;
+            /** Structure */
+            structure: {
+                [key: string]: unknown;
+            };
+            /** Created By */
+            created_by: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Segments */
+            segments: components["schemas"]["SegmentOut"][];
+        };
+        /** ProjectOut */
+        ProjectOut: {
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
+            /** Customer */
+            customer: string;
+            /** Filename */
+            filename: string;
+            file_type: components["schemas"]["FileFormat"];
+            /** Source Lang */
+            source_lang: string;
+            /** Detected Lang */
+            detected_lang: string;
+            /** Target Langs */
+            target_langs: string[];
+            status: components["schemas"]["ProjectStatus"];
+            /** Archived */
+            archived: boolean;
+            job_state: components["schemas"]["JobState"];
+            /** Job Progress */
+            job_progress: number;
+            /** Job Error */
+            job_error: string;
+            /** Structure */
+            structure: {
+                [key: string]: unknown;
+            };
+            /** Created By */
+            created_by: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** ProjectPatch */
+        ProjectPatch: {
+            /** Name */
+            name?: string | null;
+            /** Customer */
+            customer?: string | null;
+            /** Source Lang */
+            source_lang?: components["schemas"]["Lang"] | "auto" | null;
+            /** Target Langs */
+            target_langs?: components["schemas"]["Lang"][] | null;
+        };
+        /**
+         * ProjectStatus
+         * @enum {string}
+         */
+        ProjectStatus: "new" | "preview_ready" | "in_review" | "approved" | "archived";
+        /** QualityOut */
+        QualityOut: {
+            /** Warnings */
+            warnings: components["schemas"]["QualityWarning"][];
+            /** Errors */
+            errors: number;
+            /** Glossary Version */
+            glossary_version: number;
+        };
+        /** QualityWarning */
+        QualityWarning: {
+            /** Segment Id */
+            segment_id: number | null;
+            /** Idx */
+            idx: number;
+            /** Lang */
+            lang: string;
+            /** Type */
+            type: string;
+            severity: components["schemas"]["Severity"];
+            /** Message */
+            message: string;
+        };
+        /**
+         * ReleaseDetail
+         * @description One approved version: what the machine produced (preview) and what was approved (final), per segment id.
+         */
+        ReleaseDetail: {
+            /** Id */
+            id: number;
+            /** Approved By */
+            approved_by: string;
+            /** Editors */
+            editors: string[];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Glossary Version */
+            glossary_version: number;
+            /** Change Count */
+            change_count: number;
+            /** Warnings */
+            warnings: components["schemas"]["QualityWarning"][];
+            /** Preview */
+            preview: {
+                [key: string]: unknown;
+            };
+            /** Final */
+            final: {
+                [key: string]: unknown;
+            };
+        };
+        /** ReleaseOut */
+        ReleaseOut: {
+            /** Id */
+            id: number;
+            /** Approved By */
+            approved_by: string;
+            /** Editors */
+            editors: string[];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Glossary Version */
+            glossary_version: number;
+            /** Change Count */
+            change_count: number;
+            /** Warnings */
+            warnings: components["schemas"]["QualityWarning"][];
+        };
+        /**
+         * Role
+         * @description Ordered by privilege: a reviewer can do everything a translator can, an admin everything.
+         * @enum {string}
+         */
+        Role: "translator" | "reviewer" | "admin";
+        /** SegmentEdit */
+        SegmentEdit: {
+            /** Text */
+            text?: string | null;
+            /** Comment */
+            comment?: string | null;
+        };
+        /** SegmentOut */
+        SegmentOut: {
+            /** Id */
+            id: number;
+            /** Idx */
+            idx: number;
+            /** Source Text */
+            source_text: string;
+            /** Locator */
+            locator: {
+                [key: string]: unknown;
+            };
+            /** Translations */
+            translations: {
+                [key: string]: components["schemas"]["TranslationOut"];
+            };
+        };
+        /** SettingsOut */
+        SettingsOut: {
+            /** Llm Provider */
+            llm_provider: string;
+            /** Llm Model */
+            llm_model: string;
+            /** Default Source Lang */
+            default_source_lang: string;
+            /** Default Target Langs */
+            default_target_langs: string[];
+            /** Default Export Format */
+            default_export_format: string;
+            /** Default Export Mode */
+            default_export_mode: string;
+            /** Colors */
+            colors: {
+                [key: string]: string;
+            };
+            /**
+             * Gemini Key Configured
+             * @default false
+             */
+            gemini_key_configured: boolean;
+        };
+        /**
+         * Severity
+         * @enum {string}
+         */
+        Severity: "error" | "warning" | "info";
+        /** Stats */
+        Stats: {
+            /** Projects Total */
+            projects_total: number;
+            /** Segments */
+            segments: number;
+            /** Translations */
+            translations: number;
+            /** Manual Edits */
+            manual_edits: number;
+            /** Glossary Entries */
+            glossary_entries: number;
+            /** By Language */
+            by_language: {
+                [key: string]: number;
+            };
+            /** Releases Per Day */
+            releases_per_day: {
+                [key: string]: number;
+            };
+        };
+        /** TemplateIn */
+        TemplateIn: {
+            /** Name */
+            name: string;
+            /**
+             * Format
+             * @default xlsx
+             * @constant
+             */
+            format: "xlsx";
+            config: components["schemas"]["ExcelLayout"];
+        };
+        /** TemplateOut */
+        TemplateOut: {
+            /** Name */
+            name: string;
+            /**
+             * Format
+             * @default xlsx
+             * @constant
+             */
+            format: "xlsx";
+            config: components["schemas"]["ExcelLayout"];
+            /** Id */
+            id: number;
+        };
+        /**
+         * Term
+         * @description A highlighted term. `ok=False` means the glossary target is missing in the translation.
+         */
+        Term: {
+            /** Source */
+            source: string;
+            /**
+             * Target
+             * @default
+             */
+            target: string;
+            category: components["schemas"]["TermCategory"];
+            /**
+             * Alternatives
+             * @default []
+             */
+            alternatives: string[];
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /** Glossary Id */
+            glossary_id?: number | null;
+            /**
+             * Dnt
+             * @default false
+             */
+            dnt: boolean;
+            /**
+             * Ok
+             * @default true
+             */
+            ok: boolean;
+        };
+        /**
+         * TermCategory
+         * @description How a highlighted term in a translation came about (also its colour in the UI).
+         * @enum {string}
+         */
+        TermCategory: "technical" | "glossary" | "ambiguous" | "unknown" | "protected";
+        /** TermReplace */
+        TermReplace: {
+            /** Lang */
+            lang: string;
+            /** Old */
+            old: string;
+            /** New */
+            new: string;
+        };
+        /** TopTerm */
+        TopTerm: {
+            /** Id */
+            id: number;
+            /** Term */
+            term: string;
+            /** Count */
+            count: number;
+        };
+        /** TranslateIn */
+        TranslateIn: {
+            /** Source Lang */
+            source_lang?: components["schemas"]["Lang"] | "auto" | null;
+            /** Target Langs */
+            target_langs?: components["schemas"]["Lang"][] | null;
+        };
+        /** TranslationOut */
+        TranslationOut: {
+            /** Text */
+            text: string;
+            /** Original Text */
+            original_text: string;
+            /** Terms */
+            terms: components["schemas"]["Term"][];
+            /** Comment */
+            comment: string;
+            /** Edited */
+            edited: boolean;
+            /** Edited By */
+            edited_by: string;
+        };
+        /** UserIn */
+        UserIn: {
+            /** Username */
+            username: string;
+            /**
+             * Full Name
+             * @default
+             */
+            full_name: string;
+            /**
+             * Password
+             * @default
+             */
+            password: string;
+            /** @default translator */
+            role: components["schemas"]["Role"];
+            /**
+             * Active
+             * @default true
+             */
+            active: boolean;
+        };
+        /** UserOut */
+        UserOut: {
+            /** Id */
+            id: number;
+            /** Username */
+            username: string;
+            /** Full Name */
+            full_name: string;
+            role: components["schemas"]["Role"];
+            /** Active */
+            active: boolean;
+        };
+        /** ValidationError */
+        ValidationError: {
+            /** Location */
+            loc: (string | number)[];
+            /** Message */
+            msg: string;
+            /** Error Type */
+            type: string;
+            /** Input */
+            input?: unknown;
+            /** Context */
+            ctx?: Record<string, never>;
+        };
+    };
+    responses: never;
+    parameters: never;
+    requestBodies: never;
+    headers: never;
+    pathItems: never;
 }
-export type $defs = Record<string, never>
+export type $defs = Record<string, never>;
 export interface operations {
-  login_api_auth_login_post: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/x-www-form-urlencoded': components['schemas']['Body_login_api_auth_login_post']
-      }
-    }
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['LoginOut']
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  me_api_auth_me_get: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['UserOut']
-        }
-      }
-    }
-  }
-  list_users_api_users_get: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['UserOut'][]
-        }
-      }
-    }
-  }
-  create_user_api_users_post: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['UserIn']
-      }
-    }
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['UserOut']
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  user_names_api_users_names_get: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': string[]
-        }
-      }
-    }
-  }
-  update_user_api_users__uid__put: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        uid: number
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['UserIn']
-      }
-    }
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['UserOut']
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  get_settings_api_settings_get: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['SettingsOut']
-        }
-      }
-    }
-  }
-  put_settings_api_settings_put: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': {
-          [key: string]: unknown
-        }
-      }
-    }
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['SettingsOut']
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  dashboard_api_dashboard_get: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['DashboardOut']
-        }
-      }
-    }
-  }
-  list_projects_api_projects_get: {
-    parameters: {
-      query?: {
-        q?: string
-        status?: string
-        archived?: string
-        lang?: string
-        customer?: string
-        editor?: string
-        term?: string
-        date_from?: string | null
-        date_to?: string | null
-        limit?: number
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ProjectOut'][]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  create_project_api_projects_post: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'multipart/form-data': components['schemas']['Body_create_project_api_projects_post']
-      }
-    }
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ProjectOut']
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  project_detail_api_projects__pid__get: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        pid: number
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ProjectDetail']
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  delete_project_api_projects__pid__delete: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        pid: number
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': {
-            [key: string]: boolean
-          }
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  patch_project_api_projects__pid__patch: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        pid: number
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['ProjectPatch']
-      }
-    }
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ProjectOut']
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  archive_api_projects__pid__archive_post: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        pid: number
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ProjectOut']
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  unarchive_api_projects__pid__unarchive_post: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        pid: number
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ProjectOut']
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  copy_project_api_projects__pid__copy_post: {
-    parameters: {
-      query?: {
-        with_translations?: boolean
-      }
-      header?: never
-      path: {
-        pid: number
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ProjectOut']
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  download_original_api_projects__pid__original_get: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        pid: number
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  start_translation_api_projects__pid__translate_post: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        pid: number
-      }
-      cookie?: never
-    }
-    requestBody?: {
-      content: {
-        'application/json': components['schemas']['TranslateIn'] | null
-      }
-    }
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ProjectOut']
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  job_status_api_projects__pid__status_get: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        pid: number
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['JobStatus']
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  edit_segment_api_segments__sid___lang__put: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        sid: number
-        lang: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['SegmentEdit']
-      }
-    }
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['SegmentOut']
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  retranslate_api_segments__sid___lang__retranslate_post: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        sid: number
-        lang: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['SegmentOut']
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  replace_term_api_projects__pid__replace_term_post: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        pid: number
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['TermReplace']
-      }
-    }
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': {
-            [key: string]: number
-          }
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  quality_check_api_projects__pid__quality_get: {
-    parameters: {
-      query?: {
-        lang?: string | null
-      }
-      header?: never
-      path: {
-        pid: number
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['QualityOut']
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  submit_review_api_projects__pid__submit_review_post: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        pid: number
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ProjectOut']
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  reject_api_projects__pid__reject_post: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        pid: number
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ProjectOut']
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  approve_api_projects__pid__approve_post: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        pid: number
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ProjectOut']
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  reopen_api_projects__pid__reopen_post: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        pid: number
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ProjectOut']
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  export_project_api_projects__pid__export_post: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        pid: number
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['ExportIn']
-      }
-    }
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ExportFileOut']
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  download_export_api_exports__eid__download_get: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        eid: number
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  release_detail_api_releases__rid__get: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        rid: number
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ReleaseDetail']
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  history_api_projects__pid__history_get: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        pid: number
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HistoryOut']
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  list_templates_api_export_templates_get: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['TemplateOut'][]
-        }
-      }
-    }
-  }
-  create_template_api_export_templates_post: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['TemplateIn']
-      }
-    }
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['TemplateOut']
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  delete_template_api_export_templates__tid__delete: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        tid: number
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': {
-            [key: string]: boolean
-          }
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  list_entries_api_glossary_get: {
-    parameters: {
-      query?: {
-        q?: string
-        status?: string
-        category?: string
-        limit?: number
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['GlossaryOut'][]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  create_entry_api_glossary_post: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['GlossaryIn']
-      }
-    }
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['GlossaryOut']
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  update_entry_api_glossary__eid__put: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        eid: number
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['GlossaryIn']
-      }
-    }
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['GlossaryOut']
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  delete_entry_api_glossary__eid__delete: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        eid: number
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': {
-            [key: string]: boolean
-          }
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  set_status_api_glossary__eid__status_post: {
-    parameters: {
-      query: {
-        status: string
-      }
-      header?: never
-      path: {
-        eid: number
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['GlossaryOut']
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  versions_api_glossary__eid__versions_get: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        eid: number
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['GlossaryVersionOut'][]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  scan_duplicates_api_glossary_duplicates_scan_get: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['DuplicateGroup'][]
-        }
-      }
-    }
-  }
-  export_xlsx_api_glossary_export_xlsx_get: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-    }
-  }
-  import_xlsx_api_glossary_import_xlsx_post: {
-    parameters: {
-      query?: {
-        update_existing?: boolean
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'multipart/form-data': components['schemas']['Body_import_xlsx_api_glossary_import_xlsx_post']
-      }
-    }
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ImportResult']
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['HTTPValidationError']
-        }
-      }
-    }
-  }
-  health_api_health_get: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': {
-            [key: string]: string
-          }
-        }
-      }
-    }
-  }
-  ready_api_ready_get: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': {
-            [key: string]: string
-          }
-        }
-      }
-    }
-  }
+    login_api_auth_login_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/x-www-form-urlencoded": components["schemas"]["Body_login_api_auth_login_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LoginOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    me_api_auth_me_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserOut"];
+                };
+            };
+        };
+    };
+    list_users_api_users_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserOut"][];
+                };
+            };
+        };
+    };
+    create_user_api_users_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    user_names_api_users_names_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string[];
+                };
+            };
+        };
+    };
+    update_user_api_users__uid__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                uid: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_settings_api_settings_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SettingsOut"];
+                };
+            };
+        };
+    };
+    put_settings_api_settings_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    [key: string]: unknown;
+                };
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SettingsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    dashboard_api_dashboard_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardOut"];
+                };
+            };
+        };
+    };
+    list_projects_api_projects_get: {
+        parameters: {
+            query?: {
+                q?: string;
+                status?: components["schemas"]["ProjectStatus"] | null;
+                archived?: components["schemas"]["ArchiveFilter"];
+                lang?: string;
+                customer?: string;
+                editor?: string;
+                term?: string;
+                date_from?: string | null;
+                date_to?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_project_api_projects_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_create_project_api_projects_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    project_detail_api_projects__pid__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pid: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_project_api_projects__pid__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pid: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_project_api_projects__pid__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pid: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProjectPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    archive_api_projects__pid__archive_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pid: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unarchive_api_projects__pid__unarchive_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pid: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    copy_project_api_projects__pid__copy_post: {
+        parameters: {
+            query?: {
+                with_translations?: boolean;
+            };
+            header?: never;
+            path: {
+                pid: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_original_api_projects__pid__original_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pid: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_translation_api_projects__pid__translate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pid: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["TranslateIn"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    job_status_api_projects__pid__status_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pid: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobStatus"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    edit_segment_api_segments__sid___lang__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sid: number;
+                lang: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SegmentEdit"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SegmentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    retranslate_api_segments__sid___lang__retranslate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sid: number;
+                lang: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SegmentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    replace_term_api_projects__pid__replace_term_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pid: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TermReplace"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: number;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    quality_check_api_projects__pid__quality_get: {
+        parameters: {
+            query?: {
+                lang?: string | null;
+            };
+            header?: never;
+            path: {
+                pid: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QualityOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    submit_review_api_projects__pid__submit_review_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pid: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reject_api_projects__pid__reject_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pid: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    approve_api_projects__pid__approve_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pid: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reopen_api_projects__pid__reopen_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pid: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_project_api_projects__pid__export_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pid: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExportIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExportFileOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_export_api_exports__eid__download_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eid: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    release_detail_api_releases__rid__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                rid: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReleaseDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    history_api_projects__pid__history_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pid: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HistoryOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_templates_api_export_templates_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TemplateOut"][];
+                };
+            };
+        };
+    };
+    create_template_api_export_templates_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TemplateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TemplateOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_template_api_export_templates__tid__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tid: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_entries_api_glossary_get: {
+        parameters: {
+            query?: {
+                q?: string;
+                status?: components["schemas"]["GlossaryStatus"] | null;
+                category?: components["schemas"]["EntryCategory"] | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GlossaryOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_entry_api_glossary_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GlossaryIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GlossaryOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_entry_api_glossary__eid__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eid: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GlossaryIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GlossaryOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_entry_api_glossary__eid__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eid: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_status_api_glossary__eid__status_post: {
+        parameters: {
+            query: {
+                status: components["schemas"]["GlossaryStatus"];
+            };
+            header?: never;
+            path: {
+                eid: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GlossaryOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    versions_api_glossary__eid__versions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eid: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GlossaryVersionOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    scan_duplicates_api_glossary_duplicates_scan_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DuplicateGroup"][];
+                };
+            };
+        };
+    };
+    export_xlsx_api_glossary_export_xlsx_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    import_xlsx_api_glossary_import_xlsx_post: {
+        parameters: {
+            query?: {
+                update_existing?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_import_xlsx_api_glossary_import_xlsx_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    health_api_health_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: string;
+                    };
+                };
+            };
+        };
+    };
+    ready_api_ready_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: string;
+                    };
+                };
+            };
+        };
+    };
 }

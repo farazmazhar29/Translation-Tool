@@ -347,7 +347,7 @@
      "Projects"
     ],
     "summary": "Search and filter projects",
-    "description": "`archived`: no | only | all. `term` searches inside original and translated text.",
+    "description": "`term` searches inside original and translated text.",
     "operationId": "list_projects_api_projects_get",
     "security": [
      {
@@ -370,8 +370,14 @@
       "in": "query",
       "required": false,
       "schema": {
-       "type": "string",
-       "default": "",
+       "anyOf": [
+        {
+         "$ref": "#/components/schemas/ProjectStatus"
+        },
+        {
+         "type": "null"
+        }
+       ],
        "title": "Status"
       }
      },
@@ -380,9 +386,8 @@
       "in": "query",
       "required": false,
       "schema": {
-       "type": "string",
-       "default": "no",
-       "title": "Archived"
+       "$ref": "#/components/schemas/ArchiveFilter",
+       "default": "no"
       }
      },
      {
@@ -1780,8 +1785,14 @@
       "in": "query",
       "required": false,
       "schema": {
-       "type": "string",
-       "default": "",
+       "anyOf": [
+        {
+         "$ref": "#/components/schemas/GlossaryStatus"
+        },
+        {
+         "type": "null"
+        }
+       ],
        "title": "Status"
       }
      },
@@ -1790,8 +1801,14 @@
       "in": "query",
       "required": false,
       "schema": {
-       "type": "string",
-       "default": "",
+       "anyOf": [
+        {
+         "$ref": "#/components/schemas/EntryCategory"
+        },
+        {
+         "type": "null"
+        }
+       ],
        "title": "Category"
       }
      },
@@ -2013,8 +2030,7 @@
       "in": "query",
       "required": true,
       "schema": {
-       "type": "string",
-       "title": "Status"
+       "$ref": "#/components/schemas/GlossaryStatus"
       }
      }
     ],
@@ -2254,6 +2270,16 @@
  },
  "components": {
   "schemas": {
+   "ArchiveFilter": {
+    "type": "string",
+    "enum": [
+     "no",
+     "only",
+     "all"
+    ],
+    "title": "ArchiveFilter",
+    "description": "Which projects the project list shows."
+   },
    "Body_create_project_api_projects_post": {
     "properties": {
      "file": {
@@ -2436,6 +2462,15 @@
     ],
     "title": "DuplicateGroup"
    },
+   "EntryCategory": {
+    "type": "string",
+    "enum": [
+     "technical",
+     "product"
+    ],
+    "title": "EntryCategory",
+    "description": "Category of a glossary entry."
+   },
    "ExcelLayout": {
     "properties": {
      "sheet_name": {
@@ -2497,16 +2532,14 @@
       "title": "Filename"
      },
      "format": {
-      "type": "string",
-      "title": "Format"
+      "$ref": "#/components/schemas/FileFormat"
      },
      "lang": {
       "type": "string",
       "title": "Lang"
      },
      "mode": {
-      "type": "string",
-      "title": "Mode"
+      "$ref": "#/components/schemas/ExportMode"
      },
      "created_by": {
       "type": "string",
@@ -2542,22 +2575,11 @@
       "title": "Lang"
      },
      "format": {
-      "type": "string",
-      "enum": [
-       "docx",
-       "xlsx",
-       "pdf"
-      ],
-      "title": "Format",
+      "$ref": "#/components/schemas/FileFormat",
       "default": "docx"
      },
      "mode": {
-      "type": "string",
-      "enum": [
-       "translation",
-       "both"
-      ],
-      "title": "Mode",
+      "$ref": "#/components/schemas/ExportMode",
       "default": "translation"
      },
      "include_report": {
@@ -2604,6 +2626,33 @@
     ],
     "title": "ExportIn"
    },
+   "ExportMode": {
+    "type": "string",
+    "enum": [
+     "translation",
+     "both"
+    ],
+    "title": "ExportMode"
+   },
+   "FileFormat": {
+    "type": "string",
+    "enum": [
+     "docx",
+     "xlsx",
+     "pdf"
+    ],
+    "title": "FileFormat",
+    "description": "File types the app reads (uploads) and writes (exports)."
+   },
+   "GlossaryAction": {
+    "type": "string",
+    "enum": [
+     "create",
+     "update",
+     "delete"
+    ],
+    "title": "GlossaryAction"
+   },
    "GlossaryIn": {
     "properties": {
      "terms": {
@@ -2631,12 +2680,7 @@
       "default": ""
      },
      "category": {
-      "type": "string",
-      "enum": [
-       "technical",
-       "product"
-      ],
-      "title": "Category",
+      "$ref": "#/components/schemas/EntryCategory",
       "default": "technical"
      },
      "do_not_translate": {
@@ -2647,18 +2691,12 @@
      "status": {
       "anyOf": [
        {
-        "type": "string",
-        "enum": [
-         "draft",
-         "approved",
-         "rejected"
-        ]
+        "$ref": "#/components/schemas/GlossaryStatus"
        },
        {
         "type": "null"
        }
-      ],
-      "title": "Status"
+      ]
      },
      "force": {
       "type": "boolean",
@@ -2701,16 +2739,14 @@
       "title": "Description"
      },
      "category": {
-      "type": "string",
-      "title": "Category"
+      "$ref": "#/components/schemas/EntryCategory"
      },
      "do_not_translate": {
       "type": "boolean",
       "title": "Do Not Translate"
      },
      "status": {
-      "type": "string",
-      "title": "Status"
+      "$ref": "#/components/schemas/GlossaryStatus"
      },
      "version": {
       "type": "integer",
@@ -2741,6 +2777,15 @@
     ],
     "title": "GlossaryOut"
    },
+   "GlossaryStatus": {
+    "type": "string",
+    "enum": [
+     "draft",
+     "approved",
+     "rejected"
+    ],
+    "title": "GlossaryStatus"
+   },
    "GlossaryVersionOut": {
     "properties": {
      "id": {
@@ -2752,8 +2797,7 @@
       "title": "Entry Version"
      },
      "action": {
-      "type": "string",
-      "title": "Action"
+      "$ref": "#/components/schemas/GlossaryAction"
      },
      "data": {
       "additionalProperties": true,
@@ -2854,11 +2898,20 @@
     ],
     "title": "ImportResult"
    },
+   "JobState": {
+    "type": "string",
+    "enum": [
+     "idle",
+     "running",
+     "done",
+     "error"
+    ],
+    "title": "JobState"
+   },
    "JobStatus": {
     "properties": {
      "job_state": {
-      "type": "string",
-      "title": "Job State"
+      "$ref": "#/components/schemas/JobState"
      },
      "job_progress": {
       "type": "integer",
@@ -2869,8 +2922,7 @@
       "title": "Job Error"
      },
      "status": {
-      "type": "string",
-      "title": "Status"
+      "$ref": "#/components/schemas/ProjectStatus"
      }
     },
     "type": "object",
@@ -2881,6 +2933,15 @@
      "status"
     ],
     "title": "JobStatus"
+   },
+   "Lang": {
+    "type": "string",
+    "enum": [
+     "de",
+     "en"
+    ],
+    "title": "Lang",
+    "description": "Supported translation languages (German <-> English)."
    },
    "LoginOut": {
     "properties": {
@@ -2923,8 +2984,7 @@
       "title": "Filename"
      },
      "file_type": {
-      "type": "string",
-      "title": "File Type"
+      "$ref": "#/components/schemas/FileFormat"
      },
      "source_lang": {
       "type": "string",
@@ -2942,16 +3002,14 @@
       "title": "Target Langs"
      },
      "status": {
-      "type": "string",
-      "title": "Status"
+      "$ref": "#/components/schemas/ProjectStatus"
      },
      "archived": {
       "type": "boolean",
       "title": "Archived"
      },
      "job_state": {
-      "type": "string",
-      "title": "Job State"
+      "$ref": "#/components/schemas/JobState"
      },
      "job_progress": {
       "type": "integer",
@@ -3030,8 +3088,7 @@
       "title": "Filename"
      },
      "file_type": {
-      "type": "string",
-      "title": "File Type"
+      "$ref": "#/components/schemas/FileFormat"
      },
      "source_lang": {
       "type": "string",
@@ -3049,16 +3106,14 @@
       "title": "Target Langs"
      },
      "status": {
-      "type": "string",
-      "title": "Status"
+      "$ref": "#/components/schemas/ProjectStatus"
      },
      "archived": {
       "type": "boolean",
       "title": "Archived"
      },
      "job_state": {
-      "type": "string",
-      "title": "Job State"
+      "$ref": "#/components/schemas/JobState"
      },
      "job_progress": {
       "type": "integer",
@@ -3140,12 +3195,11 @@
      "source_lang": {
       "anyOf": [
        {
+        "$ref": "#/components/schemas/Lang"
+       },
+       {
         "type": "string",
-        "enum": [
-         "auto",
-         "de",
-         "en"
-        ]
+        "const": "auto"
        },
        {
         "type": "null"
@@ -3157,11 +3211,7 @@
       "anyOf": [
        {
         "items": {
-         "type": "string",
-         "enum": [
-          "de",
-          "en"
-         ]
+         "$ref": "#/components/schemas/Lang"
         },
         "type": "array"
        },
@@ -3174,6 +3224,17 @@
     },
     "type": "object",
     "title": "ProjectPatch"
+   },
+   "ProjectStatus": {
+    "type": "string",
+    "enum": [
+     "new",
+     "preview_ready",
+     "in_review",
+     "approved",
+     "archived"
+    ],
+    "title": "ProjectStatus"
    },
    "QualityOut": {
     "properties": {
@@ -3227,13 +3288,7 @@
       "title": "Type"
      },
      "severity": {
-      "type": "string",
-      "enum": [
-       "error",
-       "warning",
-       "info"
-      ],
-      "title": "Severity"
+      "$ref": "#/components/schemas/Severity"
      },
      "message": {
       "type": "string",
@@ -3364,6 +3419,16 @@
     ],
     "title": "ReleaseOut"
    },
+   "Role": {
+    "type": "string",
+    "enum": [
+     "translator",
+     "reviewer",
+     "admin"
+    ],
+    "title": "Role",
+    "description": "Ordered by privilege: a reviewer can do everything a translator can, an admin everything."
+   },
    "SegmentEdit": {
     "properties": {
      "text": {
@@ -3483,6 +3548,15 @@
     ],
     "title": "SettingsOut"
    },
+   "Severity": {
+    "type": "string",
+    "enum": [
+     "error",
+     "warning",
+     "info"
+    ],
+    "title": "Severity"
+   },
    "Stats": {
     "properties": {
      "projects_total": {
@@ -3595,15 +3669,7 @@
       "default": ""
      },
      "category": {
-      "type": "string",
-      "enum": [
-       "technical",
-       "glossary",
-       "ambiguous",
-       "unknown",
-       "protected"
-      ],
-      "title": "Category"
+      "$ref": "#/components/schemas/TermCategory"
      },
      "alternatives": {
       "items": {
@@ -3647,6 +3713,18 @@
     ],
     "title": "Term",
     "description": "A highlighted term. `ok=False` means the glossary target is missing in the translation."
+   },
+   "TermCategory": {
+    "type": "string",
+    "enum": [
+     "technical",
+     "glossary",
+     "ambiguous",
+     "unknown",
+     "protected"
+    ],
+    "title": "TermCategory",
+    "description": "How a highlighted term in a translation came about (also its colour in the UI)."
    },
    "TermReplace": {
     "properties": {
@@ -3699,12 +3777,11 @@
      "source_lang": {
       "anyOf": [
        {
+        "$ref": "#/components/schemas/Lang"
+       },
+       {
         "type": "string",
-        "enum": [
-         "auto",
-         "de",
-         "en"
-        ]
+        "const": "auto"
        },
        {
         "type": "null"
@@ -3716,11 +3793,7 @@
       "anyOf": [
        {
         "items": {
-         "type": "string",
-         "enum": [
-          "de",
-          "en"
-         ]
+         "$ref": "#/components/schemas/Lang"
         },
         "type": "array"
        },
@@ -3792,13 +3865,7 @@
       "default": ""
      },
      "role": {
-      "type": "string",
-      "enum": [
-       "translator",
-       "reviewer",
-       "admin"
-      ],
-      "title": "Role",
+      "$ref": "#/components/schemas/Role",
       "default": "translator"
      },
      "active": {
@@ -3828,13 +3895,7 @@
       "title": "Full Name"
      },
      "role": {
-      "type": "string",
-      "enum": [
-       "translator",
-       "reviewer",
-       "admin"
-      ],
-      "title": "Role"
+      "$ref": "#/components/schemas/Role"
      },
      "active": {
       "type": "boolean",

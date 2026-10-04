@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { HttpResponse, http } from 'msw'
 import { describe, expect, it, vi } from 'vitest'
 import { AuthProvider } from '@/features/auth'
-import { setToken } from '@/shared/api/client'
+import { setToken, type S } from '@/shared/api/client'
 import { projectDetail } from '@/testing/fixtures'
 import { renderApp } from '@/testing/render'
 import { server } from '@/testing/server'
@@ -11,7 +11,7 @@ import { ProjectToolbar } from '../components/ProjectToolbar'
 
 const setup = async (
   role: 'translator' | 'reviewer',
-  status: string,
+  status: S['ProjectDetail']['status'],
   over: Partial<Parameters<typeof ProjectToolbar>[0]> = {},
 ) => {
   setToken('t')

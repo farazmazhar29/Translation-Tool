@@ -32,9 +32,9 @@ export const toForm = (e: Entry): Form => ({
   synDe: (e.synonyms['de'] ?? []).join('; '),
   synEn: (e.synonyms['en'] ?? []).join('; '),
   description: e.description,
-  category: e.category as Form['category'],
+  category: e.category,
   dnt: e.do_not_translate,
-  status: e.status as Form['status'],
+  status: e.status,
 })
 export const toBody = (f: Form, force: boolean): S['GlossaryIn'] => ({
   terms: Object.fromEntries((['de', 'en'] as const).map((l) => [l, f[l].trim()] as const).filter(([, v]) => v)),
