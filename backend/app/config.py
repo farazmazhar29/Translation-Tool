@@ -4,6 +4,8 @@ from typing import Literal, Self
 from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from .enums import Provider
+
 ROOT = Path(__file__).resolve().parents[2]
 DEV_SECRET = "dev-only-insecure-secret-key-change-me"  # noqa: S105  (refused in production, see validator)
 
@@ -30,8 +32,7 @@ class Settings(BaseSettings):
     # Uploads
     max_upload_mb: int = 20
 
-    # LLM provider: gemini | mock
-    llm_provider: str = "gemini"
+    llm_provider: Provider = Provider.GEMINI
     gemini_api_key: str = ""
     gemini_model: str = "gemini-flash-lite-latest"  # alias: survives model retirements
     gemini_fallback_models: list[str] = ["gemini-3.1-flash-lite", "gemini-3-flash-preview"]

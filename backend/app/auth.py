@@ -12,10 +12,10 @@ from fastapi.security import OAuth2PasswordBearer
 
 from .config import settings
 from .db import DB
+from .enums import Role
 from .models import User
 
 oauth2 = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
-RANK = {"translator": 1, "reviewer": 2, "admin": 3}  # role hierarchy
 
 # Argon2id with the library defaults (RFC 9106 "low memory" profile) – above OWASP's minimum (19 MiB, t=2, p=1).
 _hasher = PasswordHasher()
@@ -69,9 +69,9 @@ def current_user(token: Annotated[str, Depends(oauth2)], db: DB) -> User:
     return user
 
 
-def require_role(minimum: str) -> Callable[[User], User]:
+def require_role(minimum: Role) -> Callable[[User], User]:
     def dep(user: Annotated[User, Depends(current_user)]) -> User:
-        if RANK[user.role] < RANK[minimum]:
+        if user.role.rank < minimum.rank:
             raise HTTPException(403, "Keine Berechtigung")
         return user
 
@@ -79,6 +79,6 @@ def require_role(minimum: str) -> Callable[[User], User]:
 
 
 Me = Annotated[User, Depends(current_user)]
-Translator = Annotated[User, Depends(require_role("translator"))]
-Reviewer = Annotated[User, Depends(require_role("reviewer"))]
-Admin = Annotated[User, Depends(require_role("admin"))]
+Translator = Annotated[User, Depends(require_role(Role.TRANSLATOR))]
+Reviewer = Annotated[User, Depends(require_role(Role.REVIEWER))]
+Admin = Annotated[User, Depends(require_role(Role.ADMIN))]

@@ -8,6 +8,7 @@ from fastapi.responses import FileResponse
 
 from ..auth import Me, Reviewer, Translator
 from ..db import DB
+from ..enums import EDITABLE_STATUSES, FINISHED_STATUSES, JobState, ProjectStatus, Severity, TermCategory
 from ..models import ExportFile, ExportTemplate, GlossaryVersion, Project, Release, Segment, Translation
 from ..schemas import (
     ExcelLayout,
@@ -32,11 +33,10 @@ from ..services.translation import run_project_translation, runtime_settings, tr
 from .projects import get_project
 
 router = APIRouter(prefix="/api", tags=["Workflow"])
-EDITABLE = ("new", "preview_ready", "in_review")
 
 
 def editable(p: Project) -> Project:
-    if p.status not in EDITABLE:
+    if p.status not in EDITABLE_STATUSES:
         raise HTTPException(409, "Projekt ist freigegeben/archiviert – bitte zuerst erneut öffnen.")
     return p
 
@@ -59,7 +59,7 @@ def glossary_version(db: DB) -> int:
 def start_translation(db: DB, _: Translator, pid: int, bg: BackgroundTasks, body: TranslateIn | None = None) -> Project:
     """Only creates a preview. The final translation is produced on approval."""
     p = editable(get_project(db, pid))
-    if p.job_state == "running":
+    if p.job_state == JobState.RUNNING:
         raise HTTPException(409, "Übersetzung läuft bereits.")
     if body and body.source_lang:
         p.source_lang = body.source_lang
@@ -67,7 +67,7 @@ def start_translation(db: DB, _: Translator, pid: int, bg: BackgroundTasks, body
         p.target_langs = list(body.target_langs)
     if not p.target_langs:
         raise HTTPException(400, "Bitte mindestens eine Zielsprache wählen.")
-    p.job_state, p.job_progress, p.job_error = "running", 0, ""
+    p.job_state, p.job_progress, p.job_error = JobState.RUNNING, 0, ""
     db.commit()
     bg.add_task(run_project_translation, pid)
     return p
@@ -88,7 +88,9 @@ def edit_segment(db: DB, user: Translator, sid: int, lang: str, body: SegmentEdi
     if body.text is not None and body.text != tr.text:
         tr.text, tr.edited, tr.edited_by = body.text, body.text != tr.original_text, user.username
         tr.terms = [
-            {**t, "ok": t["target"].lower() in body.text.lower()} if t["category"] in ("glossary", "protected") else t
+            {**t, "ok": t["target"].lower() in body.text.lower()}
+            if t["category"] in (TermCategory.GLOSSARY, TermCategory.PROTECTED)
+            else t
             for t in tr.terms
         ]  # re-verify glossary compliance after a manual edit
     if body.comment is not None:
@@ -133,16 +135,18 @@ def replace_term(db: DB, user: Translator, pid: int, body: TermReplace) -> dict[
 def quality_check(db: DB, _: Me, pid: int, lang: str | None = None) -> QualityOut:
     warnings = quality.check_project(get_project(db, pid), lang)
     return QualityOut(
-        warnings=warnings, errors=sum(w.severity == "error" for w in warnings), glossary_version=glossary_version(db)
+        warnings=warnings,
+        errors=sum(w.severity == Severity.ERROR for w in warnings),
+        glossary_version=glossary_version(db),
     )
 
 
 @router.post("/projects/{pid}/submit-review", response_model=ProjectOut, summary="Send to a reviewer")
 def submit_review(db: DB, _: Translator, pid: int) -> Project:
     p = get_project(db, pid)
-    if p.status != "preview_ready":
+    if p.status != ProjectStatus.PREVIEW_READY:
         raise HTTPException(409, "Erst eine Vorschau erzeugen.")
-    p.status = "in_review"
+    p.status = ProjectStatus.IN_REVIEW
     db.commit()
     return p
 
@@ -150,9 +154,9 @@ def submit_review(db: DB, _: Translator, pid: int) -> Project:
 @router.post("/projects/{pid}/reject", response_model=ProjectOut, summary="Send back to the translator")
 def reject(db: DB, _: Reviewer, pid: int) -> Project:
     p = get_project(db, pid)
-    if p.status != "in_review":
+    if p.status != ProjectStatus.IN_REVIEW:
         raise HTTPException(409, "Projekt ist nicht in Prüfung.")
-    p.status = "preview_ready"
+    p.status = ProjectStatus.PREVIEW_READY
     db.commit()
     return p
 
@@ -161,7 +165,7 @@ def reject(db: DB, _: Reviewer, pid: int) -> Project:
 def approve(db: DB, user: Reviewer, pid: int) -> Project:
     """Stores the final translation as a release (history). Export is only possible afterwards."""
     p = get_project(db, pid)
-    if p.status not in ("preview_ready", "in_review"):
+    if p.status not in (ProjectStatus.PREVIEW_READY, ProjectStatus.IN_REVIEW):
         raise HTTPException(409, "Projekt kann in diesem Status nicht freigegeben werden.")
     missing = [
         s.idx + 1 for s in p.segments for lang in p.targets if not ((t := s.translation(lang)) and t.text.strip())
@@ -181,7 +185,7 @@ def approve(db: DB, user: Reviewer, pid: int) -> Project:
             warnings=[w.model_dump() for w in quality.check_project(p)],
         )
     )
-    p.status = "approved"
+    p.status = ProjectStatus.APPROVED
     db.commit()
     return p
 
@@ -190,7 +194,7 @@ def approve(db: DB, user: Reviewer, pid: int) -> Project:
 def reopen(db: DB, _: Translator, pid: int) -> Project:
     p = get_project(db, pid)
     p.archived = False
-    p.status = "preview_ready" if any(s.translations for s in p.segments) else "new"
+    p.status = ProjectStatus.PREVIEW_READY if any(s.translations for s in p.segments) else ProjectStatus.NEW
     db.commit()
     return p
 
@@ -199,7 +203,7 @@ def reopen(db: DB, _: Translator, pid: int) -> Project:
 @router.post("/projects/{pid}/export", response_model=ExportFileOut, summary="Export an approved translation")
 def export_project(db: DB, user: Translator, pid: int, body: ExportIn) -> ExportFile:
     p = get_project(db, pid)
-    if p.status not in ("approved", "archived"):
+    if p.status not in FINISHED_STATUSES:
         raise HTTPException(409, "Export ist erst nach der Freigabe möglich.")
     template = db.get(ExportTemplate, body.template_id) if body.template_id else None
     layout = ExcelLayout.model_validate(template.config) if template else body.config
@@ -220,7 +224,7 @@ def export_project(db: DB, user: Translator, pid: int, body: ExportIn) -> Export
     )
     db.add(ef)
     if body.archive_after:
-        p.archived, p.status = True, "archived"
+        p.archived, p.status = True, ProjectStatus.ARCHIVED
     db.commit()
     return ef
 

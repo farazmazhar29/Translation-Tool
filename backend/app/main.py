@@ -13,6 +13,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from . import middleware
 from .config import settings
 from .db import DB, SessionLocal
+from .enums import JobState
 from .logging_setup import setup_logging
 from .migrate import upgrade_to_head
 from .models import Project
@@ -35,8 +36,11 @@ def recover_interrupted_jobs() -> None:
     with SessionLocal() as db:
         result = db.execute(
             update(Project)
-            .where(Project.job_state == "running")
-            .values(job_state="error", job_error="Der Server wurde neu gestartet – bitte die Übersetzung neu starten.")
+            .where(Project.job_state == JobState.RUNNING)
+            .values(
+                job_state=JobState.ERROR,
+                job_error="Der Server wurde neu gestartet – bitte die Übersetzung neu starten.",
+            )
         )
         db.commit()
     if result.rowcount:

@@ -6,9 +6,22 @@ from typing import Any, Literal, Self, cast
 from openpyxl.utils import column_index_from_string
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from .enums import (
+    EntryCategory,
+    ExportMode,
+    FileFormat,
+    GlossaryAction,
+    GlossaryStatus,
+    JobState,
+    Lang,
+    ProjectStatus,
+    Role,
+    Severity,
+    TermCategory,
+)
+
 MAX_EXCEL_COLUMN = 16384  # XFD
-Category = Literal["technical", "glossary", "ambiguous", "unknown", "protected"]
-Severity = Literal["error", "warning", "info"]
+SourceLang = Lang | Literal["auto"]  # "auto" = detect the language from the text (see enums.AUTO)
 
 
 class ORM(BaseModel):
@@ -21,7 +34,7 @@ class Term(BaseModel):
 
     source: str
     target: str = ""
-    category: Category
+    category: TermCategory
     alternatives: list[str] = []
     description: str = ""
     glossary_id: int | None = None
@@ -83,13 +96,13 @@ class ProjectOut(ORM):
     name: str
     customer: str
     filename: str
-    file_type: str
+    file_type: FileFormat
     source_lang: str
     detected_lang: str
     target_langs: list[str]
-    status: str
+    status: ProjectStatus
     archived: bool
-    job_state: str
+    job_state: JobState
     job_progress: int
     job_error: str
     structure: dict[str, Any]
@@ -102,26 +115,23 @@ class ProjectDetail(ProjectOut):
     segments: list[SegmentOut]
 
 
-LangCode = Literal["de", "en"]  # keep in sync with services.translation.LANGS
-
-
 class ProjectPatch(BaseModel):
     name: str | None = Field(None, min_length=1, max_length=200)
     customer: str | None = Field(None, max_length=200)
-    source_lang: Literal["auto", "de", "en"] | None = None
-    target_langs: list[LangCode] | None = None
+    source_lang: SourceLang | None = None
+    target_langs: list[Lang] | None = None
 
 
 class TranslateIn(BaseModel):
-    source_lang: Literal["auto", "de", "en"] | None = None
-    target_langs: list[LangCode] | None = None
+    source_lang: SourceLang | None = None
+    target_langs: list[Lang] | None = None
 
 
 class JobStatus(ORM):
-    job_state: str
+    job_state: JobState
     job_progress: int
     job_error: str
-    status: str
+    status: ProjectStatus
 
 
 class ExcelLayout(BaseModel):
@@ -154,8 +164,8 @@ class ExcelLayout(BaseModel):
 
 class ExportIn(BaseModel):
     lang: str
-    format: Literal["docx", "xlsx", "pdf"] = "docx"
-    mode: Literal["translation", "both"] = "translation"
+    format: FileFormat = FileFormat.DOCX
+    mode: ExportMode = ExportMode.TRANSLATION
     include_report: bool = False
     include_comments: bool = False
     config: ExcelLayout | None = Field(None, description="Excel column layout (only used for .xlsx)")
@@ -166,9 +176,9 @@ class ExportIn(BaseModel):
 class ExportFileOut(ORM):
     id: int
     filename: str
-    format: str
+    format: FileFormat
     lang: str
-    mode: str
+    mode: ExportMode
     created_by: str
     created_at: datetime
     release_id: int
@@ -199,7 +209,7 @@ class HistoryOut(BaseModel):
 
 class TemplateIn(BaseModel):
     name: str
-    format: Literal["xlsx"] = "xlsx"  # only Excel exports have a configurable layout
+    format: Literal[FileFormat.XLSX] = FileFormat.XLSX  # only Excel exports have a configurable layout
     config: ExcelLayout
 
 
@@ -212,9 +222,9 @@ class GlossaryIn(BaseModel):
     terms: dict[str, str] = Field(description='{"de": "Korpus", "en": "carcass"}')
     synonyms: dict[str, list[str]] = {}
     description: str = ""
-    category: Literal["technical", "product"] = "technical"
+    category: EntryCategory = EntryCategory.TECHNICAL
     do_not_translate: bool = False
-    status: Literal["draft", "approved", "rejected"] | None = None
+    status: GlossaryStatus | None = None
     force: bool = Field(False, description="Save even if a duplicate exists")
 
 
@@ -223,9 +233,9 @@ class GlossaryOut(ORM):
     terms: dict[str, str]
     synonyms: dict[str, list[str]]
     description: str
-    category: str
+    category: EntryCategory
     do_not_translate: bool
-    status: str
+    status: GlossaryStatus
     version: int
     updated_by: str
     updated_at: datetime
@@ -234,7 +244,7 @@ class GlossaryOut(ORM):
 class GlossaryVersionOut(ORM):
     id: int
     entry_version: int
-    action: str
+    action: GlossaryAction
     data: dict[str, Any]
     changed_by: str
     changed_at: datetime
@@ -258,7 +268,7 @@ class UserIn(BaseModel):
     username: str
     full_name: str = ""
     password: str = ""
-    role: Literal["translator", "reviewer", "admin"] = "translator"
+    role: Role = Role.TRANSLATOR
     active: bool = True
 
 
@@ -266,7 +276,7 @@ class UserOut(ORM):
     id: int
     username: str
     full_name: str
-    role: Literal["translator", "reviewer", "admin"]
+    role: Role
     active: bool
 
 

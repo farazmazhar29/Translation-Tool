@@ -23,6 +23,7 @@ from reportlab.lib.styles import PropertySet, getSampleStyleSheet
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 from ..config import settings
+from ..enums import ExportMode, FileFormat
 from ..models import Project
 from ..schemas import QualityWarning
 from . import parsing
@@ -36,14 +37,15 @@ XLSX_DEFAULTS: dict[str, Any] = {
     "start_row": 2,
     "header": True,
 }
-Exporter = Callable[[Project, str, str, dict[str, bool], list[QualityWarning], dict[str, Any] | None], Path]
+Exporter = Callable[[Project, str, ExportMode, dict[str, bool], list[QualityWarning], dict[str, Any] | None], Path]
 
 
 def rows(p: Project, lang: str) -> list[dict[str, Any]]:
     def row(seg_no: int, loc: dict[str, Any], src: str, text: str, comment: str) -> dict[str, Any]:
-        place = {"xlsx": f"{loc.get('sheet')}!{loc.get('cell')}", "pdf": f"Seite {loc.get('page')}"}.get(
-            loc["type"], f"Absatz {loc.get('p', 0) + 1}"
-        )
+        place = {
+            FileFormat.XLSX: f"{loc.get('sheet')}!{loc.get('cell')}",
+            FileFormat.PDF: f"Seite {loc.get('page')}",
+        }.get(loc["type"], f"Absatz {loc.get('p', 0) + 1}")
         return {"no": seg_no, "locator": loc, "source": src, "target": text, "comment": comment, "location": place}
 
     return [
@@ -53,12 +55,12 @@ def rows(p: Project, lang: str) -> list[dict[str, Any]]:
     ]
 
 
-def out_path(ext: str) -> Path:
+def out_path(ext: FileFormat) -> Path:
     """Stored exports get a unique name: two projects with the same filename must never overwrite each other."""
     return settings.data_dir / "exports" / f"{uuid.uuid4().hex}.{ext}"
 
 
-def download_name(p: Project, lang: str, mode: str, ext: str) -> str:
+def download_name(p: Project, lang: str, mode: ExportMode, ext: FileFormat) -> str:
     """What the user sees when downloading (sanitised, since the original filename is user input)."""
     stem = re.sub(r"[^\w.-]+", "_", Path(p.filename).stem).strip("._") or f"projekt-{p.id}"
     return f"{stem[:80]}_{lang}_{mode}.{ext}"
@@ -72,18 +74,18 @@ def report_lines(warnings: list[QualityWarning]) -> list[str]:
 def to_docx(
     p: Project,
     lang: str,
-    mode: str,
+    mode: ExportMode,
     opts: dict[str, bool],
     warnings: list[QualityWarning],
     _config: dict[str, Any] | None = None,
 ) -> Path:
-    data, path = rows(p, lang), out_path("docx")
-    if mode == "translation" and p.file_type == "docx" and not any(opts.values()):
+    data, path = rows(p, lang), out_path(FileFormat.DOCX)
+    if mode == ExportMode.TRANSLATION and p.file_type == FileFormat.DOCX and not any(opts.values()):
         parsing.write_docx(Path(p.file_path), path, {r["locator"]["p"]: r["target"] for r in data if r["target"]})
         return path  # original layout and formatting stay intact
     doc = Document()
     doc.add_heading(f"{p.name} ({lang.upper()})", level=1)
-    if mode == "both":
+    if mode == ExportMode.BOTH:
         head = ["#", "Original", "Übersetzung"] + (["Kommentar"] if opts["include_comments"] else [])
         table = doc.add_table(rows=1, cols=len(head), style="Light Grid Accent 1")
         for cell, h in zip(table.rows[0].cells, head, strict=False):
@@ -111,13 +113,13 @@ def to_docx(
 def to_xlsx(
     p: Project,
     lang: str,
-    mode: str,
+    mode: ExportMode,
     opts: dict[str, bool],
     warnings: list[QualityWarning],
     config: dict[str, Any] | None = None,
 ) -> Path:
-    data, path = rows(p, lang), out_path("xlsx")
-    if mode == "translation" and p.file_type == "xlsx" and not config and not opts["include_report"]:
+    data, path = rows(p, lang), out_path(FileFormat.XLSX)
+    if mode == ExportMode.TRANSLATION and p.file_type == FileFormat.XLSX and not config and not opts["include_report"]:
         parsing.write_xlsx(
             Path(p.file_path),
             path,
@@ -128,7 +130,7 @@ def to_xlsx(
     wb = Workbook()
     ws = wb.active or wb.create_sheet()
     ws.title = str(cfg["sheet_name"])[:31] or "Übersetzung"
-    layout = [(str(cfg["source_col"]), "Original", "source")] if mode == "both" else []
+    layout = [(str(cfg["source_col"]), "Original", "source")] if mode == ExportMode.BOTH else []
     layout.append((str(cfg["target_col"]), f"Übersetzung ({lang.upper()})", "target"))
     if opts["include_comments"] and cfg["comment_col"]:
         layout.append((str(cfg["comment_col"]), "Kommentar", "comment"))
@@ -155,12 +157,12 @@ def to_xlsx(
 def to_pdf(
     p: Project,
     lang: str,
-    mode: str,
+    mode: ExportMode,
     opts: dict[str, bool],
     warnings: list[QualityWarning],
     _config: dict[str, Any] | None = None,
 ) -> Path:
-    data, path = rows(p, lang), out_path("pdf")
+    data, path = rows(p, lang), out_path(FileFormat.PDF)
     styles = getSampleStyleSheet()
     small = styles["BodyText"].clone("small", fontSize=9, leading=11)
 
@@ -168,7 +170,7 @@ def to_pdf(
         return Paragraph(escape(text), style)
 
     story: list[Any] = [para(f"{p.name} ({lang.upper()})", styles["Title"])]
-    if mode == "both":
+    if mode == ExportMode.BOTH:
         comments = opts["include_comments"]
         table: list[list[Any]] = [["#", "Original", "Übersetzung"] + (["Kommentar"] if comments else [])]
         table += [
@@ -198,4 +200,8 @@ def to_pdf(
     return path
 
 
-EXPORTERS: dict[str, Exporter] = {"docx": to_docx, "xlsx": to_xlsx, "pdf": to_pdf}
+EXPORTERS: dict[FileFormat, Exporter] = {
+    FileFormat.DOCX: to_docx,
+    FileFormat.XLSX: to_xlsx,
+    FileFormat.PDF: to_pdf,
+}

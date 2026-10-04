@@ -5,15 +5,19 @@ import logging
 import re
 import threading
 import time
-from typing import Any, Literal
+from typing import Any, Literal, get_args
 
 import httpx
 from pydantic import BaseModel, TypeAdapter, ValidationError
 
 from ..config import settings
+from ..enums import Lang, Provider, TermCategory
 
 log = logging.getLogger(__name__)
-LANGS = {"de": "German", "en": "English"}
+LANG_NAMES: dict[str, str] = {Lang.DE: "German", Lang.EN: "English"}  # as written in the prompt
+LLMTermCategory = Literal[
+    TermCategory.TECHNICAL, TermCategory.AMBIGUOUS, TermCategory.UNKNOWN
+]  # what the model may use
 
 PROMPT = """You are a professional translator for the German kitchen and furniture industry (Rotpunkt Küchen).
 Translate each segment from {src} into {tgt}. Rules:
@@ -48,7 +52,7 @@ SCHEMA: dict[str, Any] = {  # Gemini response schema
                         "target": _S,
                         "description": _S,
                         "alternatives": {"type": "ARRAY", "items": _S},
-                        "category": {"type": "STRING", "enum": ["technical", "ambiguous", "unknown"]},
+                        "category": {"type": "STRING", "enum": list(get_args(LLMTermCategory))},
                     },
                 },
             },
@@ -72,7 +76,7 @@ class LLMSegment(BaseModel):
 class LLMTerm(BaseModel):
     source: str
     target: str = ""
-    category: Literal["technical", "ambiguous", "unknown"]
+    category: LLMTermCategory
     alternatives: list[str] = []
     description: str = ""
 
@@ -111,7 +115,7 @@ class Gemini(LLMProvider):
 
     def translate_batch(self, src: str, tgt: str, segments: list[LLMSegment]) -> list[LLMResult]:
         body = {
-            "systemInstruction": {"parts": [{"text": PROMPT.format(src=LANGS[src], tgt=LANGS[tgt])}]},
+            "systemInstruction": {"parts": [{"text": PROMPT.format(src=LANG_NAMES[src], tgt=LANG_NAMES[tgt])}]},
             "contents": [
                 {
                     "role": "user",
@@ -202,7 +206,9 @@ class Mock(LLMProvider):
             for i, h in enumerate(s.glossary):
                 text = text.replace(f"⟦{i}⟧", h.source if h.dnt else h.target)
             terms = [
-                LLMTerm(source=w, target=table[w.lower()], category="technical", description="Fachbegriff (Mock)")
+                LLMTerm(
+                    source=w, target=table[w.lower()], category=TermCategory.TECHNICAL, description="Fachbegriff (Mock)"
+                )
                 for w in WORD.findall(s.text)
                 if len(w) > 5 and w.lower() in table
             ]
@@ -211,9 +217,10 @@ class Mock(LLMProvider):
 
 
 def get_provider(name: str | None = None, model: str | None = None) -> LLMProvider:
-    name = (name or settings.llm_provider).lower()
-    if name == "mock":
+    try:
+        provider = Provider((name or settings.llm_provider).lower())
+    except ValueError:
+        raise LLMError(f"Unbekannter LLM-Provider: {name}") from None
+    if provider == Provider.MOCK:
         return Mock()
-    if name == "gemini":
-        return Gemini(settings.gemini_api_key, model or settings.gemini_model)
-    raise LLMError(f"Unbekannter LLM-Provider: {name}")
+    return Gemini(settings.gemini_api_key, model or settings.gemini_model)

@@ -8,18 +8,18 @@ from sqlalchemy.orm import Session
 
 from ..config import settings
 from ..db import SessionLocal
+from ..enums import JobState, Lang, ProjectStatus, TermCategory
 from ..models import AppSetting, Project, Segment, Translation
 from ..schemas import Term
 from . import glossary as gl
 from .llm import LLMError, LLMProvider, LLMSegment, get_provider
 
 log = logging.getLogger(__name__)
-LANGS = ("de", "en")
 STOPWORDS = {
-    "de": set(
+    Lang.DE: set(
         "der die das und ist nicht mit für auf den dem ein eine zu von im auch sich des wird sind bei nach oder".split()
     ),
-    "en": set("the and is not with for on of to in a an this that are be by or from at as it can will".split()),
+    Lang.EN: set("the and is not with for on of to in a an this that are be by or from at as it can will".split()),
 }
 
 
@@ -69,7 +69,7 @@ def translate_segments(
                 Term(
                     source=c,
                     target=c,
-                    category="protected",
+                    category=TermCategory.PROTECTED,
                     dnt=True,
                     ok=c in text,
                     description="Artikelnummer / Produktcode – nicht übersetzen",
@@ -101,7 +101,7 @@ def run_project_translation(project_id: int) -> None:
         if p is None:
             return
         try:
-            p.job_state, p.job_progress, p.job_error = "running", 0, ""
+            p.job_state, p.job_progress, p.job_error = JobState.RUNNING, 0, ""
             db.commit()
             rt = runtime_settings(db)
             provider = get_provider(rt.get("llm_provider"), rt.get("llm_model"))
@@ -116,9 +116,9 @@ def run_project_translation(project_id: int) -> None:
                     db.commit()
 
                 translate_segments(db, p.segments, p.source, tgt, provider, progress)
-            p.status, p.job_state, p.job_progress = "preview_ready", "done", 100
+            p.status, p.job_state, p.job_progress = ProjectStatus.PREVIEW_READY, JobState.DONE, 100
         except Exception as e:  # shown in the UI
             log.exception("translation failed")
             db.rollback()
-            p.job_state, p.job_error = "error", str(e)[:500]
+            p.job_state, p.job_error = JobState.ERROR, str(e)[:500]
         db.commit()

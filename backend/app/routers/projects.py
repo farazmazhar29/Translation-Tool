@@ -11,10 +11,11 @@ from sqlalchemy import or_
 from ..auth import Admin, Me, Translator
 from ..config import settings
 from ..db import DB
+from ..enums import AUTO, ArchiveFilter, Lang, ProjectStatus
 from ..models import ExportFile, Project, Release, Segment, Translation
 from ..schemas import ProjectDetail, ProjectOut, ProjectPatch
 from ..services import parsing
-from ..services.translation import LANGS, detect_language
+from ..services.translation import detect_language
 
 router = APIRouter(prefix="/api/projects", tags=["Projects"])
 
@@ -43,8 +44,8 @@ def list_projects(
     db: DB,
     _: Me,
     q: str = "",
-    status: str = "",
-    archived: str = "no",
+    status: ProjectStatus | None = None,
+    archived: ArchiveFilter = ArchiveFilter.NO,
     lang: str = "",
     customer: str = "",
     editor: str = "",
@@ -53,10 +54,10 @@ def list_projects(
     date_to: datetime | None = None,
     limit: Annotated[int, Query(ge=1, le=1000)] = 500,
 ) -> list[Project]:
-    """`archived`: no | only | all. `term` searches inside original and translated text."""
+    """`term` searches inside original and translated text."""
     query = db.query(Project)
-    if archived != "all":
-        query = query.filter(Project.archived.is_(archived == "only"))
+    if archived != ArchiveFilter.ALL:
+        query = query.filter(Project.archived.is_(archived == ArchiveFilter.ONLY))
     if q:
         query = query.filter(or_(*(c.ilike(f"%{q}%") for c in (Project.name, Project.filename, Project.customer))))
     if status:
@@ -93,11 +94,11 @@ def create_project(
     file: Annotated[UploadFile, File()],
     name: Annotated[str, Form()] = "",
     customer: Annotated[str, Form()] = "",
-    source_lang: Annotated[str, Form()] = "auto",
+    source_lang: Annotated[str, Form()] = AUTO,
     target_langs: Annotated[str, Form(description="comma separated, e.g. 'en,de'")] = "",
 ) -> Project:
     filename = Path(file.filename or "upload").name[:255]  # display name only; the stored file gets a random name
-    if source_lang != "auto" and source_lang not in LANGS:
+    if source_lang != AUTO and source_lang not in list(Lang):
         raise HTTPException(400, "Ungültige Ausgangssprache.")
     stored = settings.data_dir / "uploads" / f"{uuid.uuid4().hex}{Path(filename).suffix.lower()}"
     try:
@@ -118,7 +119,7 @@ def create_project(
         stored.unlink(missing_ok=True)
         raise HTTPException(400, "In der Datei wurde kein übersetzbarer Text gefunden.")
     detected = detect_language([p.text for p in parts])
-    targets = [t for t in target_langs.split(",") if t in LANGS] or [next(x for x in LANGS if x != detected)]
+    targets = [t for t in target_langs.split(",") if t in list(Lang)] or [next(x for x in Lang if x != detected)]
     project = Project(
         name=(name.strip() or Path(filename).stem)[:200],
         customer=customer.strip()[:200],
@@ -172,7 +173,7 @@ def copy_project(db: DB, user: Translator, pid: int, with_translations: bool = F
     p = get_project(db, pid)
     new_file = settings.data_dir / "uploads" / f"{uuid.uuid4().hex}{Path(p.file_path).suffix}"
     shutil.copy(p.file_path, new_file)
-    copied = with_translations and p.status != "new"
+    copied = with_translations and p.status != ProjectStatus.NEW
     c = Project(
         name=f"{p.name} (Kopie)",
         customer=p.customer,
@@ -184,7 +185,7 @@ def copy_project(db: DB, user: Translator, pid: int, with_translations: bool = F
         target_langs=list(p.target_langs),
         structure=p.structure,
         created_by=user.username,
-        status="preview_ready" if copied else "new",
+        status=ProjectStatus.PREVIEW_READY if copied else ProjectStatus.NEW,
         segments=[
             Segment(
                 idx=s.idx,

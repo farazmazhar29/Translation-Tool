@@ -14,7 +14,9 @@ from docx.oxml.text.paragraph import CT_P
 from docx.text.paragraph import Paragraph
 from openpyxl import load_workbook
 
-FILE_TYPES = {".docx": "docx", ".xlsx": "xlsx", ".pdf": "pdf"}
+from ..enums import FileFormat
+
+FILE_TYPES = {".docx": FileFormat.DOCX, ".xlsx": FileFormat.XLSX, ".pdf": FileFormat.PDF}
 LETTER = re.compile(r"[A-Za-zÄÖÜäöüß]")
 
 
@@ -23,7 +25,7 @@ class Part(NamedTuple):
     text: str
 
 
-def file_type(filename: str) -> str:
+def file_type(filename: str) -> FileFormat:
     ext = Path(filename).suffix.lower()
     if ext in (".imdd", ".indd"):
         raise ValueError("InDesign-Dateien werden erst in Phase 2 unterstützt.")
@@ -32,10 +34,14 @@ def file_type(filename: str) -> str:
     return FILE_TYPES[ext]
 
 
-SIGNATURES = {"docx": b"PK\x03\x04", "xlsx": b"PK\x03\x04", "pdf": b"%PDF-"}  # Office files are zip archives
+SIGNATURES = {
+    FileFormat.DOCX: b"PK\x03\x04",
+    FileFormat.XLSX: b"PK\x03\x04",
+    FileFormat.PDF: b"%PDF-",
+}  # Office files are zip archives
 
 
-def check_signature(path: Path, ftype: str) -> None:
+def check_signature(path: Path, ftype: FileFormat) -> None:
     """The extension alone proves nothing: make sure the content looks like what it claims to be."""
     with path.open("rb") as f:
         head = f.read(8)
@@ -55,9 +61,11 @@ def _paragraphs(path: Path) -> tuple[Any, list[Paragraph]]:
 
 def parse_docx(path: Path) -> tuple[list[Part], dict[str, Any]]:
     parts = [
-        Part({"type": "docx", "p": i}, p.text) for i, p in enumerate(_paragraphs(path)[1]) if _translatable(p.text)
+        Part({"type": FileFormat.DOCX, "p": i}, p.text)
+        for i, p in enumerate(_paragraphs(path)[1])
+        if _translatable(p.text)
     ]
-    return parts, {"type": "docx", "paragraphs": len(parts)}
+    return parts, {"type": FileFormat.DOCX, "paragraphs": len(parts)}
 
 
 def write_docx(src: Path, dst: Path, repl: dict[int, str]) -> None:
@@ -79,14 +87,14 @@ def parse_xlsx(path: Path) -> tuple[list[Part], dict[str, Any]]:
     sheets: list[dict[str, Any]] = []
     for ws in load_workbook(path).worksheets:
         found = [
-            Part({"type": "xlsx", "sheet": ws.title, "cell": c.coordinate}, c.value)
+            Part({"type": FileFormat.XLSX, "sheet": ws.title, "cell": c.coordinate}, c.value)
             for row in ws.iter_rows()
             for c in row
             if isinstance(c.value, str) and not c.value.startswith("=") and _translatable(c.value)
         ]
         parts += found
         sheets.append({"name": ws.title, "cells": len(found)})
-    return parts, {"type": "xlsx", "sheets": sheets}
+    return parts, {"type": FileFormat.XLSX, "sheets": sheets}
 
 
 def write_xlsx(src: Path, dst: Path, repl: dict[tuple[str, str], str]) -> None:
@@ -104,12 +112,12 @@ def parse_pdf(path: Path) -> tuple[list[Part], dict[str, Any]]:
             for x0, y0, x1, y1, raw, _, kind in page.get_text("blocks"):
                 text = re.sub(r"\s*\n\s*", " ", str(raw)).strip()
                 if kind == 0 and _translatable(text):
-                    parts.append(Part({"type": "pdf", "page": n, "bbox": [x0, y0, x1, y1]}, text))
+                    parts.append(Part({"type": FileFormat.PDF, "page": n, "bbox": [x0, y0, x1, y1]}, text))
         pages = len(pdf)
     if not parts:
         raise ValueError("Im PDF wurde kein Text erkannt (gescannte PDFs: OCR folgt in Phase 2).")
-    return parts, {"type": "pdf", "pages": pages, "blocks": len(parts)}
+    return parts, {"type": FileFormat.PDF, "pages": pages, "blocks": len(parts)}
 
 
-def parse_file(path: Path, ftype: str) -> tuple[list[Part], dict[str, Any]]:
-    return {"docx": parse_docx, "xlsx": parse_xlsx, "pdf": parse_pdf}[ftype](path)
+def parse_file(path: Path, ftype: FileFormat) -> tuple[list[Part], dict[str, Any]]:
+    return {FileFormat.DOCX: parse_docx, FileFormat.XLSX: parse_xlsx, FileFormat.PDF: parse_pdf}[ftype](path)

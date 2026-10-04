@@ -5,6 +5,7 @@ from dataclasses import dataclass
 
 from sqlalchemy.orm import Session
 
+from ..enums import EntryCategory, GlossaryStatus, TermCategory
 from ..models import GlossaryEntry
 from ..schemas import Term
 
@@ -25,7 +26,7 @@ class Hit:
     target_forms: list[str]
     dnt: bool
     description: str
-    category: str
+    category: EntryCategory
 
     def ok_in(self, translation: str) -> bool:
         return any(pattern(t).search(translation) for t in self.target_forms)
@@ -34,7 +35,7 @@ class Hit:
         return Term(
             source=self.matched,
             target=self.matched if self.dnt else self.target,
-            category="protected" if self.category == "product" else "glossary",
+            category=TermCategory.PROTECTED if self.category == EntryCategory.PRODUCT else TermCategory.GLOSSARY,
             alternatives=[t for t in self.target_forms if t != self.target],
             description=self.description,
             glossary_id=self.entry_id,
@@ -55,7 +56,7 @@ class Form:
 def build_index(db: Session, src: str, tgt: str) -> list[Form]:
     """All usable surface forms for src->tgt, longest first so compounds win over parts."""
     forms: list[Form] = []
-    for e in db.query(GlossaryEntry).filter(GlossaryEntry.status != "rejected"):
+    for e in db.query(GlossaryEntry).filter(GlossaryEntry.status != GlossaryStatus.REJECTED):
         s, t = e.terms.get(src), e.terms.get(tgt)
         if not s or not (t or e.do_not_translate):
             continue

@@ -154,7 +154,9 @@ def test_status_workflow(client: TestClient, translator: Headers, reviewer: Head
     draft = create(client, translator, entry(word(), word()))
     url = f"/api/glossary/{draft['id']}/status"
     assert client.post(url, headers=translator, params={"status": "approved"}).status_code == 403
-    assert client.post(url, headers=reviewer, params={"status": "bogus"}).status_code == 400
+    assert (
+        client.post(url, headers=reviewer, params={"status": "bogus"}).status_code == 422
+    )  # validated against the enum
     assert client.post(url, headers=reviewer, params={"status": "approved"}).json()["status"] == "approved"
     assert (
         client.post("/api/glossary/999999/status", headers=reviewer, params={"status": "approved"}).status_code == 404

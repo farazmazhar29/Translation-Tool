@@ -4,7 +4,17 @@ from typing import Any
 from sqlalchemy import ForeignKey, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from .db import Base
+from .db import Base, Choice
+from .enums import (
+    EntryCategory,
+    ExportMode,
+    FileFormat,
+    GlossaryAction,
+    GlossaryStatus,
+    JobState,
+    ProjectStatus,
+    Role,
+)
 
 
 def now() -> datetime:
@@ -17,7 +27,7 @@ class User(Base):
     username: Mapped[str] = mapped_column(unique=True)
     full_name: Mapped[str] = mapped_column(default="")
     password_hash: Mapped[str]
-    role: Mapped[str] = mapped_column(default="translator")  # translator | reviewer | admin
+    role: Mapped[Role] = mapped_column(Choice(Role), default=Role.TRANSLATOR)
     active: Mapped[bool] = mapped_column(default=True)
 
 
@@ -28,13 +38,13 @@ class Project(Base):
     customer: Mapped[str] = mapped_column(default="")
     filename: Mapped[str] = mapped_column(default="")
     file_path: Mapped[str] = mapped_column(default="")
-    file_type: Mapped[str] = mapped_column(default="")
+    file_type: Mapped[FileFormat] = mapped_column(Choice(FileFormat))
     source_lang: Mapped[str] = mapped_column(default="auto")
     detected_lang: Mapped[str] = mapped_column(default="")
     target_langs: Mapped[list[str]] = mapped_column(default=list)
-    status: Mapped[str] = mapped_column(default="new")  # new | preview_ready | in_review | approved | archived
+    status: Mapped[ProjectStatus] = mapped_column(Choice(ProjectStatus), default=ProjectStatus.NEW)
     archived: Mapped[bool] = mapped_column(default=False)
-    job_state: Mapped[str] = mapped_column(default="idle")  # idle | running | done | error
+    job_state: Mapped[JobState] = mapped_column(Choice(JobState), default=JobState.IDLE)
     job_progress: Mapped[int] = mapped_column(default=0)
     job_error: Mapped[str] = mapped_column(Text, default="")
     structure: Mapped[dict[str, Any]] = mapped_column(default=dict)
@@ -95,9 +105,9 @@ class GlossaryEntry(Base):
     terms: Mapped[dict[str, str]] = mapped_column(default=dict)  # {"de": "Korpus", "en": "carcass"}
     synonyms: Mapped[dict[str, list[str]]] = mapped_column(default=dict)
     description: Mapped[str] = mapped_column(Text, default="")
-    category: Mapped[str] = mapped_column(default="technical")  # technical | product
+    category: Mapped[EntryCategory] = mapped_column(Choice(EntryCategory), default=EntryCategory.TECHNICAL)
     do_not_translate: Mapped[bool] = mapped_column(default=False)
-    status: Mapped[str] = mapped_column(default="approved")  # draft | approved | rejected
+    status: Mapped[GlossaryStatus] = mapped_column(Choice(GlossaryStatus), default=GlossaryStatus.APPROVED)
     version: Mapped[int] = mapped_column(default=1)
     updated_by: Mapped[str] = mapped_column(default="")
     updated_at: Mapped[datetime] = mapped_column(default=now, onupdate=now)
@@ -110,7 +120,7 @@ class GlossaryVersion(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     entry_id: Mapped[int] = mapped_column(index=True)
     entry_version: Mapped[int]
-    action: Mapped[str]  # create | update | delete
+    action: Mapped[GlossaryAction] = mapped_column(Choice(GlossaryAction))
     data: Mapped[dict[str, Any]] = mapped_column(default=dict)
     changed_by: Mapped[str] = mapped_column(default="")
     changed_at: Mapped[datetime] = mapped_column(default=now)
@@ -137,9 +147,9 @@ class ExportFile(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     project_id: Mapped[int] = mapped_column(ForeignKey("projects.id"), index=True)
     release_id: Mapped[int] = mapped_column(default=0)
-    format: Mapped[str]
+    format: Mapped[FileFormat] = mapped_column(Choice(FileFormat))
     lang: Mapped[str] = mapped_column(default="")
-    mode: Mapped[str] = mapped_column(default="")
+    mode: Mapped[ExportMode] = mapped_column(Choice(ExportMode))
     filename: Mapped[str]
     path: Mapped[str]
     created_by: Mapped[str] = mapped_column(default="")
@@ -156,5 +166,5 @@ class ExportTemplate(Base):
     __tablename__ = "export_templates"
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str]
-    format: Mapped[str]
+    format: Mapped[FileFormat] = mapped_column(Choice(FileFormat))
     config: Mapped[dict[str, Any]] = mapped_column(default=dict)

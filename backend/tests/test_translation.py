@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.db import SessionLocal
+from app.enums import JobState, TermCategory
 from app.main import recover_interrupted_jobs
 from app.models import Project, Segment
 from app.services.llm import LLMProvider, LLMResult, LLMSegment, LLMTerm
@@ -88,8 +89,8 @@ def test_model_terms_are_added_but_never_duplicate_glossary_terms(
     pid = upload(client, translator, "m.docx", docx_bytes("Der Korpus hat eine Spanplatte als Material."))["id"]
     segs = segments_of(db, pid)
     reported = [
-        LLMTerm(source="Korpus", target="carcass", category="technical"),  # already a glossary term
-        LLMTerm(source="Spanplatte", target="chipboard", category="technical", description="Holzwerkstoff"),
+        LLMTerm(source="Korpus", target="carcass", category=TermCategory.TECHNICAL),  # already a glossary term
+        LLMTerm(source="Spanplatte", target="chipboard", category=TermCategory.TECHNICAL, description="Holzwerkstoff"),
     ]
     translate_segments(db, segs, "de", "en", FixedProvider("The carcass has chipboard as material.", reported))
     by_category = {(t["source"], t["category"]) for t in segs[0].translations[0].terms}
@@ -163,7 +164,7 @@ def test_provider_errors_are_shown_to_the_user(
 def test_a_second_translation_cannot_start_while_one_is_running(
     client: TestClient, translator: Headers, db: Session, translated_project: int
 ) -> None:
-    db.get(Project, translated_project).job_state = "running"  # pyright: ignore[reportOptionalMemberAccess]
+    db.get(Project, translated_project).job_state = JobState.RUNNING  # pyright: ignore[reportOptionalMemberAccess]
     db.commit()
     assert client.post(f"/api/projects/{translated_project}/translate", headers=translator).status_code == 409
 
@@ -180,7 +181,7 @@ def test_a_restart_marks_interrupted_jobs_as_failed(
 ) -> None:
     project = db.get(Project, translated_project)
     assert project is not None
-    project.job_state, project.job_error = "running", ""
+    project.job_state, project.job_error = JobState.RUNNING, ""
     db.commit()
     recover_interrupted_jobs()
     status = client.get(f"/api/projects/{translated_project}/status", headers=translator).json()

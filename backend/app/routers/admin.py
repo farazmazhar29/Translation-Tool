@@ -9,6 +9,7 @@ from sqlalchemy import func
 from ..auth import DUMMY_HASH, Admin, Me, create_token, hash_password, needs_rehash, verify_password
 from ..config import settings
 from ..db import DB
+from ..enums import AUTO, ExportMode, FileFormat, Lang, ProjectStatus, Role, TermCategory
 from ..models import AppSetting, GlossaryEntry, Project, Release, Segment, Translation, User
 from ..schemas import DashboardOut, LoginOut, SettingsOut, UserIn, UserOut
 from ..services.ratelimit import FailureLimiter, RateLimited
@@ -20,16 +21,16 @@ login_limiter = FailureLimiter(settings.login_max_failures, settings.login_windo
 DEFAULTS: dict[str, Any] = {
     "llm_provider": settings.llm_provider,
     "llm_model": settings.gemini_model,
-    "default_source_lang": "auto",
-    "default_target_langs": ["en"],
-    "default_export_format": "docx",
-    "default_export_mode": "translation",
+    "default_source_lang": AUTO,
+    "default_target_langs": [Lang.EN],
+    "default_export_format": FileFormat.DOCX,
+    "default_export_mode": ExportMode.TRANSLATION,
     "colors": {
-        "technical": "#3b82f6",
-        "glossary": "#22c55e",
-        "ambiguous": "#f59e0b",
-        "unknown": "#ef4444",
-        "protected": "#a855f7",
+        TermCategory.TECHNICAL: "#3b82f6",
+        TermCategory.GLOSSARY: "#22c55e",
+        TermCategory.AMBIGUOUS: "#f59e0b",
+        TermCategory.UNKNOWN: "#ef4444",
+        TermCategory.PROTECTED: "#a855f7",
     },
 }
 
@@ -96,7 +97,7 @@ def update_user(db: DB, admin: Admin, uid: int, body: UserIn) -> User:
     u = db.get(User, uid)
     if u is None:
         raise HTTPException(404, "Benutzer nicht gefunden")
-    if u.id == admin.id and (body.role != "admin" or not body.active):
+    if u.id == admin.id and (body.role != Role.ADMIN or not body.active):
         raise HTTPException(400, "Die eigene Admin-Rolle kann nicht entfernt werden")
     u.full_name, u.role, u.active = body.full_name, body.role, body.active
     if body.password:
@@ -145,9 +146,9 @@ def dashboard(db: DB, _: Me) -> DashboardOut:
             per_day[day] += 1
     return DashboardOut.model_validate(
         {
-            "open": status["new"] + status["preview_ready"],
-            "in_review": status["in_review"],
-            "approved": status["approved"],
+            "open": status[ProjectStatus.NEW] + status[ProjectStatus.PREVIEW_READY],
+            "in_review": status[ProjectStatus.IN_REVIEW],
+            "approved": status[ProjectStatus.APPROVED],
             "edited_today": sum(p.updated_at >= today for p in projects),
             "recent": sorted(projects, key=lambda p: p.updated_at, reverse=True)[:6],
             "top_terms": [

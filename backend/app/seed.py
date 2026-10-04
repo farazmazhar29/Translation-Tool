@@ -4,12 +4,13 @@ from sqlalchemy.orm import Session
 
 from .auth import hash_password
 from .config import settings
+from .enums import EntryCategory, GlossaryAction, GlossaryStatus, Role
 from .models import GlossaryEntry, GlossaryVersion, User
 
 USERS = [
-    ("admin", "Admin", "admin", "admin123"),
-    ("reviewer", "Petra Prüfer", "reviewer", "reviewer123"),
-    ("translator", "Tom Translator", "translator", "translator123"),
+    ("admin", "Admin", Role.ADMIN, "admin123"),
+    ("reviewer", "Petra Prüfer", Role.REVIEWER, "reviewer123"),
+    ("translator", "Tom Translator", Role.TRANSLATOR, "translator123"),
 ]
 
 # de, en, de synonyms, en synonyms, description, do_not_translate, category
@@ -98,7 +99,7 @@ def seed_users(db: Session) -> None:
             User(
                 username=settings.bootstrap_admin_username,
                 full_name="Administrator",
-                role="admin",
+                role=Role.ADMIN,
                 password_hash=hash_password(settings.bootstrap_admin_password),
             )
         )
@@ -113,7 +114,7 @@ def seed_glossary(db: Session) -> None:
             synonyms={"de": sde, "en": sen},
             description=desc,
             do_not_translate=dnt,
-            category=cat,
+            category=EntryCategory(cat),
             updated_by="seed",
         )
         db.add(e)
@@ -122,15 +123,15 @@ def seed_glossary(db: Session) -> None:
             GlossaryVersion(
                 entry_id=e.id,
                 entry_version=1,
-                action="create",
+                action=GlossaryAction.CREATE,
                 changed_by="seed",
                 data={
                     "terms": e.terms,
                     "synonyms": e.synonyms,
                     "description": desc,
-                    "category": cat,
+                    "category": EntryCategory(cat),
                     "do_not_translate": dnt,
-                    "status": "approved",
+                    "status": GlossaryStatus.APPROVED,
                 },
             )
         )

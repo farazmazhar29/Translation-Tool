@@ -11,6 +11,7 @@ from reportlab.pdfgen import canvas
 
 from app.config import settings
 from app.db import SessionLocal
+from app.enums import FileFormat
 from app.models import Project
 from app.services import parsing
 
@@ -94,7 +95,9 @@ def test_pdf_without_text_is_reported_as_scanned(tmp_path: Path) -> None:
         parsing.parse_pdf(write(tmp_path, "scan.pdf", empty.getvalue()))
 
 
-@pytest.mark.parametrize(("name", "expected"), [("a.DOCX", "docx"), ("b.xlsx", "xlsx"), ("c.pdf", "pdf")])
+@pytest.mark.parametrize(
+    ("name", "expected"), [("a.DOCX", FileFormat.DOCX), ("b.xlsx", "xlsx"), ("c.pdf", FileFormat.PDF)]
+)
 def test_file_type_is_detected_case_insensitively(name: str, expected: str) -> None:
     assert parsing.file_type(name) == expected
 
@@ -109,12 +112,12 @@ def test_unsupported_file_types_are_explained(name: str, message: str) -> None:
 
 
 def test_signature_check_catches_disguised_files(tmp_path: Path) -> None:
-    parsing.check_signature(write(tmp_path, "ok.docx", docx_bytes("x")), "docx")
-    parsing.check_signature(write(tmp_path, "ok.pdf", pdf_bytes("x")), "pdf")
+    parsing.check_signature(write(tmp_path, "ok.docx", docx_bytes("x")), FileFormat.DOCX)
+    parsing.check_signature(write(tmp_path, "ok.pdf", pdf_bytes("x")), FileFormat.PDF)
     with pytest.raises(ValueError, match="keine gültige DOCX"):
-        parsing.check_signature(write(tmp_path, "fake.docx", b"MZ\x90\x00 an executable"), "docx")
+        parsing.check_signature(write(tmp_path, "fake.docx", b"MZ\x90\x00 an executable"), FileFormat.DOCX)
     with pytest.raises(ValueError, match="keine gültige PDF"):
-        parsing.check_signature(write(tmp_path, "empty.pdf", b""), "pdf")
+        parsing.check_signature(write(tmp_path, "empty.pdf", b""), FileFormat.PDF)
 
 
 # Upload through the API

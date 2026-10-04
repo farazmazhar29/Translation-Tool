@@ -8,9 +8,9 @@ from openpyxl import Workbook, load_workbook
 
 from ..auth import Admin, Me, Reviewer, Translator
 from ..db import DB
+from ..enums import EntryCategory, GlossaryAction, GlossaryStatus, Lang, Role
 from ..models import GlossaryEntry, GlossaryVersion
 from ..schemas import DuplicateGroup, GlossaryIn, GlossaryOut, GlossaryVersionOut, ImportResult
-from ..services.translation import LANGS
 
 router = APIRouter(prefix="/api/glossary", tags=["Glossary"])
 
@@ -48,7 +48,7 @@ def duplicates(db: DB, terms: dict[str, str], skip: int | None = None) -> list[G
     ]
 
 
-def snapshot(db: DB, e: GlossaryEntry, action: str, user: str) -> None:
+def snapshot(db: DB, e: GlossaryEntry, action: GlossaryAction, user: str) -> None:
     db.add(
         GlossaryVersion(
             entry_id=e.id,
@@ -68,10 +68,10 @@ def snapshot(db: DB, e: GlossaryEntry, action: str, user: str) -> None:
 
 
 def clean(body: GlossaryIn) -> tuple[dict[str, str], dict[str, list[str]]]:
-    terms = {k: v.strip() for k, v in body.terms.items() if k in LANGS and v.strip()}
+    terms = {k: v.strip() for k, v in body.terms.items() if k in list(Lang) and v.strip()}
     if not terms or (not body.do_not_translate and len(terms) < 2):
         raise HTTPException(400, "Begriff und Übersetzung angeben (oder „Nicht übersetzen“ aktivieren).")
-    return terms, {k: [s.strip() for s in v if s.strip()] for k, v in body.synonyms.items() if k in LANGS}
+    return terms, {k: [s.strip() for s in v if s.strip()] for k, v in body.synonyms.items() if k in list(Lang)}
 
 
 def conflict(dups: list[GlossaryEntry]) -> HTTPException:
@@ -88,7 +88,12 @@ def find(db: DB, eid: int) -> GlossaryEntry:
 
 @router.get("", response_model=list[GlossaryOut])
 def list_entries(
-    db: DB, _: Me, q: str = "", status: str = "", category: str = "", limit: Annotated[int, Query(ge=1, le=5000)] = 2000
+    db: DB,
+    _: Me,
+    q: str = "",
+    status: GlossaryStatus | None = None,
+    category: EntryCategory | None = None,
+    limit: Annotated[int, Query(ge=1, le=5000)] = 2000,
 ) -> list[GlossaryEntry]:
     def text(e: GlossaryEntry) -> str:
         return " ".join([*e.terms.values(), *(s for v in e.synonyms.values() for s in v), e.description]).lower()
@@ -105,7 +110,7 @@ def create_entry(db: DB, user: Translator, body: GlossaryIn) -> GlossaryEntry:
     terms, syn = clean(body)
     if (dups := duplicates(db, terms)) and not body.force:
         raise conflict(dups)
-    status = "draft" if user.role == "translator" else body.status or "approved"
+    status = GlossaryStatus.DRAFT if user.role == Role.TRANSLATOR else body.status or GlossaryStatus.APPROVED
     e = GlossaryEntry(
         terms=terms,
         synonyms=syn,
@@ -117,7 +122,7 @@ def create_entry(db: DB, user: Translator, body: GlossaryIn) -> GlossaryEntry:
     )
     db.add(e)
     db.flush()
-    snapshot(db, e, "create", user.username)
+    snapshot(db, e, GlossaryAction.CREATE, user.username)
     db.commit()
     return e
 
@@ -131,18 +136,16 @@ def update_entry(db: DB, user: Reviewer, eid: int, body: GlossaryIn) -> Glossary
     e.terms, e.synonyms, e.description, e.category = terms, syn, body.description, body.category
     e.do_not_translate, e.status = body.do_not_translate, body.status or e.status
     e.version, e.updated_by = e.version + 1, user.username
-    snapshot(db, e, "update", user.username)
+    snapshot(db, e, GlossaryAction.UPDATE, user.username)
     db.commit()
     return e
 
 
 @router.post("/{eid}/status", response_model=GlossaryOut, summary="Approve or reject an entry")
-def set_status(db: DB, user: Reviewer, eid: int, status: str) -> GlossaryEntry:
-    if status not in ("draft", "approved", "rejected"):
-        raise HTTPException(400, "Ungültiger Status")
+def set_status(db: DB, user: Reviewer, eid: int, status: GlossaryStatus) -> GlossaryEntry:
     e = find(db, eid)
     e.status, e.version, e.updated_by = status, e.version + 1, user.username
-    snapshot(db, e, "update", user.username)
+    snapshot(db, e, GlossaryAction.UPDATE, user.username)
     db.commit()
     return e
 
@@ -151,7 +154,7 @@ def set_status(db: DB, user: Reviewer, eid: int, status: str) -> GlossaryEntry:
 def delete_entry(db: DB, user: Admin, eid: int) -> dict[str, bool]:
     e = find(db, eid)
     e.version += 1
-    snapshot(db, e, "delete", user.username)
+    snapshot(db, e, GlossaryAction.DELETE, user.username)
     db.delete(e)
     db.commit()
     return {"ok": True}
@@ -215,10 +218,11 @@ def import_xlsx(
     res = ImportResult(created=0, updated=0, skipped=0, skipped_rows=[])
     for n, row in enumerate(rows[1:], start=2):
         r = {h: str(v).strip() for h, v in zip(header, row, strict=False) if v is not None}
-        terms = {lang: r[lang] for lang in LANGS if r.get(lang)}
+        terms = {lang.value: r[lang] for lang in Lang if r.get(lang)}
         dnt = r.get("nicht_uebersetzen", "").lower() in ("ja", "yes", "true", "1", "x")
         syn = {
-            lang: [s.strip() for s in re.split(r"[;|]", r.get(f"{lang}_synonyme", "")) if s.strip()] for lang in LANGS
+            lang.value: [s.strip() for s in re.split(r"[;|]", r.get(f"{lang}_synonyme", "")) if s.strip()]
+            for lang in Lang
         }
         dups = duplicates(db, terms) if terms else []
         reason = (
@@ -242,19 +246,25 @@ def import_xlsx(
             )
             res.updated += 1
         else:
-            status = r.get("status") if r.get("status") in ("draft", "approved") else "approved"
+            status = (
+                GlossaryStatus(r["status"])
+                if r.get("status") in (GlossaryStatus.DRAFT, GlossaryStatus.APPROVED)
+                else GlossaryStatus.APPROVED
+            )
             e = GlossaryEntry(
                 terms=terms,
                 synonyms=syn,
                 description=r.get("beschreibung", ""),
                 do_not_translate=dnt,
-                category=cat if (cat := r.get("kategorie", "").lower()) in ("technical", "product") else "technical",
-                status=status or "approved",
+                category=EntryCategory(cat)
+                if (cat := r.get("kategorie", "").lower()) in list(EntryCategory)
+                else EntryCategory.TECHNICAL,
+                status=status,
                 updated_by=user.username,
             )
             db.add(e)
             db.flush()
             res.created += 1
-        snapshot(db, e, "update" if dups else "create", user.username)
+        snapshot(db, e, GlossaryAction.UPDATE if dups else GlossaryAction.CREATE, user.username)
     db.commit()
     return res
