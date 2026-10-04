@@ -2,10 +2,11 @@
 
 from sqlalchemy.orm import Session
 
-from .auth import hash_password
-from .config import settings
-from .enums import EntryCategory, GlossaryAction, GlossaryStatus, Role
-from .models import GlossaryEntry, GlossaryVersion, User
+from app.accounts.models import User
+from app.accounts.security import hash_password
+from app.core.config import settings
+from app.core.enums import EntryCategory, GlossaryAction, GlossaryStatus, Role
+from app.glossary.models import GlossaryEntry, GlossaryVersion
 
 USERS = [
     ("admin", "Admin", Role.ADMIN, "admin123"),

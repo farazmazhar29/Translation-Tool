@@ -2,9 +2,10 @@
 
 from typing import Any
 
-from app.models import Project, Segment, Translation
-from app.schemas import QualityWarning, Term
-from app.services.quality import check_project
+from app.glossary.schemas import Term
+from app.projects.models import Project, Segment, Translation
+from app.quality.schemas import QualityWarning
+from app.quality.service import check_project
 
 
 def term(source: str, target: str, category: str = "technical", **over: Any) -> dict[str, Any]:

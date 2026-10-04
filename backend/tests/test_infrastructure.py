@@ -9,11 +9,12 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
-from app.config import settings
-from app.db import Base
-from app.logging_setup import JsonFormatter, RequestIdFilter, request_id_var, setup_logging
+from app.accounts.models import User
+from app.core.config import settings
+from app.core.db import Base
+from app.core.logging_setup import JsonFormatter, RequestIdFilter, request_id_var, setup_logging
+from app.glossary.models import GlossaryEntry
 from app.main import DIST
-from app.models import GlossaryEntry, User
 from app.seed import seed
 
 

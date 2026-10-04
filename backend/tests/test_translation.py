@@ -8,13 +8,14 @@ from conftest import Headers, docx_bytes, upload
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-from app.config import settings
-from app.db import SessionLocal
-from app.enums import JobState, TermCategory
+from app.core.config import settings
+from app.core.db import SessionLocal
+from app.core.enums import JobState, TermCategory
 from app.main import recover_interrupted_jobs
-from app.models import Project, Segment
-from app.services.llm import LLMProvider, LLMResult, LLMSegment, LLMTerm
-from app.services.translation import detect_language, translate_segments
+from app.projects.language import detect_language
+from app.projects.models import Project, Segment
+from app.translation.llm import LLMProvider, LLMResult, LLMSegment, LLMTerm
+from app.translation.pipeline import translate_segments
 
 
 class FixedProvider(LLMProvider):

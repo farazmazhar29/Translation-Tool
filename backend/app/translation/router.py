@@ -1,0 +1,92 @@
+"""Start a translation, edit segments, replace terms."""
+
+import re
+
+from fastapi import APIRouter, BackgroundTasks, HTTPException
+
+from app.accounts.security import Me, Translator
+from app.core.db import DB
+from app.core.enums import JobState, TermCategory
+from app.projects.models import Project, Segment, Translation
+from app.projects.queries import editable, get_project, get_segment
+from app.projects.schemas import JobStatus, ProjectOut, SegmentEdit, SegmentOut
+from app.translation.llm import LLMError, get_provider
+from app.translation.pipeline import run_project_translation, runtime_settings, translate_segments
+from app.translation.schemas import TermReplace, TranslateIn
+
+router = APIRouter(prefix="/api", tags=["Translation"])
+
+
+@router.post("/projects/{pid}/translate", response_model=ProjectOut, summary="Start the PREVIEW translation")
+def start_translation(db: DB, _: Translator, pid: int, bg: BackgroundTasks, body: TranslateIn | None = None) -> Project:
+    """Only creates a preview. The final translation is produced on approval."""
+    p = editable(get_project(db, pid))
+    if p.job_state == JobState.RUNNING:
+        raise HTTPException(409, "Übersetzung läuft bereits.")
+    if body and body.source_lang:
+        p.source_lang = body.source_lang
+    if body and body.target_langs is not None:
+        p.target_langs = list(body.target_langs)
+    if not p.target_langs:
+        raise HTTPException(400, "Bitte mindestens eine Zielsprache wählen.")
+    p.job_state, p.job_progress, p.job_error = JobState.RUNNING, 0, ""
+    db.commit()
+    bg.add_task(run_project_translation, pid)
+    return p
+
+
+@router.get("/projects/{pid}/status", response_model=JobStatus)
+def job_status(db: DB, _: Me, pid: int) -> Project:
+    return get_project(db, pid)
+
+
+@router.put("/segments/{sid}/{lang}", response_model=SegmentOut, summary="Edit translation text or comment")
+def edit_segment(db: DB, user: Translator, sid: int, lang: str, body: SegmentEdit) -> Segment:
+    seg = get_segment(db, sid)
+    tr = seg.translation(lang)
+    if tr is None:
+        tr = Translation.empty(lang)
+        seg.translations.append(tr)
+    if body.text is not None and body.text != tr.text:
+        tr.text, tr.edited, tr.edited_by = body.text, body.text != tr.original_text, user.username
+        tr.terms = [
+            {**t, "ok": t["target"].lower() in body.text.lower()}
+            if t["category"] in (TermCategory.GLOSSARY, TermCategory.PROTECTED)
+            else t
+            for t in tr.terms
+        ]  # re-verify glossary compliance after a manual edit
+    if body.comment is not None:
+        tr.comment = body.comment
+    db.commit()
+    return seg
+
+
+@router.post("/segments/{sid}/{lang}/retranslate", response_model=SegmentOut, summary="Regenerate one segment")
+def retranslate(db: DB, _: Translator, sid: int, lang: str) -> Segment:
+    seg = get_segment(db, sid)
+    try:
+        rt = runtime_settings(db)
+        translate_segments(
+            db, [seg], seg.project.source, lang, get_provider(rt.get("llm_provider"), rt.get("llm_model"))
+        )
+    except LLMError as e:
+        raise HTTPException(502, str(e)) from None
+    return seg
+
+
+@router.post("/projects/{pid}/replace-term", summary="Replace a translated term in the whole project")
+def replace_term(db: DB, user: Translator, pid: int, body: TermReplace) -> dict[str, int]:
+    p = editable(get_project(db, pid))
+    pat = re.compile(rf"(?<!\w){re.escape(body.old)}(?!\w)", re.I)
+    changed = 0
+    for seg in p.segments:
+        tr = seg.translation(body.lang)
+        if tr and pat.search(tr.text):
+            tr.text, tr.edited, tr.edited_by = pat.sub(body.new, tr.text), True, user.username
+            tr.terms = [
+                {**t, "target": body.new, "ok": True} if t["target"].lower() == body.old.lower() else t
+                for t in tr.terms
+            ]
+            changed += 1
+    db.commit()
+    return {"replaced_in_segments": changed}

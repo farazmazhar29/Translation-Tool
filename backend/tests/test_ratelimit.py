@@ -1,7 +1,7 @@
 import pytest
 
-from app.services import ratelimit
-from app.services.ratelimit import FailureLimiter, RateLimited
+from app.core import ratelimit
+from app.core.ratelimit import FailureLimiter, RateLimited
 
 
 class Clock:

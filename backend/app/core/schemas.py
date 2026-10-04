@@ -1,0 +1,7 @@
+"""Base class of response models that are built from ORM objects."""
+
+from pydantic import BaseModel, ConfigDict
+
+
+class ORM(BaseModel):
+    model_config = ConfigDict(from_attributes=True)

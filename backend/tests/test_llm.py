@@ -4,9 +4,9 @@ from typing import Any
 import httpx
 import pytest
 
-from app.config import settings
-from app.services import llm
-from app.services.llm import Gemini, Hint, LLMError, LLMResult, LLMSegment, Mock, get_provider
+from app.core.config import settings
+from app.translation import llm
+from app.translation.llm import Gemini, Hint, LLMError, LLMResult, LLMSegment, Mock, get_provider
 
 SEGMENTS = [
     LLMSegment(id=1, text="Der Korpus ist weiß.", glossary=[Hint(source="Korpus", target="carcass", dnt=False)])

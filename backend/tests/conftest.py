@@ -24,8 +24,8 @@ import pytest  # noqa: E402
 from docx import Document  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
+from app.accounts.router import login_limiter  # noqa: E402
 from app.main import app  # noqa: E402
-from app.routers.admin import login_limiter  # noqa: E402
 
 Headers = dict[str, str]
 

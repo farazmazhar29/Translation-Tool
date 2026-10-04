@@ -10,9 +10,10 @@ import pytest
 from conftest import Headers, docx_bytes, upload
 from fastapi.testclient import TestClient
 
-from app.config import settings
-from app.db import SessionLocal
-from app.models import ExportFile, Project
+from app.core.config import settings
+from app.core.db import SessionLocal
+from app.export.models import ExportFile
+from app.projects.models import Project
 
 
 def token() -> str:

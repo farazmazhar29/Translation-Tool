@@ -5,8 +5,8 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.exc import OperationalError
 
-from app.config import DEV_SECRET, Settings, settings
-from app.db import get_db
+from app.core.config import DEV_SECRET, Settings, settings
+from app.core.db import get_db
 from app.main import app
 
 

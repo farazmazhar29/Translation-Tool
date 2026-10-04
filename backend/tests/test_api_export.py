@@ -13,9 +13,9 @@ from fastapi.testclient import TestClient
 from openpyxl import load_workbook
 from openpyxl.worksheet.worksheet import Worksheet
 
-from app.config import settings
-from app.db import SessionLocal
-from app.models import ExportFile
+from app.core.config import settings
+from app.core.db import SessionLocal
+from app.export.models import ExportFile
 
 FORMATS = ("docx", "xlsx", "pdf")
 

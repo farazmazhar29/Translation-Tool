@@ -9,11 +9,11 @@ from fastapi.testclient import TestClient
 from openpyxl import Workbook, load_workbook
 from reportlab.pdfgen import canvas
 
-from app.config import settings
-from app.db import SessionLocal
-from app.enums import FileFormat
-from app.models import Project
-from app.services import parsing
+from app.core.config import settings
+from app.core.db import SessionLocal
+from app.core.enums import FileFormat
+from app.projects import parsing
+from app.projects.models import Project
 
 PDF_LINES = ["Assembly guide base unit", "The carcass is made of coated chipboard."]
 

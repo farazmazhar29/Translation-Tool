@@ -6,11 +6,11 @@ import pytest
 from conftest import Headers, login
 from fastapi.testclient import TestClient
 
-from app import auth
-from app.config import settings
-from app.db import SessionLocal
-from app.models import User
-from app.routers.admin import login_limiter
+from app.accounts import security as auth
+from app.accounts.models import User
+from app.accounts.router import login_limiter
+from app.core.config import settings
+from app.core.db import SessionLocal
 
 
 def legacy_hash(password: str) -> str:

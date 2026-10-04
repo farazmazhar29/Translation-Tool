@@ -10,15 +10,23 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text, update
 from sqlalchemy.exc import SQLAlchemyError
 
-from . import middleware
-from .config import settings
-from .db import DB, SessionLocal
-from .enums import JobState
-from .logging_setup import setup_logging
-from .migrate import upgrade_to_head
-from .models import Project
-from .routers import admin, glossary, projects, workflow
-from .seed import seed
+from app.accounts import router as accounts
+from app.core import middleware
+from app.core.config import settings
+from app.core.db import DB, SessionLocal
+from app.core.enums import JobState
+from app.core.logging_setup import setup_logging
+from app.core.migrate import upgrade_to_head
+from app.dashboard import router as dashboard
+from app.export import router as export
+from app.glossary import router as glossary
+from app.preferences import router as preferences
+from app.projects import router as projects
+from app.projects.models import Project
+from app.quality import router as quality
+from app.review import router as review
+from app.seed import seed
+from app.translation import router as translation
 
 log = logging.getLogger(__name__)
 
@@ -75,7 +83,17 @@ app.add_middleware(
     expose_headers=["X-Request-ID"],
 )
 middleware.install(app)
-for r in (admin.router, projects.router, workflow.router, glossary.router):
+for r in (
+    accounts.router,
+    preferences.router,
+    dashboard.router,
+    glossary.router,
+    projects.router,
+    translation.router,
+    quality.router,
+    review.router,
+    export.router,
+):
     app.include_router(r)
 
 

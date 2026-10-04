@@ -7,9 +7,9 @@ import pytest
 from alembic import command
 from sqlalchemy import Engine, create_engine, inspect, text
 
-from app import migrate
-from app.config import settings
-from app.db import Base
+from app.core import migrate
+from app.core.config import settings
+from app.core.db import Base
 
 EXPECTED_TABLES = {
     "users", "projects", "segments", "translations", "glossary_entries", "glossary_versions",

@@ -3,9 +3,9 @@
 from alembic import context
 from sqlalchemy import create_engine
 
-from app import models  # noqa: F401  (registers every table on Base.metadata)
-from app.config import settings
-from app.db import Base
+from app import registry  # noqa: F401  (registers every table on Base.metadata)
+from app.core.config import settings
+from app.core.db import Base
 
 target_metadata = Base.metadata
 
