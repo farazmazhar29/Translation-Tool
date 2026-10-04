@@ -69,7 +69,7 @@ Everything is configured through environment variables or a `.env` file (see [`.
 5. The quality check adds: untranslated text, number mismatches, line-break/length problems, contradicting translations
    of the same term, and frequent technical terms that are missing from the glossary.
 
-The LLM sits behind a small provider interface ([`services/llm.py`](backend/app/services/llm.py)); Gemini and an offline
+The LLM sits behind a small provider interface ([`translation/llm.py`](backend/app/translation/llm.py)); Gemini and an offline
 mock are included, switchable in *Einstellungen*. DeepL, Azure OpenAI (EU) or a local Ollama model plug in the same way.
 
 ## Architecture

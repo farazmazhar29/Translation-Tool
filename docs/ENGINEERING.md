@@ -23,7 +23,7 @@
 | Library | Used for | Why this one | Rejected alternative |
 |---|---|---|---|
 | **FastAPI 0.142** (Starlette 1.7) | REST API | Typed request/response models, automatic **Swagger/OpenAPI** docs, async-ready, the standard for Python AI services. Upgraded from 0.115 because Starlette 0.41 had 14 known advisories (D-26) | Flask (no typing/docs built in), Django (heavier than needed) |
-| **Pydantic v2** | Validation, API contract (`schemas.py`) | One typed source of truth for input validation, output shape and the docs | Hand-written dicts |
+| **Pydantic v2** | Validation, API contract (`<feature>/schemas.py`) | One typed source of truth for input validation, output shape and the docs | Hand-written dicts |
 | **SQLAlchemy 2** | ORM | Fully typed `Mapped[...]` models, works with SQLite (dev) and PostgreSQL (prod) | Raw SQL, SQLModel (less mature typing) |
 | **PostgreSQL** (Docker) / **SQLite** (dev) | Persistence | Same code, zero-setup development, real DB in production | MongoDB (data is relational) |
 | **python-docx, openpyxl, PyMuPDF** | Read/write Word, Excel, PDF | Edit files *in place* so formatting and formulas survive | Converting everything to text |
@@ -80,7 +80,7 @@
 * Strict Pyright (`typeCheckingMode: strict`) with **0 errors**, tests included; no `Any` leaking from untyped libraries (local stub for PyMuPDF).
 * **Ruff with a broad rule set**, not just style: bandit security rules (`S`), bugbear, simplify/comprehensions/performance, naming, unused arguments, no `print`, no commented-out code, timezone-aware datetimes, logging usage, pytest style, **FastAPI-specific rules** and pylint errors/warnings. Line length 120.
 * Production code never relies on `assert` (it is stripped with `python -O`); optional values are handled explicitly.
-* Routes are thin; logic lives in `services/`. Every endpoint has a typed return, a summary for Swagger, and is covered by a test.
+* Routes are thin; logic lives in the `service`/`pipeline` modules of the feature. Every endpoint has a typed return, a summary for Swagger, and is covered by a test.
 * Permissions are enforced server-side with dependency aliases (`Translator`, `Reviewer`, `Admin`); every endpoint is tested for the 401/403 case.
 * **Never trust input:** every request body has a Pydantic model with constraints (lengths, enums, patterns); uploads are size-limited, signature-checked and stored under random names; user-supplied file names are reduced to a base name and sanitised.
 * Errors the user can fix are German messages with a precise status code (400/409/413/422/429); anything unexpected is a logged 500 with a request id and **no internals** in the response.
@@ -151,7 +151,7 @@ Format: **decision → why → alternatives → consequence**.
 **D-06 · Preview ≠ final (2026-09-30).** Translation creates a preview; approval stores an immutable **Release** (history); export requires approval.
 *Why:* directly from the spec ("Erst nach Klick auf Freigabe …") and gives an audit trail (who, when, glossary version, number of changes).
 
-**D-07 · Pydantic schemas as the API contract (2026-09-30).** `schemas.py` drives validation, responses and Swagger.
+**D-07 · Pydantic schemas as the API contract (2026-09-30).** The `schemas.py` of each feature drives validation, responses and Swagger.
 *Why:* far less code than hand-written serialisation and no drift between code and docs.
 
 **D-08 · Frontend types generated from Swagger (2026-09-30).** `export_openapi.py` → `openapi-typescript`.
@@ -252,6 +252,8 @@ Format: **decision → why → alternatives → consequence**.
 
 **D-38 - Backend: one place for every fixed set of values (2026-10-04).** About 130 string literals (`"approved"`, `"translator"`, `"preview_ready"`, `"technical"` ...) were spread over 14 files, with the allowed values only written in comments (`# new | preview_ready | ...`) and the same list repeated in several `Literal[...]` types (the role list twice, the languages three times, with a comment "keep in sync"). They are now `StrEnum`s in `app/enums.py`: `Role` (with a `rank`, replacing a separate dict), `ProjectStatus`, `JobState`, `Lang`, `GlossaryStatus`, `EntryCategory`, `GlossaryAction`, `TermCategory`, `Severity`, `FileFormat` (uploads and exports), `ExportMode`, `ArchiveFilter`, `Provider`, plus the sets `EDITABLE_STATUSES` and `FINISHED_STATUSES`. Why `StrEnum` and not plain constants: members *are* strings (compare equal, serialise to the same JSON), Pydantic validates against them, Swagger shows them as `enum`, and Pyright now rejects a typo or a wrong value. **Database:** a small `Choice` column type (`db.py`) stores the enum as its value in the same plain `VARCHAR`, so the schema and the Alembic migrations are unchanged (the migration tests still pass); values outside the enum are rejected on write and on read. **API:** the contract is stricter and better documented (`status`, `role`, `category`, `format`, `mode` are enums in the OpenAPI schema); the frontend types were regenerated and several casts there became unnecessary. *One visible change:* an invalid glossary status in `POST /api/glossary/{id}/status` is now rejected by request validation (422) instead of by hand-written code (400). *Kept as text on purpose:* language columns (they also hold `auto` and the empty "not detected"), the JSON settings, and the LLM provider stored in the settings page. Verified: Ruff, Pyright strict (0 errors), 287 tests at 99 % coverage, 109 frontend unit tests, 10 Playwright tests.
 
+**D-39 - Backend: structure by feature (2026-10-04).** The backend was layered by file type (`routers/`, `services/`, one `models.py`, one `schemas.py` of 313 lines), so a change to e.g. the glossary touched five folders, and `workflow.py` mixed translation, editing, quality, approval, export, history and templates in one 276-line router. It is now grouped by feature, like the frontend: `core/` (configuration, database, enums, logging, middleware, migrations, rate limiter: no domain code), `accounts/` (users, login, tokens, roles), `projects/` (projects, segments, upload parsing, language detection), `glossary/`, `translation/` (LLM providers, the translation pipeline), `quality/`, `review/` (approve, reject, reopen, releases, history), `export/` (Word/Excel/PDF, templates), `preferences/` (settings page), `dashboard/`. Each feature owns its `models.py`, `schemas.py`, `router.py` and, where it has logic, `service.py`; shared lookups are in `projects/queries.py`. Imports are absolute (`from app.glossary.service import ...`). `app/registry.py` imports every model so Alembic and tooling see all tables. `core` imports nothing from the features; every feature may use `core` and `accounts` (login and roles). Between features the dependencies are: `glossary` <- `projects` <- `translation`/`quality` <- `review`/`export`/`dashboard`; the exceptions are that deleting a project also deletes its releases and export files (`projects` uses their models) and that `review` and `export` use each other's models (history lists exports, exports record the latest release). There are no import cycles between *modules* (checked with a script over the import graph). **Unchanged:** the HTTP API (same 38 paths and the same schemas, verified by comparing the generated OpenAPI documents; only the Swagger tags and the order of the paths differ), the database schema and the 287 tests (only their imports changed). Tests stay together in `backend/tests/` (they are API-level and span features), separate from the application code. *Honest limit:* the packages are not strictly layered (see the exceptions above); a tool like import-linter could enforce the direction if the project grows.
+
 ## 6. Problems found and how they were fixed
 
 | Problem | Cause | Fix |
@@ -330,6 +332,7 @@ TanStack Query lint, Knip, `prettier --check` + `npm audit` in CI, Husky + lint-
 * **2026-10-03** - Frontend: full test run (109 unit + 10 end-to-end tests green), language end-to-end test, unused-translation-key test, lazy-loaded pages, coverage guard raised (D-36).
 * **2026-10-03** - Frontend: component state reviewed and four places simplified (D-37).
 * **2026-10-04** - Backend: fixed value sets as `StrEnum`s in one module, stored through a `Choice` column type without a schema change (D-38).
+* **2026-10-04** - Backend regrouped by feature, same API and database schema (D-39).
 
 ## 9. Sources (research, 2026-10-01 and 2026-10-03)
 
