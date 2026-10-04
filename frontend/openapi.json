@@ -9,7 +9,6 @@
   "/api/auth/login": {
    "post": {
     "tags": [
-     "Admin",
      "Auth"
     ],
     "summary": "Log in (rate limited per IP and username)",
@@ -51,7 +50,6 @@
   "/api/auth/me": {
    "get": {
     "tags": [
-     "Admin",
      "Auth"
     ],
     "summary": "Me",
@@ -78,7 +76,6 @@
   "/api/users": {
    "get": {
     "tags": [
-     "Admin",
      "Users"
     ],
     "summary": "List Users",
@@ -107,7 +104,6 @@
    },
    "post": {
     "tags": [
-     "Admin",
      "Users"
     ],
     "summary": "Create User",
@@ -154,7 +150,6 @@
   "/api/users/names": {
    "get": {
     "tags": [
-     "Admin",
      "Users"
     ],
     "summary": "Usernames (for the editor filter)",
@@ -185,7 +180,6 @@
   "/api/users/{uid}": {
    "put": {
     "tags": [
-     "Admin",
      "Users"
     ],
     "summary": "Update User",
@@ -243,7 +237,6 @@
   "/api/settings": {
    "get": {
     "tags": [
-     "Admin",
      "Settings"
     ],
     "summary": "Get Settings",
@@ -268,7 +261,6 @@
    },
    "put": {
     "tags": [
-     "Admin",
      "Settings"
     ],
     "summary": "Put Settings",
@@ -317,7 +309,6 @@
   "/api/dashboard": {
    "get": {
     "tags": [
-     "Admin",
      "Dashboard"
     ],
     "summary": "Dashboard",
@@ -339,6 +330,466 @@
       "OAuth2PasswordBearer": []
      }
     ]
+   }
+  },
+  "/api/glossary": {
+   "get": {
+    "tags": [
+     "Glossary"
+    ],
+    "summary": "List Entries",
+    "operationId": "list_entries_api_glossary_get",
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "q",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "default": "",
+       "title": "Q"
+      }
+     },
+     {
+      "name": "status",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "$ref": "#/components/schemas/GlossaryStatus"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Status"
+      }
+     },
+     {
+      "name": "category",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "$ref": "#/components/schemas/EntryCategory"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Category"
+      }
+     },
+     {
+      "name": "limit",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "maximum": 5000,
+       "minimum": 1,
+       "default": 2000,
+       "title": "Limit"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "$ref": "#/components/schemas/GlossaryOut"
+         },
+         "title": "Response List Entries Api Glossary Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "post": {
+    "tags": [
+     "Glossary"
+    ],
+    "summary": "Create an entry (translators create drafts)",
+    "operationId": "create_entry_api_glossary_post",
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/GlossaryIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/GlossaryOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/glossary/{eid}": {
+   "put": {
+    "tags": [
+     "Glossary"
+    ],
+    "summary": "Update Entry",
+    "operationId": "update_entry_api_glossary__eid__put",
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "eid",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "integer",
+       "title": "Eid"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/GlossaryIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/GlossaryOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "delete": {
+    "tags": [
+     "Glossary"
+    ],
+    "summary": "Delete Entry",
+    "operationId": "delete_entry_api_glossary__eid__delete",
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "eid",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "integer",
+       "title": "Eid"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": {
+          "type": "boolean"
+         },
+         "title": "Response Delete Entry Api Glossary  Eid  Delete"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/glossary/{eid}/status": {
+   "post": {
+    "tags": [
+     "Glossary"
+    ],
+    "summary": "Approve or reject an entry",
+    "operationId": "set_status_api_glossary__eid__status_post",
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "eid",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "integer",
+       "title": "Eid"
+      }
+     },
+     {
+      "name": "status",
+      "in": "query",
+      "required": true,
+      "schema": {
+       "$ref": "#/components/schemas/GlossaryStatus"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/GlossaryOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/glossary/{eid}/versions": {
+   "get": {
+    "tags": [
+     "Glossary"
+    ],
+    "summary": "Version history of an entry",
+    "operationId": "versions_api_glossary__eid__versions_get",
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "eid",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "integer",
+       "title": "Eid"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "$ref": "#/components/schemas/GlossaryVersionOut"
+         },
+         "title": "Response Versions Api Glossary  Eid  Versions Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/glossary/duplicates/scan": {
+   "get": {
+    "tags": [
+     "Glossary"
+    ],
+    "summary": "Find duplicate terms",
+    "operationId": "scan_duplicates_api_glossary_duplicates_scan_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/DuplicateGroup"
+         },
+         "type": "array",
+         "title": "Response Scan Duplicates Api Glossary Duplicates Scan Get"
+        }
+       }
+      }
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ]
+   }
+  },
+  "/api/glossary/export/xlsx": {
+   "get": {
+    "tags": [
+     "Glossary"
+    ],
+    "summary": "Export the glossary to Excel",
+    "operationId": "export_xlsx_api_glossary_export_xlsx_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response"
+     }
+    },
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ]
+   }
+  },
+  "/api/glossary/import/xlsx": {
+   "post": {
+    "tags": [
+     "Glossary"
+    ],
+    "summary": "Import glossary entries from Excel",
+    "description": "Columns: de, en, de_synonyme, en_synonyme, beschreibung, nicht_uebersetzen, kategorie, status.",
+    "operationId": "import_xlsx_api_glossary_import_xlsx_post",
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "update_existing",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "boolean",
+       "default": false,
+       "title": "Update Existing"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "multipart/form-data": {
+       "schema": {
+        "$ref": "#/components/schemas/Body_import_xlsx_api_glossary_import_xlsx_post"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ImportResult"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
    }
   },
   "/api/projects": {
@@ -894,7 +1345,7 @@
   "/api/projects/{pid}/translate": {
    "post": {
     "tags": [
-     "Workflow"
+     "Translation"
     ],
     "summary": "Start the PREVIEW translation",
     "description": "Only creates a preview. The final translation is produced on approval.",
@@ -959,7 +1410,7 @@
   "/api/projects/{pid}/status": {
    "get": {
     "tags": [
-     "Workflow"
+     "Translation"
     ],
     "summary": "Job Status",
     "operationId": "job_status_api_projects__pid__status_get",
@@ -1006,7 +1457,7 @@
   "/api/segments/{sid}/{lang}": {
    "put": {
     "tags": [
-     "Workflow"
+     "Translation"
     ],
     "summary": "Edit translation text or comment",
     "operationId": "edit_segment_api_segments__sid___lang__put",
@@ -1072,7 +1523,7 @@
   "/api/segments/{sid}/{lang}/retranslate": {
    "post": {
     "tags": [
-     "Workflow"
+     "Translation"
     ],
     "summary": "Regenerate one segment",
     "operationId": "retranslate_api_segments__sid___lang__retranslate_post",
@@ -1128,7 +1579,7 @@
   "/api/projects/{pid}/replace-term": {
    "post": {
     "tags": [
-     "Workflow"
+     "Translation"
     ],
     "summary": "Replace a translated term in the whole project",
     "operationId": "replace_term_api_projects__pid__replace_term_post",
@@ -1189,7 +1640,7 @@
   "/api/projects/{pid}/quality": {
    "get": {
     "tags": [
-     "Workflow"
+     "Quality"
     ],
     "summary": "Quality Check",
     "operationId": "quality_check_api_projects__pid__quality_get",
@@ -1252,7 +1703,7 @@
   "/api/projects/{pid}/submit-review": {
    "post": {
     "tags": [
-     "Workflow"
+     "Review"
     ],
     "summary": "Send to a reviewer",
     "operationId": "submit_review_api_projects__pid__submit_review_post",
@@ -1299,7 +1750,7 @@
   "/api/projects/{pid}/reject": {
    "post": {
     "tags": [
-     "Workflow"
+     "Review"
     ],
     "summary": "Send back to the translator",
     "operationId": "reject_api_projects__pid__reject_post",
@@ -1346,7 +1797,7 @@
   "/api/projects/{pid}/approve": {
    "post": {
     "tags": [
-     "Workflow"
+     "Review"
     ],
     "summary": "'\u00dcbersetzung freigeben'",
     "description": "Stores the final translation as a release (history). Export is only possible afterwards.",
@@ -1394,7 +1845,7 @@
   "/api/projects/{pid}/reopen": {
    "post": {
     "tags": [
-     "Workflow"
+     "Review"
     ],
     "summary": "Reopen a finished project",
     "operationId": "reopen_api_projects__pid__reopen_post",
@@ -1438,10 +1889,104 @@
     }
    }
   },
+  "/api/releases/{rid}": {
+   "get": {
+    "tags": [
+     "Review"
+    ],
+    "summary": "Preview and final text of one approved version",
+    "operationId": "release_detail_api_releases__rid__get",
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "rid",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "integer",
+       "title": "Rid"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ReleaseDetail"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/projects/{pid}/history": {
+   "get": {
+    "tags": [
+     "Review"
+    ],
+    "summary": "Releases and exports of a project",
+    "operationId": "history_api_projects__pid__history_get",
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "pid",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "integer",
+       "title": "Pid"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HistoryOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
   "/api/projects/{pid}/export": {
    "post": {
     "tags": [
-     "Workflow"
+     "Export"
     ],
     "summary": "Export an approved translation",
     "operationId": "export_project_api_projects__pid__export_post",
@@ -1498,7 +2043,7 @@
   "/api/exports/{eid}/download": {
    "get": {
     "tags": [
-     "Workflow"
+     "Export"
     ],
     "summary": "Download Export",
     "operationId": "download_export_api_exports__eid__download_get",
@@ -1535,104 +2080,10 @@
     }
    }
   },
-  "/api/releases/{rid}": {
-   "get": {
-    "tags": [
-     "Workflow"
-    ],
-    "summary": "Preview and final text of one approved version",
-    "operationId": "release_detail_api_releases__rid__get",
-    "security": [
-     {
-      "OAuth2PasswordBearer": []
-     }
-    ],
-    "parameters": [
-     {
-      "name": "rid",
-      "in": "path",
-      "required": true,
-      "schema": {
-       "type": "integer",
-       "title": "Rid"
-      }
-     }
-    ],
-    "responses": {
-     "200": {
-      "description": "Successful Response",
-      "content": {
-       "application/json": {
-        "schema": {
-         "$ref": "#/components/schemas/ReleaseDetail"
-        }
-       }
-      }
-     },
-     "422": {
-      "description": "Validation Error",
-      "content": {
-       "application/json": {
-        "schema": {
-         "$ref": "#/components/schemas/HTTPValidationError"
-        }
-       }
-      }
-     }
-    }
-   }
-  },
-  "/api/projects/{pid}/history": {
-   "get": {
-    "tags": [
-     "Workflow"
-    ],
-    "summary": "Releases and exports of a project",
-    "operationId": "history_api_projects__pid__history_get",
-    "security": [
-     {
-      "OAuth2PasswordBearer": []
-     }
-    ],
-    "parameters": [
-     {
-      "name": "pid",
-      "in": "path",
-      "required": true,
-      "schema": {
-       "type": "integer",
-       "title": "Pid"
-      }
-     }
-    ],
-    "responses": {
-     "200": {
-      "description": "Successful Response",
-      "content": {
-       "application/json": {
-        "schema": {
-         "$ref": "#/components/schemas/HistoryOut"
-        }
-       }
-      }
-     },
-     "422": {
-      "description": "Validation Error",
-      "content": {
-       "application/json": {
-        "schema": {
-         "$ref": "#/components/schemas/HTTPValidationError"
-        }
-       }
-      }
-     }
-    }
-   }
-  },
   "/api/export-templates": {
    "get": {
     "tags": [
-     "Workflow",
+     "Export",
      "Export templates"
     ],
     "summary": "List Templates",
@@ -1661,7 +2112,7 @@
    },
    "post": {
     "tags": [
-     "Workflow",
+     "Export",
      "Export templates"
     ],
     "summary": "Create Template",
@@ -1708,7 +2159,7 @@
   "/api/export-templates/{tid}": {
    "delete": {
     "tags": [
-     "Workflow",
+     "Export",
      "Export templates"
     ],
     "summary": "Delete Template",
@@ -1740,466 +2191,6 @@
           "type": "boolean"
          },
          "title": "Response Delete Template Api Export Templates  Tid  Delete"
-        }
-       }
-      }
-     },
-     "422": {
-      "description": "Validation Error",
-      "content": {
-       "application/json": {
-        "schema": {
-         "$ref": "#/components/schemas/HTTPValidationError"
-        }
-       }
-      }
-     }
-    }
-   }
-  },
-  "/api/glossary": {
-   "get": {
-    "tags": [
-     "Glossary"
-    ],
-    "summary": "List Entries",
-    "operationId": "list_entries_api_glossary_get",
-    "security": [
-     {
-      "OAuth2PasswordBearer": []
-     }
-    ],
-    "parameters": [
-     {
-      "name": "q",
-      "in": "query",
-      "required": false,
-      "schema": {
-       "type": "string",
-       "default": "",
-       "title": "Q"
-      }
-     },
-     {
-      "name": "status",
-      "in": "query",
-      "required": false,
-      "schema": {
-       "anyOf": [
-        {
-         "$ref": "#/components/schemas/GlossaryStatus"
-        },
-        {
-         "type": "null"
-        }
-       ],
-       "title": "Status"
-      }
-     },
-     {
-      "name": "category",
-      "in": "query",
-      "required": false,
-      "schema": {
-       "anyOf": [
-        {
-         "$ref": "#/components/schemas/EntryCategory"
-        },
-        {
-         "type": "null"
-        }
-       ],
-       "title": "Category"
-      }
-     },
-     {
-      "name": "limit",
-      "in": "query",
-      "required": false,
-      "schema": {
-       "type": "integer",
-       "maximum": 5000,
-       "minimum": 1,
-       "default": 2000,
-       "title": "Limit"
-      }
-     }
-    ],
-    "responses": {
-     "200": {
-      "description": "Successful Response",
-      "content": {
-       "application/json": {
-        "schema": {
-         "type": "array",
-         "items": {
-          "$ref": "#/components/schemas/GlossaryOut"
-         },
-         "title": "Response List Entries Api Glossary Get"
-        }
-       }
-      }
-     },
-     "422": {
-      "description": "Validation Error",
-      "content": {
-       "application/json": {
-        "schema": {
-         "$ref": "#/components/schemas/HTTPValidationError"
-        }
-       }
-      }
-     }
-    }
-   },
-   "post": {
-    "tags": [
-     "Glossary"
-    ],
-    "summary": "Create an entry (translators create drafts)",
-    "operationId": "create_entry_api_glossary_post",
-    "security": [
-     {
-      "OAuth2PasswordBearer": []
-     }
-    ],
-    "requestBody": {
-     "required": true,
-     "content": {
-      "application/json": {
-       "schema": {
-        "$ref": "#/components/schemas/GlossaryIn"
-       }
-      }
-     }
-    },
-    "responses": {
-     "200": {
-      "description": "Successful Response",
-      "content": {
-       "application/json": {
-        "schema": {
-         "$ref": "#/components/schemas/GlossaryOut"
-        }
-       }
-      }
-     },
-     "422": {
-      "description": "Validation Error",
-      "content": {
-       "application/json": {
-        "schema": {
-         "$ref": "#/components/schemas/HTTPValidationError"
-        }
-       }
-      }
-     }
-    }
-   }
-  },
-  "/api/glossary/{eid}": {
-   "put": {
-    "tags": [
-     "Glossary"
-    ],
-    "summary": "Update Entry",
-    "operationId": "update_entry_api_glossary__eid__put",
-    "security": [
-     {
-      "OAuth2PasswordBearer": []
-     }
-    ],
-    "parameters": [
-     {
-      "name": "eid",
-      "in": "path",
-      "required": true,
-      "schema": {
-       "type": "integer",
-       "title": "Eid"
-      }
-     }
-    ],
-    "requestBody": {
-     "required": true,
-     "content": {
-      "application/json": {
-       "schema": {
-        "$ref": "#/components/schemas/GlossaryIn"
-       }
-      }
-     }
-    },
-    "responses": {
-     "200": {
-      "description": "Successful Response",
-      "content": {
-       "application/json": {
-        "schema": {
-         "$ref": "#/components/schemas/GlossaryOut"
-        }
-       }
-      }
-     },
-     "422": {
-      "description": "Validation Error",
-      "content": {
-       "application/json": {
-        "schema": {
-         "$ref": "#/components/schemas/HTTPValidationError"
-        }
-       }
-      }
-     }
-    }
-   },
-   "delete": {
-    "tags": [
-     "Glossary"
-    ],
-    "summary": "Delete Entry",
-    "operationId": "delete_entry_api_glossary__eid__delete",
-    "security": [
-     {
-      "OAuth2PasswordBearer": []
-     }
-    ],
-    "parameters": [
-     {
-      "name": "eid",
-      "in": "path",
-      "required": true,
-      "schema": {
-       "type": "integer",
-       "title": "Eid"
-      }
-     }
-    ],
-    "responses": {
-     "200": {
-      "description": "Successful Response",
-      "content": {
-       "application/json": {
-        "schema": {
-         "type": "object",
-         "additionalProperties": {
-          "type": "boolean"
-         },
-         "title": "Response Delete Entry Api Glossary  Eid  Delete"
-        }
-       }
-      }
-     },
-     "422": {
-      "description": "Validation Error",
-      "content": {
-       "application/json": {
-        "schema": {
-         "$ref": "#/components/schemas/HTTPValidationError"
-        }
-       }
-      }
-     }
-    }
-   }
-  },
-  "/api/glossary/{eid}/status": {
-   "post": {
-    "tags": [
-     "Glossary"
-    ],
-    "summary": "Approve or reject an entry",
-    "operationId": "set_status_api_glossary__eid__status_post",
-    "security": [
-     {
-      "OAuth2PasswordBearer": []
-     }
-    ],
-    "parameters": [
-     {
-      "name": "eid",
-      "in": "path",
-      "required": true,
-      "schema": {
-       "type": "integer",
-       "title": "Eid"
-      }
-     },
-     {
-      "name": "status",
-      "in": "query",
-      "required": true,
-      "schema": {
-       "$ref": "#/components/schemas/GlossaryStatus"
-      }
-     }
-    ],
-    "responses": {
-     "200": {
-      "description": "Successful Response",
-      "content": {
-       "application/json": {
-        "schema": {
-         "$ref": "#/components/schemas/GlossaryOut"
-        }
-       }
-      }
-     },
-     "422": {
-      "description": "Validation Error",
-      "content": {
-       "application/json": {
-        "schema": {
-         "$ref": "#/components/schemas/HTTPValidationError"
-        }
-       }
-      }
-     }
-    }
-   }
-  },
-  "/api/glossary/{eid}/versions": {
-   "get": {
-    "tags": [
-     "Glossary"
-    ],
-    "summary": "Version history of an entry",
-    "operationId": "versions_api_glossary__eid__versions_get",
-    "security": [
-     {
-      "OAuth2PasswordBearer": []
-     }
-    ],
-    "parameters": [
-     {
-      "name": "eid",
-      "in": "path",
-      "required": true,
-      "schema": {
-       "type": "integer",
-       "title": "Eid"
-      }
-     }
-    ],
-    "responses": {
-     "200": {
-      "description": "Successful Response",
-      "content": {
-       "application/json": {
-        "schema": {
-         "type": "array",
-         "items": {
-          "$ref": "#/components/schemas/GlossaryVersionOut"
-         },
-         "title": "Response Versions Api Glossary  Eid  Versions Get"
-        }
-       }
-      }
-     },
-     "422": {
-      "description": "Validation Error",
-      "content": {
-       "application/json": {
-        "schema": {
-         "$ref": "#/components/schemas/HTTPValidationError"
-        }
-       }
-      }
-     }
-    }
-   }
-  },
-  "/api/glossary/duplicates/scan": {
-   "get": {
-    "tags": [
-     "Glossary"
-    ],
-    "summary": "Find duplicate terms",
-    "operationId": "scan_duplicates_api_glossary_duplicates_scan_get",
-    "responses": {
-     "200": {
-      "description": "Successful Response",
-      "content": {
-       "application/json": {
-        "schema": {
-         "items": {
-          "$ref": "#/components/schemas/DuplicateGroup"
-         },
-         "type": "array",
-         "title": "Response Scan Duplicates Api Glossary Duplicates Scan Get"
-        }
-       }
-      }
-     }
-    },
-    "security": [
-     {
-      "OAuth2PasswordBearer": []
-     }
-    ]
-   }
-  },
-  "/api/glossary/export/xlsx": {
-   "get": {
-    "tags": [
-     "Glossary"
-    ],
-    "summary": "Export the glossary to Excel",
-    "operationId": "export_xlsx_api_glossary_export_xlsx_get",
-    "responses": {
-     "200": {
-      "description": "Successful Response"
-     }
-    },
-    "security": [
-     {
-      "OAuth2PasswordBearer": []
-     }
-    ]
-   }
-  },
-  "/api/glossary/import/xlsx": {
-   "post": {
-    "tags": [
-     "Glossary"
-    ],
-    "summary": "Import glossary entries from Excel",
-    "description": "Columns: de, en, de_synonyme, en_synonyme, beschreibung, nicht_uebersetzen, kategorie, status.",
-    "operationId": "import_xlsx_api_glossary_import_xlsx_post",
-    "security": [
-     {
-      "OAuth2PasswordBearer": []
-     }
-    ],
-    "parameters": [
-     {
-      "name": "update_existing",
-      "in": "query",
-      "required": false,
-      "schema": {
-       "type": "boolean",
-       "default": false,
-       "title": "Update Existing"
-      }
-     }
-    ],
-    "requestBody": {
-     "required": true,
-     "content": {
-      "multipart/form-data": {
-       "schema": {
-        "$ref": "#/components/schemas/Body_import_xlsx_api_glossary_import_xlsx_post"
-       }
-      }
-     }
-    },
-    "responses": {
-     "200": {
-      "description": "Successful Response",
-      "content": {
-       "application/json": {
-        "schema": {
-         "$ref": "#/components/schemas/ImportResult"
         }
        }
       }
