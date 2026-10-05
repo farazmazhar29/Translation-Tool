@@ -825,7 +825,7 @@ export interface components {
              */
             created_at: string;
             /** Release Id */
-            release_id: number;
+            release_id: number | null;
         };
         /** ExportIn */
         ExportIn: {

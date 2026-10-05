@@ -2542,7 +2542,14 @@
       "title": "Created At"
      },
      "release_id": {
-      "type": "integer",
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
       "title": "Release Id"
      }
     },
