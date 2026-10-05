@@ -1,6 +1,8 @@
 /** Texts used by several features (namespace `common`). German is the reference: `en.ts` must have the same keys. */
 export const de = {
   appName: 'Rotpunkt Übersetzung',
+  brandProduct: 'Übersetzung',
+  backToProjects: 'Zurück zu den Projekten',
   loading: 'Laden …',
   unknownError: 'Unbekannter Fehler',
   save: 'Speichern',

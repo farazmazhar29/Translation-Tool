@@ -1,11 +1,12 @@
 import { useState } from 'react'
+import { FileText, UploadCloud } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { post, type Lang, type S } from '@/shared/api/client'
 import { LANGS } from '@/shared/constants'
 import { LangCheckboxes, SelectField, TextField } from '@/shared/components/form'
-import { Form, PageHeader } from '@/shared/components/layout'
-import { Card } from '@/shared/components/ui'
+import { BackLink, Form, PageHeader } from '@/shared/components/layout'
+import { Card, LinkBtn } from '@/shared/components/ui'
 import { useAction, useFields } from '@/shared/lib/hooks'
 import { optionsOf, useSettings } from '@/shared/lib/ui'
 
@@ -44,11 +45,13 @@ const NewProject = () => {
       disabled={!file || create.isPending}
       error={create.error}
       className="mx-auto max-w-2xl space-y-4"
+      secondary={<LinkBtn to="/projects">{t('common:cancel')}</LinkBtn>}
     >
+      <BackLink to="/projects">{t('common:backToProjects')}</BackLink>
       <PageHeader title={t('new.title')} />
       <Card>
         <label
-          className="block cursor-pointer rounded-lg border-2 border-dashed border-slate-300 p-8 text-center focus-within:border-red-600 hover:border-red-400"
+          className="flex cursor-pointer flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-stone-300 px-6 py-14 text-center transition focus-within:border-brand hover:border-brand hover:bg-brand-soft/40"
           onDragOver={(e) => {
             e.preventDefault()
           }}
@@ -65,11 +68,18 @@ const NewProject = () => {
               setFile(e.target.files?.[0] ?? null)
             }}
           />
-          {file ? <strong>{file.name}</strong> : t('new.dropFile')}
+          <span className="grid size-14 place-items-center rounded-full bg-brand-soft text-brand" aria-hidden="true">
+            {file ? <FileText className="size-7" /> : <UploadCloud className="size-7" />}
+          </span>
+          {file ? (
+            <strong className="text-lg">{file.name}</strong>
+          ) : (
+            <span className="font-semibold">{t('new.dropFile')}</span>
+          )}
         </label>
-        <p className="mt-2 text-xs text-slate-600">{t('new.hint')}</p>
+        <p className="mt-3 text-center text-xs text-stone-600">{t('new.hint')}</p>
       </Card>
-      <Card className="grid gap-3 md:grid-cols-2">
+      <Card className="grid gap-5 md:grid-cols-2">
         <TextField label={t('new.name')} placeholder={t('new.namePlaceholder')} value={f.name} onChange={set('name')} />
         <TextField label={t('new.customer')} value={f.customer} onChange={set('customer')} />
         <SelectField

@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { Plus } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Link, useSearchParams } from 'react-router-dom'
 import { can, del, get, post, qs, type S } from '@/shared/api/client'
@@ -50,6 +51,7 @@ const Projects = () => {
     <div className="space-y-4">
       <PageHeader title={t('list.title')}>
         <LinkBtn to="/projects/new" variant="primary">
+          <Plus className="size-4" aria-hidden="true" />
           {t('list.newProject')}
         </LinkBtn>
       </PageHeader>
@@ -114,16 +116,20 @@ const Projects = () => {
             onChange={set('date_to')}
           />
         </div>
-        <div className="mt-2 flex gap-3 text-sm">
+        <div className="mt-4 flex w-fit rounded-full bg-stone-100 p-1 text-sm">
           {ARCHIVE_VALUES.map((value) => (
-            <label key={value} className="flex items-center gap-1">
+            <label
+              key={value}
+              className="cursor-pointer rounded-full px-4 py-1.5 font-semibold text-stone-600 transition has-[:checked]:bg-white has-[:checked]:text-ink has-[:checked]:shadow-sm has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-brand"
+            >
               <input
                 type="radio"
+                className="sr-only"
                 checked={f.archived === value}
                 onChange={() => {
                   set('archived')(value)
                 }}
-              />{' '}
+              />
               {t(`filters.archive.${value}`)}
             </label>
           ))}
@@ -144,27 +150,28 @@ const Projects = () => {
         emptyText={t('list.empty')}
       >
         {projects.map((p) => (
-          <tr key={p.id} className="hover:bg-slate-50">
-            <td className="px-3 py-2 font-medium">
-              <Link to={`/projects/${p.id}`} className="hover:text-red-700">
+          <tr key={p.id} className="hover:bg-stone-50">
+            <td className="px-4 py-3 font-semibold">
+              <Link to={`/projects/${p.id}`} className="hover:text-brand">
                 {p.name}
               </Link>
             </td>
-            <td className="px-3 py-2">{p.customer}</td>
-            <td className="px-3 py-2 text-slate-600">{p.filename}</td>
-            <td className="px-3 py-2 uppercase">
+            <td className="px-4 py-3">{p.customer}</td>
+            <td className="px-4 py-3 text-stone-600">{p.filename}</td>
+            <td className="px-4 py-3 uppercase">
               {(p.source_lang === 'auto' ? p.detected_lang : p.source_lang) || '?'} → {p.target_langs.join(', ')}
             </td>
-            <td className="px-3 py-2">
+            <td className="px-4 py-3">
               <StatusBadge status={p.status} />
             </td>
-            <td className="px-3 py-2 text-slate-600">{fmtDate(p.updated_at)}</td>
-            <td className="px-3 py-2">{p.created_by}</td>
-            <td className="whitespace-nowrap px-3 py-2 text-right">
+            <td className="px-4 py-3 text-stone-600">{fmtDate(p.updated_at)}</td>
+            <td className="px-4 py-3">{p.created_by}</td>
+            <td className="whitespace-nowrap px-4 py-3 text-right">
               {can(user, 'translator') && (
                 <>
                   <Btn
                     variant="ghost"
+                    className="!px-3 !py-1.5"
                     onClick={() => {
                       run(p.id, 'copy')
                     }}
@@ -173,6 +180,7 @@ const Projects = () => {
                   </Btn>
                   <Btn
                     variant="ghost"
+                    className="!px-3 !py-1.5"
                     onClick={() => {
                       run(p.id, p.archived ? 'unarchive' : 'archive')
                     }}
@@ -184,6 +192,7 @@ const Projects = () => {
               {can(user, 'admin') && (
                 <Btn
                   variant="ghost"
+                  className="!px-3 !py-1.5"
                   onClick={() => {
                     if (window.confirm(t('list.confirmDelete', { name: p.name }))) run(p.id, 'delete')
                   }}

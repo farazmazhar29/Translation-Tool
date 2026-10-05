@@ -110,9 +110,10 @@ export const Checkbox = ({
   disabled?: boolean
   className?: string
 }) => (
-  <label className={`flex items-center gap-1 text-sm ${className}`}>
+  <label className={`flex cursor-pointer items-center gap-2 text-sm font-medium ${className}`}>
     <input
       type="checkbox"
+      className="size-4 cursor-pointer accent-brand"
       checked={checked}
       disabled={disabled}
       onChange={(e) => {
@@ -136,8 +137,8 @@ export const LangCheckboxes = ({
   const { t } = useTranslation()
   return (
     <fieldset>
-      <legend className="mb-1 block text-sm font-medium text-slate-600">{label}</legend>
-      <div className="flex gap-4 py-1.5">
+      <legend className="mb-1.5 block text-sm font-semibold text-stone-700">{label}</legend>
+      <div className="flex gap-5 py-2.5">
         {LANGS.map((code) => (
           <Checkbox
             key={code}

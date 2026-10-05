@@ -1,3 +1,4 @@
+import { MessageSquare, Pencil, RefreshCw } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Highlighted } from '@/features/glossary'
@@ -16,6 +17,9 @@ interface Props {
   busy: boolean
 }
 
+const action =
+  'inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold text-stone-600 transition hover:bg-stone-100 hover:text-ink disabled:opacity-50'
+
 export const SegmentRow = ({ seg, lang, editable, onTerm, onSave, onRegenerate, busy }: Props) => {
   const { t } = useTranslation(['projects', 'common'])
   const tr = seg.translations[lang]
@@ -25,25 +29,34 @@ export const SegmentRow = ({ seg, lang, editable, onTerm, onSave, onRegenerate, 
   const terms = tr?.terms ?? []
   const missing = terms.some((term) => !term.ok)
   return (
-    <div id={`seg-${seg.idx}`} className={`grid gap-3 border-b p-3 md:grid-cols-2 ${missing ? 'bg-red-50/40' : ''}`}>
+    <div
+      id={`seg-${seg.idx}`}
+      className={`grid gap-5 border-b border-line px-6 py-5 last:border-b-0 md:grid-cols-2 md:gap-8 ${missing ? 'bg-red-50/50' : 'hover:bg-stone-50/60'}`}
+    >
       <div>
-        <span className="mb-1 block text-xs text-slate-600">#{seg.idx + 1}</span>
-        <Highlighted
-          text={seg.source_text}
-          terms={terms}
-          side="source"
-          onTerm={(term) => {
-            onTerm(seg, term)
-          }}
-        />
+        <div className="mb-2 flex min-h-7 items-center">
+          <span className="rounded-full bg-stone-100 px-2.5 py-0.5 text-xs font-bold text-stone-600">
+            #{seg.idx + 1}
+          </span>
+        </div>
+        <div className="text-[15px] leading-relaxed">
+          <Highlighted
+            text={seg.source_text}
+            terms={terms}
+            side="source"
+            onTerm={(term) => {
+              onTerm(seg, term)
+            }}
+          />
+        </div>
       </div>
       <div>
-        <span className="mb-1 block text-xs font-semibold uppercase text-slate-600 md:hidden">
+        <span className="mb-2 block text-xs font-bold uppercase tracking-wider text-stone-600 md:hidden">
           {t('row.translation')}
         </span>
-        <div className="mb-1 flex items-center gap-2 text-xs text-slate-600">
+        <div className="mb-2 flex min-h-7 items-center gap-2">
           {tr?.edited && (
-            <span className="rounded bg-amber-100 px-1.5 text-amber-800">
+            <span className="rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-800">
               {t('row.editedBy', { name: tr.edited_by })}
             </span>
           )}
@@ -51,38 +64,41 @@ export const SegmentRow = ({ seg, lang, editable, onTerm, onSave, onRegenerate, 
             <span className="ml-auto flex gap-1">
               <button
                 type="button"
-                className="hover:text-red-700"
+                className={action}
                 onClick={() => {
                   setDraft(draft === null ? tr.text : null)
                 }}
               >
+                <Pencil className="size-3.5" aria-hidden="true" />
                 {t('row.edit')}
               </button>
               <button
                 type="button"
-                className="hover:text-red-700"
+                className={action}
                 disabled={busy}
                 onClick={() => {
                   onRegenerate(seg)
                 }}
               >
+                <RefreshCw className="size-3.5" aria-hidden="true" />
                 {t('row.regenerate')}
               </button>
               <button
                 type="button"
-                className="hover:text-red-700"
+                className={action}
                 onClick={() => {
                   setShowComment(!showComment)
                 }}
               >
+                <MessageSquare className="size-3.5" aria-hidden="true" />
                 {t('row.comment')}
               </button>
             </span>
           )}
         </div>
-        {!tr && <p className="text-sm italic text-slate-600">{t('row.notTranslated')}</p>}
+        {!tr && <p className="text-sm italic text-stone-600">{t('row.notTranslated')}</p>}
         {tr && draft !== null ? (
-          <div className="space-y-2">
+          <div className="space-y-3">
             <TextArea
               hideLabel
               label={t('row.editTranslation')}
@@ -93,6 +109,7 @@ export const SegmentRow = ({ seg, lang, editable, onTerm, onSave, onRegenerate, 
             <div className="flex gap-2">
               <Btn
                 variant="primary"
+                className="!px-4 !py-1.5"
                 onClick={() => {
                   onSave(seg, { text: draft })
                   setDraft(null)
@@ -101,6 +118,7 @@ export const SegmentRow = ({ seg, lang, editable, onTerm, onSave, onRegenerate, 
                 {t('row.apply')}
               </Btn>
               <Btn
+                className="!px-4 !py-1.5"
                 onClick={() => {
                   setDraft(null)
                 }}
@@ -111,21 +129,23 @@ export const SegmentRow = ({ seg, lang, editable, onTerm, onSave, onRegenerate, 
           </div>
         ) : (
           tr && (
-            <Highlighted
-              text={tr.text}
-              terms={terms}
-              side="target"
-              onTerm={(term) => {
-                onTerm(seg, term)
-              }}
-            />
+            <div className="text-[15px] leading-relaxed">
+              <Highlighted
+                text={tr.text}
+                terms={terms}
+                side="target"
+                onTerm={(term) => {
+                  onTerm(seg, term)
+                }}
+              />
+            </div>
           )
         )}
         {showComment && tr && (
           <TextArea
             hideLabel
             label={t('row.commentLabel')}
-            className="mt-2"
+            className="mt-3"
             rows={2}
             placeholder={t('row.commentPlaceholder')}
             disabled={!editable}

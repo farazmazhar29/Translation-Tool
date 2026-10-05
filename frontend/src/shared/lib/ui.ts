@@ -3,18 +3,18 @@ import i18n from 'i18next'
 import { get, type S } from '../api/client'
 
 export const input =
-  'w-full rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600 disabled:bg-slate-100'
+  'w-full rounded-xl border border-stone-300 bg-white px-3.5 py-2.5 text-sm outline-none transition placeholder:text-stone-400 focus:border-brand focus:ring-4 focus:ring-brand/15 disabled:bg-stone-100 disabled:text-stone-500'
 
 export type Variant = 'primary' | 'secondary' | 'danger' | 'ghost'
 const VARIANTS: Record<Variant, string> = {
-  primary: 'bg-red-700 text-white hover:bg-red-800',
-  secondary: 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-50',
-  danger: 'bg-white border border-red-300 text-red-700 hover:bg-red-50',
-  ghost: 'text-slate-600 hover:bg-slate-100',
+  primary: 'bg-brand text-white shadow-sm hover:bg-brand-dark',
+  secondary: 'border border-stone-300 bg-white text-ink hover:border-stone-400 hover:bg-stone-50',
+  danger: 'border border-red-300 bg-white text-red-700 hover:bg-red-50',
+  ghost: 'text-stone-600 hover:bg-stone-100 hover:text-ink',
 }
 /** Classes of a button; shared by real buttons and links that look like buttons. */
 export const btnClass = (variant: Variant = 'secondary', extra = ''): string =>
-  `rounded-md px-3 py-1.5 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50 ${VARIANTS[variant]} ${extra}`
+  `inline-flex items-center justify-center gap-2 rounded-full px-5 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${VARIANTS[variant]} ${extra}`
 
 /** [value, label] pair of a <select>. */
 export type Option = readonly [value: string, label: string]

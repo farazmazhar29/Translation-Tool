@@ -13,7 +13,7 @@ export const HistoryPanel = ({ projectId }: { projectId: number }) => {
   })
   return (
     <Card title={t('historyPanel.title')}>
-      {history?.releases.length === 0 && <p className="text-sm text-slate-600">{t('historyPanel.none')}</p>}
+      {history?.releases.length === 0 && <p className="text-sm text-stone-600">{t('historyPanel.none')}</p>}
       <ul className="divide-y text-sm">
         {history?.releases.map((r) => (
           <li key={r.id} className="py-2">
@@ -30,7 +30,7 @@ export const HistoryPanel = ({ projectId }: { projectId: number }) => {
         ))}
       </ul>
       {history && history.exports.length > 0 && (
-        <h3 className="mb-1 mt-3 text-xs font-semibold uppercase text-slate-600">{t('historyPanel.exports')}</h3>
+        <h3 className="mb-1 mt-3 text-xs font-semibold uppercase text-stone-600">{t('historyPanel.exports')}</h3>
       )}
       <ul className="space-y-1 text-sm">
         {history?.exports.map((e) => (
@@ -44,7 +44,7 @@ export const HistoryPanel = ({ projectId }: { projectId: number }) => {
             >
               {e.filename}
             </button>
-            <span className="text-xs text-slate-600">
+            <span className="text-xs text-stone-600">
               {e.created_by} · {fmtDate(e.created_at)}
             </span>
           </li>

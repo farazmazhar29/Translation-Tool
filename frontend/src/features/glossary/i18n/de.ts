@@ -4,7 +4,7 @@ export const de = {
   duplicateScan: 'Dublettenprüfung',
   exportExcel: 'Export Excel',
   importExcel: 'Import Excel',
-  addTerm: '+ Begriff',
+  addTerm: 'Begriff hinzufügen',
   search: 'Suche',
   searchPlaceholder: 'Suche (Begriff, Synonym, Beschreibung)',
   statusLabel: 'Status',

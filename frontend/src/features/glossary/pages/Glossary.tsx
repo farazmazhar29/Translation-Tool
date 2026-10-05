@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { Download, Plus, ScanSearch, Upload } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { can, del, download, get, post, qs, type S } from '@/shared/api/client'
@@ -73,6 +74,7 @@ const Glossary = () => {
             scan.mutate()
           }}
         >
+          <ScanSearch className="size-4" aria-hidden="true" />
           {t('duplicateScan')}
         </Btn>
         <Btn
@@ -80,9 +82,15 @@ const Glossary = () => {
             void download('/glossary/export/xlsx', 'glossar.xlsx')
           }}
         >
+          <Download className="size-4" aria-hidden="true" />
           {t('exportExcel')}
         </Btn>
-        {reviewer && <Btn onClick={() => fileRef.current?.click()}>{t('importExcel')}</Btn>}
+        {reviewer && (
+          <Btn onClick={() => fileRef.current?.click()}>
+            <Upload className="size-4" aria-hidden="true" />
+            {t('importExcel')}
+          </Btn>
+        )}
         <input
           ref={fileRef}
           type="file"
@@ -100,10 +108,11 @@ const Glossary = () => {
             setEdit({ form: EMPTY })
           }}
         >
+          <Plus className="size-4" aria-hidden="true" />
           {t('addTerm')}
         </Btn>
       </PageHeader>
-      {note && <p className="rounded bg-blue-50 px-3 py-2 text-sm text-blue-800">{note}</p>}
+      {note && <p className="rounded-xl bg-sky-50 px-4 py-3 text-sm text-sky-900">{note}</p>}
       <ErrorText error={imp.error ?? act.error} />
       <Card className="grid gap-2 md:grid-cols-3">
         <TextField hideLabel label={t('search')} placeholder={t('searchPlaceholder')} value={f.q} onChange={set('q')} />
@@ -134,20 +143,30 @@ const Glossary = () => {
         ]}
       >
         {entries.map((e) => (
-          <tr key={e.id} className="align-top hover:bg-slate-50">
-            <td className="px-3 py-2 font-medium">{e.terms['de']}</td>
-            <td className="px-3 py-2 font-medium">
-              {e.do_not_translate ? <em className="text-purple-700">{t('doNotTranslateShort')}</em> : e.terms['en']}
+          <tr key={e.id} className="align-top hover:bg-stone-50">
+            <td className="px-4 py-3 font-medium">{e.terms['de']}</td>
+            <td className="px-4 py-3 font-medium">
+              {e.do_not_translate ? (
+                <span className="rounded-full bg-purple-50 px-3 py-1 text-xs font-semibold text-purple-800">
+                  {t('doNotTranslateShort')}
+                </span>
+              ) : (
+                e.terms['en']
+              )}
             </td>
-            <td className="px-3 py-2 text-slate-600">{Object.values(e.synonyms).flat().join(', ')}</td>
-            <td className="px-3 py-2 text-slate-600">{e.description}</td>
-            <td className={`px-3 py-2 ${isEntryStatus(e.status) ? STATUS_CLS[e.status] : ''}`}>
-              {isEntryStatus(e.status) ? t(`status.${e.status}`) : e.status}
+            <td className="px-4 py-3 text-stone-600">{Object.values(e.synonyms).flat().join(', ')}</td>
+            <td className="px-4 py-3 text-stone-600">{e.description}</td>
+            <td className="px-4 py-3">
+              <span
+                className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${isEntryStatus(e.status) ? STATUS_CLS[e.status] : 'bg-stone-100 text-stone-700'}`}
+              >
+                {isEntryStatus(e.status) ? t(`status.${e.status}`) : e.status}
+              </span>
             </td>
-            <td className="px-3 py-2">
+            <td className="px-4 py-3">
               <button
                 type="button"
-                className="text-blue-700 hover:underline"
+                className="rounded-full bg-stone-100 px-2.5 py-0.5 text-xs font-bold text-stone-600 transition hover:bg-stone-200"
                 onClick={() => {
                   setVersions(e)
                 }}
@@ -155,12 +174,13 @@ const Glossary = () => {
                 v{e.version}
               </button>
             </td>
-            <td className="whitespace-nowrap px-3 py-2 text-right">
+            <td className="whitespace-nowrap px-4 py-3 text-right">
               {reviewer && (
                 <>
                   {e.status !== 'approved' && (
                     <Btn
                       variant="ghost"
+                      className="!px-3 !py-1.5"
                       onClick={() => {
                         act.mutate({ id: e.id, status: 'approved' })
                       }}
@@ -170,6 +190,7 @@ const Glossary = () => {
                   )}
                   <Btn
                     variant="ghost"
+                    className="!px-3 !py-1.5"
                     onClick={() => {
                       setEdit({ id: e.id, form: toForm(e) })
                     }}
@@ -181,6 +202,7 @@ const Glossary = () => {
               {can(user, 'admin') && (
                 <Btn
                   variant="ghost"
+                  className="!px-3 !py-1.5"
                   onClick={() => {
                     if (window.confirm(t('confirmDelete'))) act.mutate({ id: e.id })
                   }}
@@ -208,7 +230,7 @@ const Glossary = () => {
               void refresh()
             }}
           />
-          {!reviewer && <p className="mt-2 text-xs text-slate-600">{t('translatorHint')}</p>}
+          {!reviewer && <p className="mt-2 text-xs text-stone-600">{t('translatorHint')}</p>}
         </Modal>
       )}
       {versions && (
@@ -222,7 +244,7 @@ const Glossary = () => {
             {vers.map((v) => (
               <li key={v.id} className="py-2">
                 <strong>v{v.entry_version}</strong> · {v.action} · {v.changed_by} · {fmtDate(v.changed_at)}
-                <div className="text-slate-600">
+                <div className="text-stone-600">
                   {Object.values(v.data['terms'] as Record<string, string>).join(' → ')} ({String(v.data['status'])})
                 </div>
               </li>

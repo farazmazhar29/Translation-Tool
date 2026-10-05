@@ -1,6 +1,11 @@
 /** Texts of the projects feature (namespace `projects`). German is the reference: `en.ts` must have the same keys. */
 export const de = {
   dashboard: {
+    title: 'Dashboard',
+    greeting: 'Willkommen zurück, {{name}}. Hier ist der Stand Ihrer Übersetzungen.',
+    newProject: 'Neues Projekt',
+    createFirst: 'Erstes Projekt anlegen',
+    releasesTotal: '{{count}} Freigaben in den letzten 14 Tagen',
     open: 'Offene Projekte',
     inReview: 'In Prüfung',
     editedToday: 'Heute bearbeitet',
@@ -19,7 +24,7 @@ export const de = {
   },
   list: {
     title: 'Projekte',
-    newProject: '+ Neues Projekt',
+    newProject: 'Neues Projekt',
     empty: 'Keine Projekte gefunden.',
     confirmDelete: '„{{name}}“ löschen?',
     copy: 'Kopieren',
@@ -103,9 +108,9 @@ export const de = {
   row: {
     translation: 'Übersetzung',
     editedBy: 'bearbeitet von {{name}}',
-    edit: '✎ Bearbeiten',
-    regenerate: '↻ Neu erzeugen',
-    comment: '💬 Kommentar',
+    edit: 'Bearbeiten',
+    regenerate: 'Neu erzeugen',
+    comment: 'Kommentar',
     notTranslated: 'Noch nicht übersetzt',
     editTranslation: 'Übersetzung bearbeiten',
     apply: 'Übernehmen',

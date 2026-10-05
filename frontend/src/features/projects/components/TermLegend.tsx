@@ -7,16 +7,16 @@ export const TermLegend = () => {
   const { t } = useTranslation('common')
   const colors = useSettings()?.colors
   return (
-    <div className="flex flex-wrap gap-3 text-xs">
+    <ul className="flex flex-wrap gap-2 text-xs">
       {TERM_CATEGORIES.map((k) => (
-        <span key={k} className="flex items-center gap-1">
-          <span
-            className="inline-block h-3 w-3 rounded"
-            style={{ background: `${colors?.[k] ?? '#999'}55`, borderBottom: `2px solid ${colors?.[k] ?? '#999'}` }}
-          />{' '}
+        <li
+          key={k}
+          className="flex items-center gap-2 rounded-full border border-line bg-white px-3 py-1.5 font-medium"
+        >
+          <span className="size-2.5 rounded-full" style={{ background: colors?.[k] ?? '#999999' }} aria-hidden="true" />
           {t(`category.${k}`)}
-        </span>
+        </li>
       ))}
-    </div>
+    </ul>
   )
 }

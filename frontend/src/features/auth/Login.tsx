@@ -1,37 +1,70 @@
+import { useQuery } from '@tanstack/react-query'
+import { CheckCircle2, UserPlus } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { Navigate, useNavigate } from 'react-router-dom'
-import { useAuth } from './auth-context'
+import { Navigate, useLocation, useNavigate } from 'react-router-dom'
+import { get, type S } from '@/shared/api/client'
 import { TextField } from '@/shared/components/form'
 import { Form } from '@/shared/components/layout'
+import { LinkBtn } from '@/shared/components/ui'
 import { useAction, useFields } from '@/shared/lib/hooks'
+import { AuthLayout } from './AuthLayout'
+import { useAuth } from './auth-context'
 
 const Login = () => {
   const { t } = useTranslation('auth')
   const { user, login } = useAuth()
   const navigate = useNavigate()
-  const { values, set } = useFields({ username: 'translator', password: 'translator123' })
+  const state: unknown = useLocation().state // set by the registration page
+  const justRegistered = typeof state === 'object' && state !== null && 'registered' in state
+  const { values, set } = useFields({ username: '', password: '' })
   const signIn = useAction(() => login(values.username, values.password), { onSuccess: () => void navigate('/') })
+  const { data: options } = useQuery({
+    queryKey: ['auth-options'],
+    queryFn: () => get<S['AuthOptions']>('/auth/options'),
+  })
   if (user) return <Navigate to="/" replace />
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
+    <AuthLayout title={t('title')} subtitle={t('subtitle')}>
+      {justRegistered && (
+        <p
+          role="status"
+          className="mb-6 flex items-start gap-2 rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-900"
+        >
+          <CheckCircle2 className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+          {t('registered')}
+        </p>
+      )}
       <Form
         onSubmit={() => {
           signIn.mutate()
         }}
         submitLabel={t('signIn')}
-        submitClassName="w-full"
+        submitClassName="w-full !py-3"
         disabled={signIn.isPending}
         error={signIn.error}
-        className="w-full max-w-sm space-y-4 rounded-lg border bg-white p-6 shadow-sm"
+        className="space-y-5"
       >
-        <h1 className="flex items-center gap-2 text-xl font-semibold">
-          <span className="inline-block h-3 w-3 rounded-full bg-red-700" /> {t('title')}
-        </h1>
-        <TextField label={t('username')} value={values.username} onChange={set('username')} />
-        <TextField label={t('password')} type="password" value={values.password} onChange={set('password')} />
-        <p className="text-xs text-slate-600">{t('demo')}</p>
+        <TextField label={t('username')} autoComplete="username" value={values.username} onChange={set('username')} />
+        <TextField
+          label={t('password')}
+          type="password"
+          autoComplete="current-password"
+          value={values.password}
+          onChange={set('password')}
+        />
       </Form>
-    </div>
+      {options?.registration_enabled && (
+        <>
+          <p className="my-6 flex items-center gap-4 text-xs font-semibold uppercase tracking-wider text-stone-600 before:h-px before:flex-1 before:bg-line after:h-px after:flex-1 after:bg-line">
+            {t('or')}
+          </p>
+          <LinkBtn to="/register" variant="secondary" className="w-full !py-3">
+            <UserPlus className="size-4" aria-hidden="true" />
+            {t('createAccount')}
+          </LinkBtn>
+        </>
+      )}
+    </AuthLayout>
   )
 }
 

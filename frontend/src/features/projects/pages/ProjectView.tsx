@@ -5,7 +5,7 @@ import { useParams } from 'react-router-dom'
 import { useAuth } from '@/features/auth'
 import { TermDialog } from '@/features/glossary'
 import { can, get, post, put, type S } from '@/shared/api/client'
-import { Loading } from '@/shared/components/layout'
+import { BackLink, Loading } from '@/shared/components/layout'
 import { Card, ErrorText, Modal } from '@/shared/components/ui'
 import { useAction, useInvalidate } from '@/shared/lib/hooks'
 import { ExportDialog } from '../components/ExportDialog'
@@ -52,6 +52,7 @@ const ProjectView = () => {
   }
   return (
     <div className="space-y-4">
+      <BackLink to="/projects">{t('common:backToProjects')}</BackLink>
       <ProjectHeader project={p} editable={editable} hasTranslation={hasTranslation} run={run} error={act.error} />
       {hasTranslation && (
         <>
@@ -90,8 +91,8 @@ const ProjectView = () => {
       )}
       {!hasTranslation && !running && (
         <Card>
-          <p className="text-sm text-slate-600">{t('view.analyzed')}</p>
-          <ol className="mt-3 list-decimal space-y-1 pl-5 text-sm text-slate-600">
+          <p className="text-sm text-stone-600">{t('view.analyzed')}</p>
+          <ol className="mt-3 list-decimal space-y-1 pl-5 text-sm text-stone-600">
             {p.segments.slice(0, 15).map((s) => (
               <li key={s.id}>{s.source_text.slice(0, 160)}</li>
             ))}
@@ -133,7 +134,7 @@ const ProjectView = () => {
       )}
       {act.isPending && (
         <Modal title={t('view.pleaseWait')} onClose={() => undefined}>
-          <p className="text-sm text-slate-600">{t('view.running')}</p>
+          <p className="text-sm text-stone-600">{t('view.running')}</p>
         </Modal>
       )}
     </div>

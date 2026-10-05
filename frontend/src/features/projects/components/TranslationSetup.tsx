@@ -23,7 +23,7 @@ export const TranslationSetup = ({
   const src = srcPick ?? p.source_lang
   const targets = targetsPick ?? (p.target_langs as Lang[])
   return (
-    <div className="mt-4 flex flex-wrap items-end gap-4 border-t pt-4">
+    <div className="mt-6 flex flex-wrap items-end gap-6 border-t border-line pt-6">
       <SelectField
         label={t('view.sourceLang')}
         className="!w-auto"
@@ -46,7 +46,7 @@ export const TranslationSetup = ({
       >
         {hasTranslation ? t('view.retranslate') : t('view.startTranslation')}
       </Btn>
-      <span className="text-xs text-slate-600">{t('view.previewOnly')}</span>
+      <span className="basis-full text-xs text-stone-600">{t('view.previewOnly')}</span>
     </div>
   )
 }

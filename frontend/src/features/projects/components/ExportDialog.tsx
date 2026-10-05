@@ -151,7 +151,7 @@ export const ExportDialog = ({
                 className="self-end pb-2"
               />
             </div>
-            <p className="text-xs text-slate-600">{t('export.sourceColHint')}</p>
+            <p className="text-xs text-stone-600">{t('export.sourceColHint')}</p>
             <div className="flex gap-2">
               <TextField
                 hideLabel

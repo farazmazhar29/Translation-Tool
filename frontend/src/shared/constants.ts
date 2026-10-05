@@ -13,13 +13,13 @@ export const TERM_CATEGORIES: readonly S['Term']['category'][] = [
 export const EXPORT_FORMATS = ['docx', 'xlsx', 'pdf'] as const
 export const EXPORT_MODES = ['translation', 'both'] as const
 
-/** Badge colours per project status. */
+/** Colours per project status: `chip` for the badge, `dot` for the small circle in it (and the workflow steps). */
 export const STATUS_STYLE = {
-  new: 'bg-slate-100 text-slate-700',
-  preview_ready: 'bg-blue-100 text-blue-700',
-  in_review: 'bg-amber-100 text-amber-800',
-  approved: 'bg-green-100 text-green-700',
-  archived: 'bg-zinc-200 text-zinc-600',
+  new: { chip: 'bg-stone-100 text-stone-700', dot: 'bg-stone-400' },
+  preview_ready: { chip: 'bg-sky-50 text-sky-800', dot: 'bg-sky-500' },
+  in_review: { chip: 'bg-amber-50 text-amber-800', dot: 'bg-amber-500' },
+  approved: { chip: 'bg-emerald-50 text-emerald-800', dot: 'bg-emerald-500' },
+  archived: { chip: 'bg-stone-200 text-stone-700', dot: 'bg-stone-500' },
 } as const
 type ProjectStatus = keyof typeof STATUS_STYLE
 export const STATUSES = Object.keys(STATUS_STYLE) as ProjectStatus[]

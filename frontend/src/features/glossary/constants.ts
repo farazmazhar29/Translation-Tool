@@ -6,9 +6,9 @@ export const isEntryStatus = (value: string): value is EntryStatus =>
   (ENTRY_STATUSES as readonly string[]).includes(value)
 
 export const STATUS_CLS: Record<EntryStatus, string> = {
-  approved: 'text-green-700',
-  draft: 'text-amber-700',
-  rejected: 'text-red-700',
+  approved: 'bg-emerald-50 text-emerald-800',
+  draft: 'bg-amber-50 text-amber-800',
+  rejected: 'bg-red-50 text-red-800',
 }
 
 /** Highlight colour per term category when the user has not configured one. */

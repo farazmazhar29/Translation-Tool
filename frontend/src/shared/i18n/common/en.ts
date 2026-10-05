@@ -3,6 +3,8 @@ import type { de } from './de'
 
 export const en: Texts<typeof de> = {
   appName: 'Rotpunkt Translation',
+  brandProduct: 'Translation',
+  backToProjects: 'Back to projects',
   loading: 'Loading …',
   unknownError: 'Unknown error',
   save: 'Save',

@@ -6,7 +6,7 @@ export const en: Texts<typeof de> = {
   duplicateScan: 'Check for duplicates',
   exportExcel: 'Export Excel',
   importExcel: 'Import Excel',
-  addTerm: '+ Term',
+  addTerm: 'Add term',
   search: 'Search',
   searchPlaceholder: 'Search (term, synonym, description)',
   statusLabel: 'Status',

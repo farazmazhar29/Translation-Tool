@@ -3,6 +3,11 @@ import type { de } from './de'
 
 export const en: Texts<typeof de> = {
   dashboard: {
+    title: 'Dashboard',
+    greeting: 'Welcome back, {{name}}. Here is where your translations stand.',
+    newProject: 'New project',
+    createFirst: 'Create your first project',
+    releasesTotal: '{{count}} approvals in the last 14 days',
     open: 'Open projects',
     inReview: 'In review',
     editedToday: 'Edited today',
@@ -21,7 +26,7 @@ export const en: Texts<typeof de> = {
   },
   list: {
     title: 'Projects',
-    newProject: '+ New project',
+    newProject: 'New project',
     empty: 'No projects found.',
     confirmDelete: 'Delete “{{name}}”?',
     copy: 'Copy',
@@ -104,9 +109,9 @@ export const en: Texts<typeof de> = {
   row: {
     translation: 'Translation',
     editedBy: 'edited by {{name}}',
-    edit: '✎ Edit',
-    regenerate: '↻ Regenerate',
-    comment: '💬 Comment',
+    edit: 'Edit',
+    regenerate: 'Regenerate',
+    comment: 'Comment',
     notTranslated: 'Not translated yet',
     editTranslation: 'Edit translation',
     apply: 'Apply',

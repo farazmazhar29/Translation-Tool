@@ -51,14 +51,14 @@ export const TermDialog = ({ term, seg, lang, src, projectId, editable, onClose,
     <Modal title={t('term.title', { term: term.source })} onClose={onClose}>
       <dl className="space-y-3 text-sm">
         <div>
-          <dt className="text-xs uppercase text-slate-600">{t('term.category')}</dt>
+          <dt className="text-xs uppercase text-stone-600">{t('term.category')}</dt>
           <dd>
             {t(`common:category.${term.category}`)}
             {!term.ok && <span className="ml-2 text-red-600">{t('term.missing')}</span>}
           </dd>
         </div>
         <div>
-          <dt className="text-xs uppercase text-slate-600">
+          <dt className="text-xs uppercase text-stone-600">
             {t('term.usedTranslation', { lang: t(`common:lang.${lang as Lang}`) })}
           </dt>
           <dd className="font-medium">
@@ -67,13 +67,13 @@ export const TermDialog = ({ term, seg, lang, src, projectId, editable, onClose,
         </div>
         {term.description && (
           <div>
-            <dt className="text-xs uppercase text-slate-600">{t('term.description')}</dt>
+            <dt className="text-xs uppercase text-stone-600">{t('term.description')}</dt>
             <dd>{term.description}</dd>
           </div>
         )}
         {term.alternatives.length > 0 && (
           <div>
-            <dt className="text-xs uppercase text-slate-600">{t('term.alternatives')}</dt>
+            <dt className="text-xs uppercase text-stone-600">{t('term.alternatives')}</dt>
             <dd className="mt-1 flex flex-wrap gap-2">
               {term.alternatives.map((a) => (
                 <Btn
@@ -92,7 +92,7 @@ export const TermDialog = ({ term, seg, lang, src, projectId, editable, onClose,
         )}
         {entry && (
           <div>
-            <dt className="text-xs uppercase text-slate-600">{t('term.entry')}</dt>
+            <dt className="text-xs uppercase text-stone-600">{t('term.entry')}</dt>
             <dd>
               {Object.values(entry.terms).join(' → ')} · v{entry.version} ·{' '}
               {isEntryStatus(entry.status) ? t(`status.${entry.status}`) : entry.status}{' '}
@@ -105,7 +105,7 @@ export const TermDialog = ({ term, seg, lang, src, projectId, editable, onClose,
       </dl>
       {editable && (
         <div className="mt-4 space-y-2 border-t pt-4">
-          <p className="text-xs uppercase text-slate-600">{t('term.editDirectly')}</p>
+          <p className="text-xs uppercase text-stone-600">{t('term.editDirectly')}</p>
           <TextField hideLabel label={t('term.newTranslation')} value={value} onChange={setValue} />
           <div className="flex flex-wrap gap-2">
             <Btn

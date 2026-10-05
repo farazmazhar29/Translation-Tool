@@ -1,11 +1,38 @@
 @import 'tailwindcss';
+/* Raleway is the typeface of the Rotpunkt web site. Self-hosted (OFL licence): the strict CSP allows no external fonts. */
+@import '@fontsource-variable/raleway';
 
-body {
-  @apply bg-slate-50 text-slate-900 antialiased;
-  font-family:
-    system-ui,
-    -apple-system,
-    'Segoe UI',
-    Roboto,
-    sans-serif;
+@theme {
+  --font-sans: 'Raleway Variable', ui-sans-serif, system-ui, 'Segoe UI', Roboto, sans-serif;
+
+  /* Brand: the red of the Rotpunkt logo and buttons (#E30421). Errors keep Tailwind's red so the two never mix. */
+  --color-brand: #e30421;
+  --color-brand-dark: #bf0319;
+  --color-brand-soft: #fdeceb;
+
+  --color-ink: #212121; /* body text colour of the Rotpunkt site */
+  --color-canvas: #f7f5f2; /* warm off-white behind the cards, like a light kitchen surface */
+  --color-line: #e8e3de;
+  --color-night: #241d19; /* the dark, warm tone of the Rotpunkt photography */
+
+  --shadow-card: 0 1px 2px rgb(33 33 33 / 0.04), 0 6px 24px rgb(33 33 33 / 0.05);
+  --shadow-pop: 0 12px 40px rgb(33 33 33 / 0.18);
+}
+
+@layer base {
+  body {
+    @apply bg-canvas text-ink antialiased;
+    font-weight: 450; /* Raleway is a light face; the Rotpunkt site uses 300, a little more weight reads better in a work tool */
+    font-feature-settings:
+      'lnum' 1,
+      'tnum' 1; /* lining, equal-width digits (Raleway's default digits are old-style): numbers line up */
+  }
+  h1,
+  h2,
+  h3 {
+    @apply tracking-tight;
+  }
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-brand;
+  }
 }

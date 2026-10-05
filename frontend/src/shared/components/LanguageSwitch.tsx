@@ -5,18 +5,14 @@ import { LANGUAGES } from '../i18n'
 export const LanguageSwitch = () => {
   const { t, i18n } = useTranslation()
   return (
-    <div
-      role="group"
-      aria-label={t('language')}
-      className="flex overflow-hidden rounded-md border border-slate-300 text-xs"
-    >
+    <div role="group" aria-label={t('language')} className="flex w-fit rounded-full bg-stone-100 p-1 text-xs">
       {LANGUAGES.map((code) => (
         <button
           key={code}
           type="button"
           lang={code}
           aria-pressed={i18n.resolvedLanguage === code}
-          className={`px-2 py-1 font-medium ${i18n.resolvedLanguage === code ? 'bg-red-700 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'}`}
+          className={`rounded-full px-3 py-1 font-semibold transition ${i18n.resolvedLanguage === code ? 'bg-white text-ink shadow-sm' : 'text-stone-600 hover:text-ink'}`}
           onClick={() => {
             void i18n.changeLanguage(code)
           }}

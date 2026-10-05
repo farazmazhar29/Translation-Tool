@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { Check, Minus, Plus } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { get, post, put, type S } from '@/shared/api/client'
@@ -64,19 +65,31 @@ const Users = () => {
             setEditing({ initial: EMPTY })
           }}
         >
+          <Plus className="size-4" aria-hidden="true" />
           {t('addUser')}
         </Btn>
       </PageHeader>
       <Table headers={[t('user'), t('name'), t('role'), t('active'), '']}>
         {users.map((u) => (
           <tr key={u.id}>
-            <td className="px-3 py-2 font-medium">{u.username}</td>
-            <td className="px-3 py-2">{u.full_name}</td>
-            <td className="px-3 py-2">{t(`common:role.${u.role}`)}</td>
-            <td className="px-3 py-2">{u.active ? '✔' : '—'}</td>
-            <td className="px-3 py-2 text-right">
+            <td className="px-4 py-3 font-medium">{u.username}</td>
+            <td className="px-4 py-3">{u.full_name}</td>
+            <td className="px-4 py-3">
+              <span className="rounded-full bg-stone-100 px-3 py-1 text-xs font-semibold text-stone-700">
+                {t(`common:role.${u.role}`)}
+              </span>
+            </td>
+            <td className="px-4 py-3">
+              {u.active ? (
+                <Check className="size-4 text-emerald-600" aria-label={t('activeYes')} />
+              ) : (
+                <Minus className="size-4 text-stone-400" aria-label={t('activeNo')} />
+              )}
+            </td>
+            <td className="px-4 py-3 text-right">
               <Btn
                 variant="ghost"
+                className="!px-3 !py-1.5"
                 onClick={() => {
                   setEditing({
                     id: u.id,
@@ -90,7 +103,7 @@ const Users = () => {
           </tr>
         ))}
       </Table>
-      <p className="text-xs text-slate-600">{t('rights')}</p>
+      <p className="text-xs text-stone-600">{t('rights')}</p>
       {editing && (
         <UserDialog
           id={editing.id}

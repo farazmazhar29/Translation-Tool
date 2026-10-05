@@ -28,49 +28,54 @@ const SettingsForm = ({ initial }: { initial: S['SettingsOut'] }) => {
           options={optionsOf(PROVIDERS, (p) => t(`providers.${p}`))}
         />
         <TextField label={t('model')} disabled={disabled} value={s.llm_model} onChange={set('llm_model')} />
-        <p className="text-xs text-slate-600">
+        <p className="rounded-xl bg-stone-100 px-4 py-3 text-xs text-stone-600">
           {t('apiKey', { status: s.gemini_key_configured ? t('keyConfigured') : t('keyMissing') })}
         </p>
       </Card>
-      <Card title={t('defaultsCard')} className="grid gap-3 md:grid-cols-2">
-        <SelectField
-          label={t('defaultExport')}
-          disabled={disabled}
-          value={s.default_export_format}
-          onChange={set('default_export_format')}
-          options={optionsOf(EXPORT_FORMATS, (f) => t(`common:exportFormat.${f}`))}
-        />
-        <SelectField
-          label={t('exportContent')}
-          disabled={disabled}
-          value={s.default_export_mode}
-          onChange={set('default_export_mode')}
-          options={optionsOf(EXPORT_MODES, (m) => t(`common:exportMode.${m}`))}
-        />
-        <SelectField
-          label={t('defaultTargetLang')}
-          disabled={disabled}
-          value={s.default_target_langs[0] ?? 'en'}
-          onChange={(lang) => {
-            set('default_target_langs')([lang])
-          }}
-          options={optionsOf(LANGS, (l) => t(`common:lang.${l}`))}
-        />
+      <Card title={t('defaultsCard')}>
+        <div className="grid gap-5 md:grid-cols-2">
+          <SelectField
+            label={t('defaultExport')}
+            disabled={disabled}
+            value={s.default_export_format}
+            onChange={set('default_export_format')}
+            options={optionsOf(EXPORT_FORMATS, (f) => t(`common:exportFormat.${f}`))}
+          />
+          <SelectField
+            label={t('exportContent')}
+            disabled={disabled}
+            value={s.default_export_mode}
+            onChange={set('default_export_mode')}
+            options={optionsOf(EXPORT_MODES, (m) => t(`common:exportMode.${m}`))}
+          />
+          <SelectField
+            label={t('defaultTargetLang')}
+            disabled={disabled}
+            value={s.default_target_langs[0] ?? 'en'}
+            onChange={(lang) => {
+              set('default_target_langs')([lang])
+            }}
+            options={optionsOf(LANGS, (l) => t(`common:lang.${l}`))}
+          />
+        </div>
       </Card>
-      <Card title={t('colorsCard')} className="grid gap-3 md:grid-cols-2">
-        {TERM_CATEGORIES.map((category) => (
-          <label key={category} className="flex items-center gap-3 text-sm">
-            <input
-              type="color"
-              disabled={disabled}
-              value={s.colors[category] ?? '#999999'}
-              onChange={(e) => {
-                set('colors')({ ...s.colors, [category]: e.target.value })
-              }}
-            />
-            {t(`common:category.${category}`)}
-          </label>
-        ))}
+      <Card title={t('colorsCard')}>
+        <div className="grid gap-4 sm:grid-cols-2">
+          {TERM_CATEGORIES.map((category) => (
+            <label key={category} className="flex items-center gap-3 text-sm font-medium">
+              <input
+                type="color"
+                className="size-9 shrink-0 cursor-pointer rounded-full border border-line bg-transparent p-0.5 disabled:cursor-not-allowed [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-full [&::-webkit-color-swatch]:border-0 [&::-moz-color-swatch]:rounded-full [&::-moz-color-swatch]:border-0"
+                disabled={disabled}
+                value={s.colors[category] ?? '#999999'}
+                onChange={(e) => {
+                  set('colors')({ ...s.colors, [category]: e.target.value })
+                }}
+              />
+              {t(`common:category.${category}`)}
+            </label>
+          ))}
+        </div>
       </Card>
       <ErrorText error={save.error} />
       {!disabled && (

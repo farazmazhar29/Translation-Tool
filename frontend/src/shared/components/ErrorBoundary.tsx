@@ -24,7 +24,7 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, State> {
         className="mx-auto mt-20 max-w-md rounded-lg border border-red-200 bg-white p-6 text-center shadow-sm"
       >
         <h1 className="text-lg font-semibold text-red-700">{i18n.t('crash.title')}</h1>
-        <p className="mt-2 text-sm text-slate-600">{i18n.t('crash.text')}</p>
+        <p className="mt-2 text-sm text-stone-600">{i18n.t('crash.text')}</p>
         <button
           type="button"
           className="mt-4 rounded-md bg-red-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-800"

@@ -5,6 +5,7 @@ interface Auth {
   user: S['UserOut'] | null
   loading: boolean
   login: (username: string, password: string) => Promise<void>
+  register: (body: S['RegisterIn']) => Promise<void>
   logout: () => void
 }
 
