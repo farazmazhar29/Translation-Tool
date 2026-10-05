@@ -33,7 +33,7 @@ describe('toggle', () => {
 
 describe('btnClass', () => {
   it('uses the variant colours and appends extra classes', () => {
-    expect(btnClass('primary', 'w-full')).toContain('bg-red-700')
+    expect(btnClass('primary', 'w-full')).toContain('bg-brand')
     expect(btnClass('primary', 'w-full')).toContain('w-full')
     expect(btnClass('danger')).toContain('text-red-700')
   })

@@ -24,7 +24,7 @@ test('translator → reviewer: upload, preview, edit, approve, export', async ({
   await expect(dialog).toBeHidden()
 
   // manual edit is attributed to the editor
-  await page.getByRole('button', { name: '✎ Bearbeiten' }).nth(1).click()
+  await page.getByRole('button', { name: 'Bearbeiten' }).nth(1).click()
   await page.getByRole('textbox').first().fill('Edited by hand')
   await page.getByRole('button', { name: 'Übernehmen' }).click()
   await expect(page.getByText('bearbeitet von translator')).toBeVisible()
@@ -59,7 +59,7 @@ test('translator → reviewer: upload, preview, edit, approve, export', async ({
 test('glossary: duplicates are detected and drafts need approval', async ({ page }) => {
   await login(page, 'translator')
   await page.goto('/glossary')
-  await page.getByRole('button', { name: '+ Begriff' }).click()
+  await page.getByRole('button', { name: 'Begriff hinzufügen' }).click()
   const dialog = page.getByRole('dialog')
   await dialog.getByLabel('Deutsch').fill('Korpus')
   await dialog.getByLabel('Englisch').fill('carcass')
@@ -76,6 +76,7 @@ test('roles: translators do not see user administration', async ({ page }) => {
 
 test('login rejects wrong credentials', async ({ page }) => {
   await page.goto('/login')
+  await page.getByLabel('Benutzername').fill('translator')
   await page.getByLabel('Passwort').fill('wrong')
   await page.getByRole('button', { name: 'Anmelden' }).click()
   await expect(page.getByText('Benutzername oder Passwort falsch')).toBeVisible()
@@ -100,4 +101,18 @@ test('login is rate limited after repeated failures', async ({ page }) => {
   for (let i = 0; i < 5; i++) await page.getByRole('button', { name: 'Anmelden' }).click()
   await page.getByRole('button', { name: 'Anmelden' }).click()
   await expect(page.getByText(/Zu viele Fehlversuche/)).toBeVisible()
+})
+
+test('pages opened from the project list have a way back', async ({ page }) => {
+  await login(page, 'translator')
+  await page.goto('/projects/new')
+  await page.getByRole('link', { name: 'Zurück zu den Projekten' }).click()
+  await expect(page).toHaveURL(/\/projects$/)
+  await page.goto('/projects/new')
+  await page.getByRole('link', { name: 'Abbrechen' }).click() // the cancel button next to "Projekt anlegen"
+  await expect(page).toHaveURL(/\/projects$/)
+  const url = await createProject(page, 'Zurück-Test')
+  await page.getByRole('link', { name: 'Zurück zu den Projekten' }).click()
+  await expect(page).toHaveURL(/\/projects$/)
+  expect(url).toMatch(/\/projects\/\d+$/)
 })

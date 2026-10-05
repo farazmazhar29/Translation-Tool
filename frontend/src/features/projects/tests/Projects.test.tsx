@@ -13,7 +13,9 @@ const setup = (role: 'translator' | 'admin' = 'translator') => {
   setToken('t')
   const urls: string[] = []
   server.use(
-    http.get('*/api/auth/me', () => HttpResponse.json({ id: 1, username: 'u', full_name: '', role, active: true })),
+    http.get('*/api/users/current-user', () =>
+      HttpResponse.json({ id: 1, username: 'u', full_name: '', role, active: true }),
+    ),
     http.get('*/api/users/names', () => HttpResponse.json(['translator', 'reviewer'])),
     http.get('*/api/projects', ({ request }) => {
       urls.push(new URL(request.url).search)

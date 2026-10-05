@@ -1,7 +1,8 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
-import { EmptyState, Form, Loading, PageHeader, Table } from '../components/layout'
+import { MemoryRouter } from 'react-router-dom'
+import { BackLink, EmptyState, Form, Loading, PageHeader, Table } from '../components/layout'
 
 describe('PageHeader', () => {
   it('shows the title as the page heading, with optional actions', () => {
@@ -112,5 +113,30 @@ describe('Form', () => {
       </Form>,
     )
     expect(screen.queryByText('Unbekannter Fehler')).not.toBeInTheDocument()
+  })
+})
+
+describe('BackLink', () => {
+  it('is a link to the list the page was opened from', () => {
+    render(
+      <MemoryRouter>
+        <BackLink to="/projects">Zurück zu den Projekten</BackLink>
+      </MemoryRouter>,
+    )
+    expect(screen.getByRole('link', { name: 'Zurück zu den Projekten' })).toHaveAttribute('href', '/projects')
+  })
+})
+
+describe('Form with a second button', () => {
+  it('shows it next to the submit button without submitting the form', async () => {
+    const onSubmit = vi.fn()
+    render(
+      <Form onSubmit={onSubmit} submitLabel="Anlegen" secondary={<button type="button">Abbrechen</button>}>
+        <span>Inhalt</span>
+      </Form>,
+    )
+    await userEvent.click(screen.getByRole('button', { name: 'Abbrechen' }))
+    expect(onSubmit).not.toHaveBeenCalled()
+    expect(screen.getByRole('button', { name: 'Anlegen' })).toBeInTheDocument()
   })
 })
