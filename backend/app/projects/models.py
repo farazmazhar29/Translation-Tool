@@ -3,15 +3,22 @@
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import ForeignKey, Text
+from sqlalchemy import CheckConstraint, ForeignKey, Index, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.core.db import Base, Choice, now
+from app.core.db import Base, Choice, now, one_of
 from app.core.enums import FileFormat, JobState, ProjectStatus
 
 
 class Project(Base):
     __tablename__ = "projects"
+    __table_args__ = (
+        one_of("projects", "status", ProjectStatus),
+        one_of("projects", "job_state", JobState),
+        one_of("projects", "file_type", FileFormat),
+        CheckConstraint("job_progress BETWEEN 0 AND 100", name="ck_projects_job_progress"),
+        Index("ix_projects_archived_updated_at", "archived", "updated_at"),  # the project list
+    )
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str]
     customer: Mapped[str] = mapped_column(default="")
@@ -46,8 +53,14 @@ class Project(Base):
 
 class Segment(Base):
     __tablename__ = "segments"
+    __table_args__ = (
+        UniqueConstraint("project_id", "idx", name="uq_segments_project_id_idx"),
+        CheckConstraint("idx >= 0", name="ck_segments_idx"),
+    )
     id: Mapped[int] = mapped_column(primary_key=True)
-    project_id: Mapped[int] = mapped_column(ForeignKey("projects.id"), index=True)
+    project_id: Mapped[int] = mapped_column(
+        ForeignKey("projects.id", ondelete="CASCADE", name="fk_segments_project_id")
+    )
     idx: Mapped[int]
     locator: Mapped[dict[str, Any]] = mapped_column(default=dict)
     source_text: Mapped[str] = mapped_column(Text)
@@ -60,8 +73,11 @@ class Segment(Base):
 
 class Translation(Base):
     __tablename__ = "translations"
+    __table_args__ = (UniqueConstraint("segment_id", "lang", name="uq_translations_segment_id_lang"),)
     id: Mapped[int] = mapped_column(primary_key=True)
-    segment_id: Mapped[int] = mapped_column(ForeignKey("segments.id"), index=True)
+    segment_id: Mapped[int] = mapped_column(
+        ForeignKey("segments.id", ondelete="CASCADE", name="fk_translations_segment_id")
+    )
     lang: Mapped[str]
     text: Mapped[str] = mapped_column(Text, default="")
     original_text: Mapped[str] = mapped_column(Text, default="")  # machine output before manual edits

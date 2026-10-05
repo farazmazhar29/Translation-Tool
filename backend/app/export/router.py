@@ -32,7 +32,7 @@ def export_project(db: DB, user: Translator, pid: int, body: ExportIn) -> Export
     last = db.query(Release).filter(Release.project_id == pid).order_by(Release.id.desc()).first()
     ef = ExportFile(
         project_id=pid,
-        release_id=last.id if last else 0,
+        release_id=last.id if last else None,
         format=body.format,
         lang=body.lang,
         mode=body.mode,

@@ -11,6 +11,7 @@ from .db import engine
 
 log = logging.getLogger(__name__)
 BACKEND = Path(__file__).resolve().parents[2]
+BASELINE = "0001"  # the schema `create_all` produced in the first version
 
 
 def alembic_config() -> Config:
@@ -25,8 +26,7 @@ def upgrade_to_head() -> None:
     if "users" in tables and "alembic_version" not in tables:
         # Database created by the first version (`create_all`): adopt it instead of failing with "table exists".
         log.warning("Existing unversioned database found - stamping it as the baseline revision")
-        command.stamp(cfg, "head")
-        return
+        command.stamp(cfg, BASELINE)
     command.upgrade(cfg, "head")
 
 

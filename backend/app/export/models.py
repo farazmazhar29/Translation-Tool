@@ -6,15 +6,20 @@ from typing import Any
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.core.db import Base, Choice, now
+from app.core.db import Base, Choice, now, one_of
 from app.core.enums import ExportMode, FileFormat
 
 
 class ExportFile(Base):
     __tablename__ = "export_files"
+    __table_args__ = (one_of("export_files", "format", FileFormat), one_of("export_files", "mode", ExportMode))
     id: Mapped[int] = mapped_column(primary_key=True)
-    project_id: Mapped[int] = mapped_column(ForeignKey("projects.id"), index=True)
-    release_id: Mapped[int] = mapped_column(default=0)
+    project_id: Mapped[int] = mapped_column(
+        ForeignKey("projects.id", ondelete="CASCADE", name="fk_export_files_project_id"), index=True
+    )
+    release_id: Mapped[int | None] = mapped_column(  # the approved version this was exported from
+        ForeignKey("releases.id", ondelete="SET NULL", name="fk_export_files_release_id"), index=True, default=None
+    )
     format: Mapped[FileFormat] = mapped_column(Choice(FileFormat))
     lang: Mapped[str] = mapped_column(default="")
     mode: Mapped[ExportMode] = mapped_column(Choice(ExportMode))
@@ -26,6 +31,7 @@ class ExportFile(Base):
 
 class ExportTemplate(Base):
     __tablename__ = "export_templates"
+    __table_args__ = (one_of("export_templates", "format", FileFormat),)
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str]
     format: Mapped[FileFormat] = mapped_column(Choice(FileFormat))

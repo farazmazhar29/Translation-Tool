@@ -59,7 +59,7 @@ class ExportFileOut(ORM):
     mode: ExportMode
     created_by: str
     created_at: datetime
-    release_id: int
+    release_id: int | None
 
 
 class TemplateIn(BaseModel):
