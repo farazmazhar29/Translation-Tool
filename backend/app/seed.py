@@ -139,7 +139,9 @@ def seed_glossary(db: Session) -> None:
 
 
 def seed(db: Session) -> None:
+    """Demo content is created once, with the very first start. A glossary that someone emptied stays empty."""
+    first_run = db.query(User).count() == 0
     seed_users(db)
-    if settings.seed_demo_data:  # the sample glossary is demo content, not something to ship to production
+    if settings.seed_demo_data and first_run:  # the sample glossary is demo content, not for production
         seed_glossary(db)
     db.commit()

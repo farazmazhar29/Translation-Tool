@@ -76,6 +76,15 @@ def test_demo_mode_creates_demo_users_and_the_sample_glossary(empty_db: Session)
     assert empty_db.query(User).count() == 3
 
 
+def test_a_glossary_that_was_emptied_on_purpose_is_not_filled_again(empty_db: Session) -> None:
+    seed(empty_db)
+    empty_db.query(GlossaryEntry).delete()
+    empty_db.commit()
+    seed(empty_db)  # the next start: the users exist, so this is not the first run any more
+    assert empty_db.query(GlossaryEntry).count() == 0
+    assert empty_db.query(User).count() == 3
+
+
 def test_production_mode_creates_only_the_configured_first_admin(
     empty_db: Session, monkeypatch: pytest.MonkeyPatch
 ) -> None:
