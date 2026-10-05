@@ -21,15 +21,52 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/auth/me": {
+    "/api/auth/options": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Me */
-        get: operations["me_api_auth_me_get"];
+        /** What the login page may offer */
+        get: operations["auth_options_api_auth_options_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/register": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create an account (always a translator); the user signs in afterwards */
+        post: operations["register_api_auth_register_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/users/current-user": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The signed-in user (profile and role)
+         * @description What the browser asks on every page load: who owns this token, and what may they do?
+         */
+        get: operations["read_current_user_api_users_current_user_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -680,6 +717,11 @@ export interface components {
          * @enum {string}
          */
         ArchiveFilter: "no" | "only" | "all";
+        /** AuthOptions */
+        AuthOptions: {
+            /** Registration Enabled */
+            registration_enabled: boolean;
+        };
         /** Body_create_project_api_projects_post */
         Body_create_project_api_projects_post: {
             /** File */
@@ -1142,6 +1184,21 @@ export interface components {
             message: string;
         };
         /**
+         * RegisterIn
+         * @description Self-registration. The role is never chosen by the user: a new account is always a translator.
+         */
+        RegisterIn: {
+            /** Username */
+            username: string;
+            /**
+             * Full Name
+             * @default
+             */
+            full_name: string;
+            /** Password */
+            password: string;
+        };
+        /**
          * ReleaseDetail
          * @description One approved version: what the machine produced (preview) and what was approved (final), per segment id.
          */
@@ -1469,7 +1526,60 @@ export interface operations {
             };
         };
     };
-    me_api_auth_me_get: {
+    auth_options_api_auth_options_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthOptions"];
+                };
+            };
+        };
+    };
+    register_api_auth_register_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegisterIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_current_user_api_users_current_user_get: {
         parameters: {
             query?: never;
             header?: never;

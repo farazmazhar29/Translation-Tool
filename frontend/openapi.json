@@ -47,13 +47,76 @@
     }
    }
   },
-  "/api/auth/me": {
+  "/api/auth/options": {
    "get": {
     "tags": [
      "Auth"
     ],
-    "summary": "Me",
-    "operationId": "me_api_auth_me_get",
+    "summary": "What the login page may offer",
+    "operationId": "auth_options_api_auth_options_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AuthOptions"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/auth/register": {
+   "post": {
+    "tags": [
+     "Auth"
+    ],
+    "summary": "Create an account (always a translator); the user signs in afterwards",
+    "operationId": "register_api_auth_register_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/RegisterIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "201": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/UserOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/users/current-user": {
+   "get": {
+    "tags": [
+     "Users"
+    ],
+    "summary": "The signed-in user (profile and role)",
+    "description": "What the browser asks on every page load: who owns this token, and what may they do?",
+    "operationId": "read_current_user_api_users_current_user_get",
     "responses": {
      "200": {
       "description": "Successful Response",
@@ -2271,6 +2334,19 @@
     "title": "ArchiveFilter",
     "description": "Which projects the project list shows."
    },
+   "AuthOptions": {
+    "properties": {
+     "registration_enabled": {
+      "type": "boolean",
+      "title": "Registration Enabled"
+     }
+    },
+    "type": "object",
+    "required": [
+     "registration_enabled"
+    ],
+    "title": "AuthOptions"
+   },
    "Body_create_project_api_projects_post": {
     "properties": {
      "file": {
@@ -3303,6 +3379,36 @@
      "message"
     ],
     "title": "QualityWarning"
+   },
+   "RegisterIn": {
+    "properties": {
+     "username": {
+      "type": "string",
+      "maxLength": 50,
+      "minLength": 3,
+      "pattern": "^[A-Za-z0-9._-]+$",
+      "title": "Username"
+     },
+     "full_name": {
+      "type": "string",
+      "maxLength": 100,
+      "title": "Full Name",
+      "default": ""
+     },
+     "password": {
+      "type": "string",
+      "maxLength": 128,
+      "minLength": 10,
+      "title": "Password"
+     }
+    },
+    "type": "object",
+    "required": [
+     "username",
+     "password"
+    ],
+    "title": "RegisterIn",
+    "description": "Self-registration. The role is never chosen by the user: a new account is always a translator."
    },
    "ReleaseDetail": {
     "properties": {
