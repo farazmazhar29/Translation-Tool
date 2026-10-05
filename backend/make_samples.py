@@ -4,6 +4,9 @@ from pathlib import Path
 
 from docx import Document
 from openpyxl import Workbook
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
 
 OUT = Path(__file__).resolve().parents[1] / "samples"
 OUT.mkdir(exist_ok=True)
@@ -80,6 +83,45 @@ def glossary() -> None:
     wb.save(OUT / "glossar_beispiel.xlsx")
 
 
-manual()
-prices()
-glossary()
+def german_pdf() -> None:
+    """One page of German assembly instructions (text, not a scan) to try the PDF translation with."""
+    styles = getSampleStyleSheet()
+    body = ParagraphStyle("body", parent=styles["BodyText"], fontSize=11, leading=16, spaceAfter=10)
+    lines: list[tuple[str, str]] = [
+        ("Title", "Montageanleitung Hängeschrank"),
+        ("Heading2", "Produktbeschreibung"),
+        (
+            "body",
+            "Der Hängeschrank Modell HS-9001 aus der Rotpunkt Kitchen Line überzeugt durch hochwertige Materialien. "
+            "Der Korpus besteht aus beschichteter Spanplatte, die Frontblende aus Eiche furniert.",
+        ),
+        ("Heading2", "Lieferumfang"),
+        ("body", "1 Hängeschrank mit Glastür, Artikelnummer HS-9001/60"),
+        ("body", "2 Scharniere (Topfband) und 1 Einlegeboden"),
+        ("body", "1 Befestigungsschiene, Art.-Nr. BS-3300"),
+        ("Heading2", "Montage"),
+        (
+            "body",
+            "Die Befestigungsschiene waagerecht an der Wand anbringen und den Hängeschrank einhängen. "
+            "Das Gewicht des Schranks beträgt 28,5 kg. Bitte nur geeignete Dübel verwenden.",
+        ),
+        (
+            "body",
+            "Die Dunstabzugshaube wird erst nach der Nischenrückwand montiert. "
+            "Die Arbeitsplatte vor dem Einbau auf Beschädigungen prüfen.",
+        ),
+        ("Heading2", "Hinweise"),
+        ("body", "Vor der Montage den Einlegeboden prüfen. Der Preis beträgt 189,90 EUR inklusive Mehrwertsteuer."),
+        ("body", "Bei Fragen wenden Sie sich bitte an Ihren Küchenfachberater."),
+    ]
+    flow: list[Paragraph | Spacer] = [Paragraph(text, styles[kind] if kind != "body" else body) for kind, text in lines]
+    SimpleDocTemplate(str(OUT / "Montageanleitung_Haengeschrank.pdf"), pagesize=A4, title="Montageanleitung").build(
+        flow
+    )
+
+
+if __name__ == "__main__":
+    manual()
+    prices()
+    glossary()
+    german_pdf()
