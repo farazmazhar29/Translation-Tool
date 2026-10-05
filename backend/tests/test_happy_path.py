@@ -33,7 +33,7 @@ def test_login_and_permissions(client: TestClient, translator: Headers) -> None:
     assert client.post("/api/auth/login", data={"username": "admin", "password": "x"}).status_code == 401
     assert client.get("/api/projects").status_code == 401
     assert client.get("/api/users", headers=translator).status_code == 403
-    assert client.get("/api/auth/me", headers=translator).json()["role"] == "translator"
+    assert client.get("/api/users/current-user", headers=translator).json()["role"] == "translator"
 
 
 def test_upload_rejects_unsupported(client: TestClient, translator: Headers) -> None:

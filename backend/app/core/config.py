@@ -25,6 +25,7 @@ class Settings(BaseSettings):
     token_hours: int = 12
     login_max_failures: int = 5  # per IP + username ...
     login_window_minutes: int = 15  # ... within this window
+    allow_registration: bool = True  # self-service "create account" on the login page; new accounts are translators
     seed_demo_data: bool = True  # demo users and sample glossary; must be off in production
     bootstrap_admin_username: str = ""  # optional first admin when no users exist (production)
     bootstrap_admin_password: str = ""

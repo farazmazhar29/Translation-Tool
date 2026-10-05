@@ -4,9 +4,10 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy import func
 
 from app.accounts.models import User
-from app.accounts.schemas import LoginOut, UserIn, UserOut
+from app.accounts.schemas import MIN_PASSWORD_LENGTH, AuthOptions, LoginOut, RegisterIn, UserIn, UserOut
 from app.accounts.security import DUMMY_HASH, Admin, Me, create_token, hash_password, needs_rehash, verify_password
 from app.core.config import settings
 from app.core.db import DB
@@ -15,7 +16,6 @@ from app.core.ratelimit import FailureLimiter, RateLimited
 
 router = APIRouter(prefix="/api")
 
-MIN_PASSWORD_LENGTH = 10
 login_limiter = FailureLimiter(settings.login_max_failures, settings.login_window_minutes * 60)
 
 
@@ -42,8 +42,52 @@ def login(db: DB, request: Request, form: Annotated[OAuth2PasswordRequestForm, D
     return LoginOut(access_token=create_token(u), user=UserOut.model_validate(u))
 
 
-@router.get("/auth/me", response_model=UserOut, tags=["Auth"])
-def me(user: Me) -> User:
+register_limiter = FailureLimiter(5, 3600)  # at most 5 new accounts per IP address and hour
+
+
+@router.get("/auth/options", tags=["Auth"], summary="What the login page may offer")
+def auth_options() -> AuthOptions:
+    return AuthOptions(registration_enabled=settings.allow_registration)
+
+
+@router.post(
+    "/auth/register",
+    status_code=201,
+    tags=["Auth"],
+    summary="Create an account (always a translator); the user signs in afterwards",
+)
+def register(db: DB, request: Request, body: RegisterIn) -> UserOut:
+    if not settings.allow_registration:
+        raise HTTPException(403, "Die Registrierung ist deaktiviert.")
+    key = request.client.host if request.client else "-"
+    try:
+        register_limiter.check(key)
+    except RateLimited as e:
+        raise HTTPException(
+            429,
+            f"Zu viele Registrierungen. Bitte in {e.retry_after // 60 + 1} Minute(n) erneut versuchen.",
+            headers={"Retry-After": str(e.retry_after)},
+        ) from None
+    # Case-insensitive: "Admin" must not be registrable next to "admin" (look-alike accounts).
+    if db.query(User).filter(func.lower(User.username) == body.username.lower()).first():
+        raise HTTPException(409, "Benutzername existiert bereits")
+    u = User(
+        username=body.username,
+        full_name=body.full_name.strip(),
+        role=Role.TRANSLATOR,
+        password_hash=hash_password(body.password),
+    )
+    db.add(u)
+    db.commit()
+    register_limiter.fail(key)  # every new account counts against the limit
+    return UserOut.model_validate(u)  # no token: signing in is a separate step
+
+
+@router.get(
+    "/users/current-user", response_model=UserOut, tags=["Users"], summary="The signed-in user (profile and role)"
+)
+def read_current_user(user: Me) -> User:
+    """What the browser asks on every page load: who owns this token, and what may they do?"""
     return user
 
 

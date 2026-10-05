@@ -24,7 +24,7 @@ import pytest  # noqa: E402
 from docx import Document  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
-from app.accounts.router import login_limiter  # noqa: E402
+from app.accounts.router import login_limiter, register_limiter  # noqa: E402
 from app.main import app  # noqa: E402
 
 Headers = dict[str, str]
@@ -49,6 +49,7 @@ def _no_real_http(monkeypatch: pytest.MonkeyPatch) -> None:
 @pytest.fixture(autouse=True)
 def _fresh_login_limiter() -> None:
     login_limiter.clear()  # failures from one test must not lock out the next
+    register_limiter.clear()
 
 
 def login(client: TestClient, user: str, password: str | None = None) -> Headers:

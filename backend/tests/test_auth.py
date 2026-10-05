@@ -98,17 +98,17 @@ def test_successful_login_resets_the_failure_counter(client: TestClient) -> None
     ],
 )
 def test_invalid_tokens_are_rejected(client: TestClient, claims: dict[str, object]) -> None:
-    assert client.get("/api/auth/me", headers=token(claims)).status_code == 401
+    assert client.get("/api/users/current-user", headers=token(claims)).status_code == 401
 
 
 def test_token_signed_with_another_key_is_rejected(client: TestClient) -> None:
     forged = token({"sub": "admin", "exp": hour(1)}, secret="attacker-key-attacker-key-attacker")
-    assert client.get("/api/auth/me", headers=forged).status_code == 401
+    assert client.get("/api/users/current-user", headers=forged).status_code == 401
 
 
 def test_missing_or_garbage_authorization_is_rejected(client: TestClient) -> None:
-    assert client.get("/api/auth/me").status_code == 401
-    assert client.get("/api/auth/me", headers={"Authorization": "Bearer not-a-jwt"}).status_code == 401
+    assert client.get("/api/users/current-user").status_code == 401
+    assert client.get("/api/users/current-user", headers={"Authorization": "Bearer not-a-jwt"}).status_code == 401
 
 
 # user administration
@@ -124,17 +124,17 @@ def test_user_lifecycle_and_password_policy(client: TestClient, admin: Headers) 
     assert client.put(f"/api/users/{uid}", headers=admin, json={**new, "role": "reviewer"}).json()["role"] == "reviewer"
 
     own = login(client, "lifecycle", "long-enough-1")
-    assert client.get("/api/auth/me", headers=own).json()["role"] == "reviewer"
+    assert client.get("/api/users/current-user", headers=own).json()["role"] == "reviewer"
     deactivate = {**new, "role": "reviewer", "active": False, "password": ""}
     assert client.put(f"/api/users/{uid}", headers=admin, json=deactivate).status_code == 200
-    assert client.get("/api/auth/me", headers=own).status_code == 401  # an existing token stops working
+    assert client.get("/api/users/current-user", headers=own).status_code == 401  # an existing token stops working
     assert (
         client.post("/api/auth/login", data={"username": "lifecycle", "password": "long-enough-1"}).status_code == 401
     )
 
 
 def test_admin_cannot_remove_their_own_admin_role(client: TestClient, admin: Headers) -> None:
-    me = client.get("/api/auth/me", headers=admin).json()
+    me = client.get("/api/users/current-user", headers=admin).json()
     body = {"username": "admin", "full_name": "x", "password": "", "role": "reviewer", "active": True}
     assert client.put(f"/api/users/{me['id']}", headers=admin, json=body).status_code == 400
     assert client.put("/api/users/99999", headers=admin, json=body).status_code == 404
