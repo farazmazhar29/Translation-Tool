@@ -1,6 +1,7 @@
 """Look up a project or segment and check that it can still be edited (shared by several features)."""
 
 from fastapi import HTTPException
+from sqlalchemy.orm import selectinload
 
 from app.core.db import DB
 from app.core.enums import EDITABLE_STATUSES
@@ -8,7 +9,8 @@ from app.projects.models import Project, Segment
 
 
 def get_project(db: DB, pid: int) -> Project:
-    p = db.get(Project, pid)
+    # Load the segments (and, through the relationship, their translations) in two queries instead of one per segment.
+    p = db.get(Project, pid, options=[selectinload(Project.segments)])
     if p is None:
         raise HTTPException(404, "Projekt nicht gefunden")
     return p

@@ -65,7 +65,11 @@ class Segment(Base):
     locator: Mapped[dict[str, Any]] = mapped_column(default=dict)
     source_text: Mapped[str] = mapped_column(Text)
     project: Mapped[Project] = relationship(back_populates="segments")
-    translations: Mapped[list["Translation"]] = relationship(back_populates="segment", cascade="all, delete-orphan")
+    translations: Mapped[list["Translation"]] = relationship(
+        back_populates="segment",
+        cascade="all, delete-orphan",
+        lazy="selectin",  # one query for all segments, not one each
+    )
 
     def translation(self, lang: str) -> "Translation | None":
         return next((t for t in self.translations if t.lang == lang), None)
