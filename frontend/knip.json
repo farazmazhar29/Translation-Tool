@@ -3,5 +3,5 @@
   "entry": ["e2e/**/*.spec.ts"],
   "project": ["src/**/*.{ts,tsx}", "e2e/**/*.ts"],
   "ignore": ["src/shared/api/schema.d.ts"],
-  "ignoreDependencies": ["tailwindcss"]
+  "ignoreDependencies": ["tailwindcss", "@fontsource-variable/raleway"]
 }
