@@ -39,6 +39,7 @@ Everything is configured through environment variables or a `.env` file (see [`.
 | `LLM_PROVIDER` | `gemini` | `gemini` or `mock` (offline) |
 | `ENVIRONMENT` | `development` | `production` **refuses to start** without a strong `SECRET_KEY` and with demo data on |
 | `SECRET_KEY` | dev value | Random, >= 32 characters in production |
+| `ALLOW_REGISTRATION` | `true` | Self-service "Create account" on the login page. New accounts are always translators. `false`: only admins create users |
 | `SEED_DEMO_DATA` | `true` | Demo users and sample glossary. Must be `false` in production |
 | `BOOTSTRAP_ADMIN_USERNAME/PASSWORD` | – | First administrator, created only when no user exists |
 | `DATABASE_URL` | SQLite in `DATA_DIR` | e.g. `postgresql+psycopg2://user:pass@host/db` |
