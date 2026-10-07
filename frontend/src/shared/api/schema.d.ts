@@ -499,40 +499,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/projects/{pid}/submit-review": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Send to a reviewer */
-        post: operations["submit_review_api_projects__pid__submit_review_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/projects/{pid}/reject": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Send back to the translator */
-        post: operations["reject_api_projects__pid__reject_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/projects/{pid}/approve": {
         parameters: {
             query?: never;
@@ -1023,10 +989,14 @@ export interface components {
             /** Skipped */
             skipped: number;
             /** Skipped Rows */
-            skipped_rows: {
-                [key: string]: unknown;
-            }[];
+            skipped_rows: components["schemas"]["SkippedRow"][];
         };
+        /**
+         * ImportSkip
+         * @description Why an Excel row was not imported; the interface words it in its own language.
+         * @enum {string}
+         */
+        ImportSkip: "missing_term" | "duplicate";
         /**
          * JobState
          * @enum {string}
@@ -1159,7 +1129,13 @@ export interface components {
          * ProjectStatus
          * @enum {string}
          */
-        ProjectStatus: "new" | "preview_ready" | "in_review" | "approved" | "archived";
+        ProjectStatus: "new" | "preview_ready" | "approved" | "archived";
+        /**
+         * QualityCode
+         * @description What the quality check found. The interface writes the sentence for each code in its own language.
+         * @enum {string}
+         */
+        QualityCode: "no_translation" | "identical_text" | "unknown_term" | "ambiguous_term" | "glossary_violation" | "numbers_differ" | "line_breaks_differ" | "too_long" | "contradiction" | "missing_glossary";
         /** QualityOut */
         QualityOut: {
             /** Warnings */
@@ -1179,6 +1155,14 @@ export interface components {
             lang: string;
             /** Type */
             type: string;
+            code?: components["schemas"]["QualityCode"] | null;
+            /**
+             * Params
+             * @default {}
+             */
+            params: {
+                [key: string]: string;
+            };
             severity: components["schemas"]["Severity"];
             /** Message */
             message: string;
@@ -1308,6 +1292,26 @@ export interface components {
          * @enum {string}
          */
         Severity: "error" | "warning" | "info";
+        /** SkippedRow */
+        SkippedRow: {
+            /**
+             * Row
+             * @description Row number in the sheet, the header being row 1
+             */
+            row: number;
+            code: components["schemas"]["ImportSkip"];
+            /**
+             * Term
+             * @description The term of a duplicate
+             * @default
+             */
+            term: string;
+            /**
+             * Reason
+             * @description German text of the reason, for API clients without their own wording
+             */
+            reason: string;
+        };
         /** Stats */
         Stats: {
             /** Projects Total */
@@ -2541,68 +2545,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["QualityOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    submit_review_api_projects__pid__submit_review_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                pid: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProjectOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    reject_api_projects__pid__reject_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                pid: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProjectOut"];
                 };
             };
             /** @description Validation Error */

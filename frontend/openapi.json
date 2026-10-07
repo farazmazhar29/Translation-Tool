@@ -1763,100 +1763,6 @@
     }
    }
   },
-  "/api/projects/{pid}/submit-review": {
-   "post": {
-    "tags": [
-     "Review"
-    ],
-    "summary": "Send to a reviewer",
-    "operationId": "submit_review_api_projects__pid__submit_review_post",
-    "security": [
-     {
-      "OAuth2PasswordBearer": []
-     }
-    ],
-    "parameters": [
-     {
-      "name": "pid",
-      "in": "path",
-      "required": true,
-      "schema": {
-       "type": "integer",
-       "title": "Pid"
-      }
-     }
-    ],
-    "responses": {
-     "200": {
-      "description": "Successful Response",
-      "content": {
-       "application/json": {
-        "schema": {
-         "$ref": "#/components/schemas/ProjectOut"
-        }
-       }
-      }
-     },
-     "422": {
-      "description": "Validation Error",
-      "content": {
-       "application/json": {
-        "schema": {
-         "$ref": "#/components/schemas/HTTPValidationError"
-        }
-       }
-      }
-     }
-    }
-   }
-  },
-  "/api/projects/{pid}/reject": {
-   "post": {
-    "tags": [
-     "Review"
-    ],
-    "summary": "Send back to the translator",
-    "operationId": "reject_api_projects__pid__reject_post",
-    "security": [
-     {
-      "OAuth2PasswordBearer": []
-     }
-    ],
-    "parameters": [
-     {
-      "name": "pid",
-      "in": "path",
-      "required": true,
-      "schema": {
-       "type": "integer",
-       "title": "Pid"
-      }
-     }
-    ],
-    "responses": {
-     "200": {
-      "description": "Successful Response",
-      "content": {
-       "application/json": {
-        "schema": {
-         "$ref": "#/components/schemas/ProjectOut"
-        }
-       }
-      }
-     },
-     "422": {
-      "description": "Validation Error",
-      "content": {
-       "application/json": {
-        "schema": {
-         "$ref": "#/components/schemas/HTTPValidationError"
-        }
-       }
-      }
-     }
-    }
-   }
-  },
   "/api/projects/{pid}/approve": {
    "post": {
     "tags": [
@@ -2956,8 +2862,7 @@
      },
      "skipped_rows": {
       "items": {
-       "additionalProperties": true,
-       "type": "object"
+       "$ref": "#/components/schemas/SkippedRow"
       },
       "type": "array",
       "title": "Skipped Rows"
@@ -2971,6 +2876,15 @@
      "skipped_rows"
     ],
     "title": "ImportResult"
+   },
+   "ImportSkip": {
+    "type": "string",
+    "enum": [
+     "missing_term",
+     "duplicate"
+    ],
+    "title": "ImportSkip",
+    "description": "Why an Excel row was not imported; the interface words it in its own language."
    },
    "JobState": {
     "type": "string",
@@ -3304,11 +3218,27 @@
     "enum": [
      "new",
      "preview_ready",
-     "in_review",
      "approved",
      "archived"
     ],
     "title": "ProjectStatus"
+   },
+   "QualityCode": {
+    "type": "string",
+    "enum": [
+     "no_translation",
+     "identical_text",
+     "unknown_term",
+     "ambiguous_term",
+     "glossary_violation",
+     "numbers_differ",
+     "line_breaks_differ",
+     "too_long",
+     "contradiction",
+     "missing_glossary"
+    ],
+    "title": "QualityCode",
+    "description": "What the quality check found. The interface writes the sentence for each code in its own language."
    },
    "QualityOut": {
     "properties": {
@@ -3360,6 +3290,24 @@
      "type": {
       "type": "string",
       "title": "Type"
+     },
+     "code": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/QualityCode"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "params": {
+      "additionalProperties": {
+       "type": "string"
+      },
+      "type": "object",
+      "title": "Params",
+      "default": {}
      },
      "severity": {
       "$ref": "#/components/schemas/Severity"
@@ -3660,6 +3608,36 @@
      "info"
     ],
     "title": "Severity"
+   },
+   "SkippedRow": {
+    "properties": {
+     "row": {
+      "type": "integer",
+      "title": "Row",
+      "description": "Row number in the sheet, the header being row 1"
+     },
+     "code": {
+      "$ref": "#/components/schemas/ImportSkip"
+     },
+     "term": {
+      "type": "string",
+      "title": "Term",
+      "description": "The term of a duplicate",
+      "default": ""
+     },
+     "reason": {
+      "type": "string",
+      "title": "Reason",
+      "description": "German text of the reason, for API clients without their own wording"
+     }
+    },
+    "type": "object",
+    "required": [
+     "row",
+     "code",
+     "reason"
+    ],
+    "title": "SkippedRow"
    },
    "Stats": {
     "properties": {
