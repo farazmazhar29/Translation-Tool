@@ -1,15 +1,16 @@
 """Translation API contract."""
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 
+from app.core.schemas import Schema
 from app.projects.schemas import SourceLang
 
 
-class TranslateIn(BaseModel):
+class TranslateIn(Schema):
     source_lang: SourceLang | None = Field(default=None, description="The target is always the other language")
 
 
-class TermReplace(BaseModel):
+class TermReplace(Schema):
     lang: str
     old: str
     new: str

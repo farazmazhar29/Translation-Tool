@@ -18,7 +18,7 @@ router = APIRouter(prefix="/api", tags=["Review"])
 
 
 @router.post("/projects/{pid}/approve", response_model=ProjectOut, summary="'Übersetzung freigeben'")
-def approve(db: DB, user: Reviewer, pid: int) -> Project:
+def approve_project(db: DB, user: Reviewer, pid: int) -> Project:
     """Stores the final translation as a release (history). Export is only possible afterwards."""
     p = get_project(db, pid)
     if p.status != ProjectStatus.PREVIEW_READY:
@@ -47,7 +47,7 @@ def approve(db: DB, user: Reviewer, pid: int) -> Project:
 
 
 @router.post("/projects/{pid}/reopen", response_model=ProjectOut, summary="Reopen a finished project")
-def reopen(db: DB, _: Translator, pid: int) -> Project:
+def reopen_project(db: DB, _: Translator, pid: int) -> Project:
     p = get_project(db, pid)
     p.archived = False
     p.status = ProjectStatus.PREVIEW_READY if any(s.translations for s in p.segments) else ProjectStatus.NEW
@@ -64,7 +64,7 @@ def release_detail(db: DB, _: Me, rid: int) -> ReleaseDetail:
 
 
 @router.get("/projects/{pid}/history", summary="Releases and exports of a project")
-def history(db: DB, _: Me, pid: int) -> HistoryOut:
+def project_history(db: DB, _: Me, pid: int) -> HistoryOut:
     p = get_project(db, pid)
     return HistoryOut.model_validate(
         {

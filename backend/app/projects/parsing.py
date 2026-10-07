@@ -118,7 +118,8 @@ def read_cells(path: Path) -> list[dict[str, Any]]:
                 cells.append(
                     {
                         "ref": c.coordinate,
-                        "value": c.value if number else str(c.value),
+                        "text": None if number else str(c.value),
+                        "number": c.value if number else None,
                         "decimals": decimals,
                         "bold": getattr(c.font, "b", None) is True,  # openpyxl's style objects are untyped
                     }

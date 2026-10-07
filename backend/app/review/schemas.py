@@ -3,9 +3,7 @@
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel
-
-from app.core.schemas import ORM
+from app.core.schemas import ORM, Schema
 from app.export.schemas import ExportFileOut
 from app.projects.schemas import ProjectOut
 from app.quality.schemas import QualityWarning
@@ -28,7 +26,7 @@ class ReleaseDetail(ReleaseOut):
     final: dict[str, Any]
 
 
-class HistoryOut(BaseModel):
+class HistoryOut(Schema):
     project: ProjectOut
     releases: list[ReleaseOut]
     exports: list[ExportFileOut]

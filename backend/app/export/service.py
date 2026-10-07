@@ -134,16 +134,15 @@ def sheets(p: Project, lang: str, both: bool, comments: bool) -> list[Sheet]:
         placed: dict[tuple[int, int], SheetCell] = {}
         for c in sheet["cells"]:
             letters, row = coordinate_from_string(c["ref"])
-            value = c["value"]
-            if isinstance(value, str):
+            if c["number"] is None:
                 seg = by_cell.get((sheet["name"], c["ref"]))
                 tr = seg.translation(lang) if seg else None
-                text = tr.text if tr and tr.text else value
+                text = tr.text if tr and tr.text else c["text"]
                 original = seg.source_text if both and seg and seg.source_text != text else ""
                 comment = tr.comment if comments and tr else ""
                 cell = SheetCell(text, original, comment, c["bold"])
             else:
-                cell = SheetCell(number_text(value, c["decimals"], lang), bold=c["bold"], number=True)
+                cell = SheetCell(number_text(c["number"], c["decimals"], lang), bold=c["bold"], number=True)
             placed[(row, column_index_from_string(letters))] = cell
         if not placed:
             continue

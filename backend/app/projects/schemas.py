@@ -3,10 +3,10 @@
 from datetime import datetime
 from typing import Any, Literal, cast
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import Field, field_validator
 
 from app.core.enums import FileFormat, JobState, Lang, ProjectStatus
-from app.core.schemas import ORM
+from app.core.schemas import ORM, Schema
 from app.glossary.schemas import Term
 
 
@@ -32,7 +32,7 @@ class SegmentOut(ORM):
         return {t.lang: t for t in cast(list[Any], v)} if isinstance(v, list) else v
 
 
-class SegmentEdit(BaseModel):
+class SegmentEdit(Schema):
     text: str | None = None
     comment: str | None = None
 
@@ -64,20 +64,21 @@ class ProjectDetail(ProjectOut):
 SourceLang = Lang | Literal["auto"]  # "auto" = detect the language from the text (see enums.AUTO)
 
 
-class ProjectPatch(BaseModel):
+class ProjectPatch(Schema):
     name: str | None = Field(None, min_length=1, max_length=200)
     customer: str | None = Field(None, max_length=200)
     source_lang: SourceLang | None = None
 
 
-class CellOut(BaseModel):
+class CellOut(Schema):
     ref: str = Field(description='Cell coordinate, e.g. "B5"; text cells match a segment locator "cell"')
-    value: str | float
+    text: str | None = Field(default=None, description="The text of a text cell")
+    number: float | None = Field(default=None, description="The value of a number cell")
     decimals: int = Field(default=0, description="Decimals of the cell's number format")
     bold: bool = False
 
 
-class SheetOut(BaseModel):
+class SheetOut(Schema):
     name: str
     cells: list[CellOut]
 

@@ -135,7 +135,7 @@ def create_project(
 
 
 @router.get("/{pid}", response_model=ProjectDetail)
-def project_detail(db: DB, _: Me, pid: int) -> Project:
+def get_project_detail(db: DB, _: Me, pid: int) -> Project:
     return get_project(db, pid)
 
 
@@ -150,7 +150,7 @@ def patch_project(db: DB, _: Translator, pid: int, body: ProjectPatch) -> Projec
 
 
 @router.post("/{pid}/archive", response_model=ProjectOut)
-def archive(db: DB, _: Translator, pid: int) -> Project:
+def archive_project(db: DB, _: Translator, pid: int) -> Project:
     p = get_project(db, pid)
     p.archived = True
     db.commit()
@@ -158,7 +158,7 @@ def archive(db: DB, _: Translator, pid: int) -> Project:
 
 
 @router.post("/{pid}/unarchive", response_model=ProjectOut)
-def unarchive(db: DB, _: Translator, pid: int) -> Project:
+def unarchive_project(db: DB, _: Translator, pid: int) -> Project:
     p = get_project(db, pid)
     p.archived = False
     db.commit()
@@ -224,7 +224,7 @@ def download_original(db: DB, _: Me, pid: int) -> FileResponse:
 
 
 @router.get("/{pid}/cells", summary="All non-empty cells of an Excel project, for the table view")
-def sheet_cells(db: DB, _: Me, pid: int) -> list[SheetOut]:
+def get_sheet_cells(db: DB, _: Me, pid: int) -> list[SheetOut]:
     p = get_project(db, pid)
     if p.file_type != FileFormat.XLSX:
         raise HTTPException(400, "Nur Excel-Projekte haben Tabellenblätter.")

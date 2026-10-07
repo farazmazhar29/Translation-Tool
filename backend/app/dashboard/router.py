@@ -18,7 +18,7 @@ router = APIRouter(prefix="/api")
 
 
 @router.get("/dashboard", tags=["Dashboard"])
-def dashboard(db: DB, _: Me) -> DashboardOut:
+def get_dashboard(db: DB, _: Me) -> DashboardOut:
     projects = db.query(Project).all()
     today = datetime.now(UTC).replace(tzinfo=None, hour=0, minute=0, second=0, microsecond=0)
     status = Counter(p.status for p in projects if not p.archived)

@@ -151,7 +151,7 @@ def update_entry(db: DB, user: Reviewer, eid: int, body: GlossaryIn) -> Glossary
 
 
 @router.post("/{eid}/status", response_model=GlossaryOut, summary="Approve or reject an entry")
-def set_status(db: DB, user: Reviewer, eid: int, status: GlossaryStatus) -> GlossaryEntry:
+def set_entry_status(db: DB, user: Reviewer, eid: int, status: GlossaryStatus) -> GlossaryEntry:
     e = find(db, eid)
     e.status, e.version, e.updated_by = status, e.version + 1, user.username
     snapshot(db, e, GlossaryAction.UPDATE, user.username)
@@ -170,7 +170,7 @@ def delete_entry(db: DB, user: Admin, eid: int) -> dict[str, bool]:
 
 
 @router.get("/{eid}/versions", response_model=list[GlossaryVersionOut], summary="Version history of an entry")
-def versions(db: DB, _: Me, eid: int) -> list[GlossaryVersion]:
+def entry_versions(db: DB, _: Me, eid: int) -> list[GlossaryVersion]:
     return db.query(GlossaryVersion).filter(GlossaryVersion.entry_id == eid).order_by(GlossaryVersion.id.desc()).all()
 
 
@@ -186,7 +186,7 @@ def scan_duplicates(db: DB, _: Me) -> list[DuplicateGroup]:
 
 
 @router.get("/export/xlsx", response_class=StreamingResponse, summary="Export the glossary to Excel")
-def export_xlsx(db: DB, _: Me) -> StreamingResponse:
+def export_glossary(db: DB, _: Me) -> StreamingResponse:
     wb = Workbook()
     ws = wb.active or wb.create_sheet()
     ws.title = "Glossar"
@@ -213,7 +213,7 @@ def export_xlsx(db: DB, _: Me) -> StreamingResponse:
 
 
 @router.post("/import/xlsx", summary="Import glossary entries from Excel")
-def import_xlsx(
+def import_glossary(
     db: DB, user: Reviewer, file: Annotated[UploadFile, File()], update_existing: bool = False
 ) -> ImportResult:
     """Columns: de, en, de_synonyme, en_synonyme, beschreibung, nicht_uebersetzen, kategorie, status."""

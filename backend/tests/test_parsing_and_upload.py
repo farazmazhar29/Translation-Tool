@@ -157,9 +157,9 @@ def test_the_table_view_gets_every_cell_with_its_number_format(
         {
             "name": "Sheet",
             "cells": [
-                {"ref": "A1", "value": "Scharnier", "decimals": 0, "bold": True},
-                {"ref": "B1", "value": 12.9, "decimals": 2, "bold": False},
-                {"ref": "C1", "value": 2, "decimals": 0, "bold": False},
+                {"ref": "A1", "text": "Scharnier", "number": None, "decimals": 0, "bold": True},
+                {"ref": "B1", "text": None, "number": 12.9, "decimals": 2, "bold": False},
+                {"ref": "C1", "text": None, "number": 2, "decimals": 0, "bold": False},
             ],
         }
     ]

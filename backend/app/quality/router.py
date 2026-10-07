@@ -14,7 +14,7 @@ router = APIRouter(prefix="/api", tags=["Quality"])
 
 
 @router.get("/projects/{pid}/quality")
-def quality_check(db: DB, _: Me, pid: int, lang: str | None = None) -> QualityOut:
+def get_quality(db: DB, _: Me, pid: int, lang: str | None = None) -> QualityOut:
     warnings = quality.check_project(get_project(db, pid), lang, db)
     return QualityOut(
         warnings=warnings,

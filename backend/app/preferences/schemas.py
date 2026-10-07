@@ -1,9 +1,9 @@
 """Settings API contract."""
 
-from pydantic import BaseModel
+from app.core.schemas import Schema
 
 
-class SettingsOut(BaseModel):
+class SettingsOut(Schema):
     llm_provider: str
     llm_model: str
     default_source_lang: str

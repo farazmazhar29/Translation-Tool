@@ -4,15 +4,15 @@ from datetime import datetime
 from typing import Literal, Self
 
 from openpyxl.utils import column_index_from_string
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import Field, field_validator, model_validator
 
 from app.core.enums import ExportMode, FileFormat
-from app.core.schemas import ORM
+from app.core.schemas import ORM, Schema
 
 MAX_EXCEL_COLUMN = 16384  # XFD
 
 
-class ExcelLayout(BaseModel):
+class ExcelLayout(Schema):
     """Free choice of columns for Excel exports ("Erweiterte Einstellungen"). An empty column letter omits it."""
 
     sheet_name: str = Field("Übersetzung", min_length=1, max_length=31)  # Excel's own limit
@@ -40,7 +40,7 @@ class ExcelLayout(BaseModel):
         return self
 
 
-class ExportIn(BaseModel):
+class ExportIn(Schema):
     lang: str
     format: FileFormat = FileFormat.DOCX
     mode: ExportMode = ExportMode.TRANSLATION
@@ -62,7 +62,7 @@ class ExportFileOut(ORM):
     release_id: int | None
 
 
-class TemplateIn(BaseModel):
+class TemplateIn(Schema):
     name: str
     format: Literal[FileFormat.XLSX] = FileFormat.XLSX  # only Excel exports have a configurable layout
     config: ExcelLayout

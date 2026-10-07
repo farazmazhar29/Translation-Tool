@@ -3,28 +3,28 @@
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 from app.core.enums import EntryCategory, GlossaryAction, GlossaryStatus, ImportSkip, TermCategory
-from app.core.schemas import ORM
+from app.core.schemas import ORM, Schema
 
 
-class Term(BaseModel):
+class Term(Schema):
     """A highlighted term. `ok=False` means the glossary target is missing in the translation."""
 
     source: str
     target: str = ""
     category: TermCategory
-    alternatives: list[str] = []
+    alternatives: list[str] = Field(default_factory=list)
     description: str = ""
     glossary_id: int | None = None
     dnt: bool = False
     ok: bool = True
 
 
-class GlossaryIn(BaseModel):
+class GlossaryIn(Schema):
     terms: dict[str, str] = Field(description='{"de": "Korpus", "en": "carcass"}')
-    synonyms: dict[str, list[str]] = {}
+    synonyms: dict[str, list[str]] = Field(default_factory=dict)
     description: str = ""
     category: EntryCategory = EntryCategory.TECHNICAL
     do_not_translate: bool = False
@@ -54,20 +54,20 @@ class GlossaryVersionOut(ORM):
     changed_at: datetime
 
 
-class DuplicateGroup(BaseModel):
+class DuplicateGroup(Schema):
     term: str
     lang: str
     ids: list[int]
 
 
-class SkippedRow(BaseModel):
+class SkippedRow(Schema):
     row: int = Field(description="Row number in the sheet, the header being row 1")
     code: ImportSkip
     term: str = Field(default="", description="The term of a duplicate")
     reason: str = Field(description="German text of the reason, for API clients without their own wording")
 
 
-class ImportResult(BaseModel):
+class ImportResult(Schema):
     created: int
     updated: int
     skipped: int

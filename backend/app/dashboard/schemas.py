@@ -1,17 +1,16 @@
 """Dashboard API contract."""
 
-from pydantic import BaseModel
-
+from app.core.schemas import Schema
 from app.projects.schemas import ProjectOut
 
 
-class TopTerm(BaseModel):
+class TopTerm(Schema):
     id: int
     term: str
     count: int
 
 
-class Stats(BaseModel):
+class Stats(Schema):
     projects_total: int
     segments: int
     translations: int
@@ -21,7 +20,7 @@ class Stats(BaseModel):
     releases_per_day: dict[str, int]
 
 
-class DashboardOut(BaseModel):
+class DashboardOut(Schema):
     open: int
     in_review: int
     approved: int

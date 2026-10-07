@@ -36,7 +36,7 @@ def start_translation(db: DB, _: Translator, pid: int, bg: BackgroundTasks, body
 
 
 @router.get("/projects/{pid}/status", response_model=JobStatus)
-def job_status(db: DB, _: Me, pid: int) -> Project:
+def get_job_status(db: DB, _: Me, pid: int) -> Project:
     return get_project(db, pid)
 
 
@@ -62,7 +62,7 @@ def edit_segment(db: DB, user: Translator, sid: int, lang: str, body: SegmentEdi
 
 
 @router.post("/segments/{sid}/{lang}/retranslate", response_model=SegmentOut, summary="Regenerate one segment")
-def retranslate(db: DB, _: Translator, sid: int, lang: str) -> Segment:
+def retranslate_segment(db: DB, _: Translator, sid: int, lang: str) -> Segment:
     seg = get_segment(db, sid)
     try:
         rt = runtime_settings(db)

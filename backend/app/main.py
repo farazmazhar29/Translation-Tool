@@ -6,6 +6,7 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from fastapi.routing import APIRoute
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text, update
 from sqlalchemy.exc import SQLAlchemyError
@@ -66,11 +67,18 @@ async def lifespan(_: FastAPI) -> AsyncGenerator[None]:
     yield
 
 
+def operation_id(route: APIRoute) -> str:
+    """The function name ("get_project") instead of FastAPI's "get_project_api_projects__pid__get": the generated
+    frontend client turns it into `getProject`."""
+    return route.name
+
+
 app = FastAPI(
     title="Rotpunkt Übersetzungstool",
     version="0.1.0",
     description=DESCRIPTION,
     lifespan=lifespan,
+    generate_unique_id_function=operation_id,
     docs_url="/docs" if settings.docs_enabled else None,
     redoc_url="/redoc" if settings.docs_enabled else None,
     openapi_url="/openapi.json" if settings.docs_enabled else None,
