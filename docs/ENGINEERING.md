@@ -292,6 +292,68 @@ A script checked 10 pages at 6 widths (390 to 1920 px) in both languages for any
 
 Word and Excel themselves confirmed one printed page each; the PDF has one page, filled to the bottom margin.
 
+**D-52 - The target is always the other language (2026-10-07).** With German and English only, choosing target languages could only go wrong: ticking both for a German file looked like it asked for a German translation, which never came ("not translated yet" in a DE tab). The target is now derived, never chosen: `target_languages(source)` returns the other language, or none while detection could not tell.
+* Upload, a source change (`PATCH`) and every translation start set it from the source.
+* The `target_langs` upload field and translate body field are gone; an older client that still sends them is ignored.
+* With no known source, translating is refused at once with a clear message (400), instead of failing later in the background job.
+* The form and the project page show the target as a fixed value next to the source language. The language tabs, the export's language choice and the "default target language" setting are removed.
+* Migration 0004 gives every project the other language as its only target. Its SQL casts to `json` only on PostgreSQL, which, unlike SQLite, does not turn text into json by itself (see section 6).
+
+The `target_langs` column and list stay as they are, so adding a third language later is a matter of this one function.
+
+**D-53 - An Excel file is read as a table (2026-10-07).** The page view laid an Excel sheet out like a letter: every cell a paragraph, short cells guessed as headings, and the numbers (prices, packing units) missing, because only text cells are segments. A new endpoint, `GET /projects/{id}/cells`, returns every non-empty cell of the original sheet, with the decimals of its number format and whether it is bold. `SheetView` rebuilds the rows and columns from that:
+* Like the page view, the original is on the left and the translation on the right. Both halves are one table, so every row stays level with its translation, and terms stay clickable on both sides.
+* Numbers are formatted in the interface language (12,90 / 12.90) and right-aligned, with their column heads.
+* A row of bold cells is the column head. A row with a single bold cell, such as a title or a group, spans its half. Empty rows stay as spacing.
+* Numbers and article numbers ("FB-6001") keep one line. Text is hyphenated in its language (`lang` on each half) and broken mid-word only as a last resort.
+
+Twelve columns side by side need room. Measured on the six-column sample, they read well from 1536 px. At 1440 px the table still fit, but prices broke into "12 / 90" and compounds mid-word. Below 1536 px each cell therefore shows the translation with the original below it in small type: still both texts, without a table too wide to read. On a phone that table scrolls inside its card. The switch calls it "Table view" for Excel files. Bold formatting is used instead of guessing headings from text length, which is what made the page view unreadable. Formulas show their last calculated value, and none if the file was never opened in Excel.
+
+The first version only showed the translation (with the original in small type), which missed the point of the view: comparing the original and the translation side by side. A missing space in a class list (`pr-5text-left`) had also cancelled the alignment of the column heads and prices.
+
+**D-54 - Every finding can be fixed from the quality check (2026-10-07).** The quality check listed problems but gave no way to solve them. Clicking a finding only scrolled to an anchor, which the table view does not even have, so a user had to find the segment and the right dialog alone. Each finding now carries its fix:
+* **A finding on a segment:** "Edit segment #n" switches to the segment list, scrolls to the row and marks it for 3 s.
+* **A contradiction** ("Hängeschränke": "wall units" / "wall cabinets"): one button per translation, "Use 'wall cabinets' everywhere". It replaces the other variants in every segment through the existing `replace-term` endpoint and, when ticked (the default), adds the term to the glossary, so the next translation is consistent. The check sends the variants as `params.options`.
+* **A frequent term missing from the glossary:** "Add to glossary: Kunststoff -> plastic", with the translation the text uses (`params.target`), without the capital letter of a sentence start, keeping abbreviations such as "LED". A term that is already in the glossary is left as it is (409), not overwritten from here.
+* Without edit rights, or after approval, the panel only offers "Show segment #n".
+
+Two fixes in the check itself:
+* **Singular and plural are the same translation.** German "Schrankaufhänger" is both, while English needs "cabinet hanger" and "cabinet hangers", which the check had reported as a contradiction. Translations are now compared without plural and case endings (English `-s`/`-es`, German `-e`/`-en`/`-n`/`-er`/`-s`/`-es`).
+* **Terms are named as written** ("Hängeschränke", not "hängeschränke").
+
+`replace-term` keeps a capital letter at a sentence start: "Wall units hang" becomes "Wall cabinets hang".
+
+**D-55 - An Excel file exported to Word or PDF stays a table (2026-10-07).** The Word and PDF exporters wrote every segment as a paragraph, which suits a Word or PDF original but turned a spreadsheet into a list of loose cells ("Item no.", "Description", "SC-110", ...). For an Excel project both now rebuild the sheet as a table, from the same cell data as the table view (`read_cells`):
+* **Translation only:** the translated sheet. **Original + translation:** each text cell holds the translation with the original below it in small grey type, so the export fits a portrait page instead of needing twelve columns.
+* Numbers keep the decimals of their cell format, written the way the reader of the translation writes them ("12,90" in German, "12.90" in English), and are right-aligned with their column head.
+* A row with a single cell in the first column (a title or a group) spans the table. Bold cells stay bold. Empty rows are left out, since they would print as empty boxes. Comments, when chosen, follow in small italic type in their cell.
+* **Column widths:** each column is at least as wide as its longest word, so a price or an article number never breaks ("12. / 90" in the first try). The rest of the line is shared by how much text a column holds. Word gets the widths per cell, which is what it follows.
+* Word now uses A4 with 2 cm margins instead of python-docx's US Letter. Both formats switch to a landscape page for sheets with more than six columns.
+
+The Excel export of an Excel project already writes into a copy of the original sheet and is unchanged. Checked with the user's real project (read-only, files generated outside the app) and rendered with Word itself. Tests cover the table shape, the merged title, the decimals, the alignment, the original in "both" mode, a PDF row, and German and English number notation.
+
+**D-56 - Hints can be settled too: the glossary counts, and judgment calls can be accepted (2026-10-07).** Two gaps remained after D-54:
+* **The check never looked at the glossary again.** It judged terms by the category stored at translation time. A term added to the glossary afterwards, even through the panel's own "Add to glossary" button, stayed "missing from the glossary" until the next translation. The check now receives the database and asks the current glossary (`build_index`, the same matching as the translation):
+  * A listed term is no longer missing.
+  * An ambiguous term whose translation the glossary confirms is no longer ambiguous.
+  * A term whose translation the glossary contradicts becomes a glossary error, exactly as if it had been in the glossary from the start.
+* **Some hints have no "fix".** A translation that is longer than usual, a different number of line breaks or an ambiguous term the reviewer judges correct are judgment calls, not errors. They can now be **accepted**:
+  * Each finding has a stable `key` (language, code, segment, term). `PUT /projects/{id}/quality/accepted` stores the project's accepted keys (`projects.accepted_findings`, migration 0005).
+  * The check marks those findings `accepted`, and the panel counts them instead of listing them ("3 accepted - reopen").
+  * The approval dialog no longer asks about them, and the export report lists only what is still open.
+  * Errors cannot be accepted (400): a missing translation or a broken glossary term has to be fixed.
+* **Ambiguous terms** also get "Confirm translation (glossary)", which settles this and every later translation of the term.
+
+Checked on the user's project: after they added "Hängeschränke" and "Stellfuß" to the glossary, both hints disappeared. On an approved project the panel offers no changes, only "Show segment". Tests cover the glossary-aware check (missing, confirmed, contradicted), accepting and reopening through the API, that an error is refused, and the panel's buttons and what they send.
+
+**D-57 - Archived is a flag, not a status (2026-10-07).** Archiving had two meanings. The archive button set the flag `archived`. An export with "archive afterwards" set the flag and replaced the status with `archived`. The archived list then showed "Approved" for one archived project and "Archived" for another. The status filter could not find projects archived by hand, and taking a project out of the archive could not tell where it had been.
+* The status now only describes the workflow (`new`, `preview_ready`, `approved`), and archiving is only the flag, set the same way by the button and by the export. An archived project keeps its status and is back exactly there when it leaves the archive.
+* The badge shows "Archived" for every archived project (`StatusBadge archived`), in the list, on the dashboard and on the project page. The workflow steps show the real step. The status filter no longer offers "Archived", which the "Active / Archived / All" switch covers.
+* Migration 0006 turns status `archived` into `approved` with the flag set (the old status was only ever set on approved projects) and removes the value from the check constraint.
+* `FINISHED_STATUSES` is just `approved`. The dashboard counts archived projects as approved by their status (D-49 without the special case).
+
+Checked on the user's projects: both archived ones show "Archived", and the dashboard counts both as approved. Tests cover the migration, the export (approved and archived), and the badge in the archived list.
+
 ## 6. Problems found and how they were fixed
 
 | Problem | Cause | Fix |
@@ -333,6 +395,7 @@ Word and Excel themselves confirmed one printed page each; the PDF has one page,
 | Container could not write to an existing data volume after switching to non-root | Volume created by the old root image | Entrypoint repairs ownership, then drops privileges (D-28) |
 | Container without PostgreSQL could not create its SQLite file | Default path derived from the repository layout, which does not exist in the image | Default derived from `DATA_DIR` |
 | Ruff `ERA001` flagged decorative comment lines | Separator comments look like code | Plain comments |
+| **Migration 0004 stopped the Docker app from starting** although every test passed | Tests run on SQLite, which stores text in a JSON column; PostgreSQL refuses it (`column is of type json but expression is of type text`) | `CAST(... AS json)` on PostgreSQL; nothing was half-applied, because PostgreSQL runs migrations in a transaction. Lesson: try a data migration on PostgreSQL, not only SQLite |
 
 ## 7. Status and roadmap
 
@@ -383,6 +446,12 @@ TanStack Query lint, Knip, `prettier --check` + `npm audit` in CI, Husky + lint-
 * **2026-10-06** - Dashboard counts archived projects as approved; clearer approvals chart (D-49).
 * **2026-10-06** - Excel import lists skipped rows with their reason; richer glossary sample (D-50).
 * **2026-10-06** - Full-page samples in PDF, Word and Excel (D-51).
+* **2026-10-07** - Target language is always the other one; migration 0004 (D-52).
+* **2026-10-07** - Excel files get a table view with every cell of the sheet (D-53).
+* **2026-10-07** - Quality findings can be fixed directly; singular/plural no longer a contradiction (D-54).
+* **2026-10-07** - Excel projects export to Word and PDF as tables (D-55).
+* **2026-10-07** - Quality check reads the current glossary; hints can be accepted; migration 0005 (D-56).
+* **2026-10-07** - Archived is a flag only; one badge for all archived projects; migration 0006 (D-57).
 
 ## 9. Sources (research, 2026-10-01 and 2026-10-03)
 

@@ -102,7 +102,7 @@ flowchart LR
 |---|---|---|
 | 1 | Project management (create, copy, archive, reopen, status, search/filter) | ✅ |
 | 2 | Upload docx / xlsx / pdf, text + structure + language detection | ✅ · InDesign: Phase 2 (`.imdd` is probably `.indd`) |
-| 3 | Source auto-detect or manual, one or several target languages | ✅ (DE, EN) |
+| 3 | Source auto-detect or manual, one or several target languages | ✅ (DE ↔ EN: the target is always the other language) |
 | 4 | Preview only, original left / translation right | ✅ |
 | 5 | 5 highlight colours + click details (translation, alternatives, description, glossary entry, edit) | ✅ colours configurable |
 | 6 | Manual editing, replace terms, add to glossary, comments, regenerate a segment | ✅ |
