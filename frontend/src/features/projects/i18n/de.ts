@@ -94,6 +94,9 @@ export const de = {
     sheets_one: '{{count}} Tabellenblatt',
     sheets_other: '{{count}} Tabellenblätter',
   },
+  sheet: {
+    name: 'Tabellenblatt „{{name}}“',
+  },
   preview: {
     title: 'Gefundener Text',
     more_one: 'Und {{count}} weiteres Segment, das nach der Übersetzung ebenfalls angezeigt wird.',
@@ -101,6 +104,7 @@ export const de = {
   },
   view: {
     pageView: 'Seitenansicht',
+    tableView: 'Tabellenansicht',
     listView: 'Segmente bearbeiten',
     viewLabel: 'Ansicht',
     segments_one: '{{count}} Segment',

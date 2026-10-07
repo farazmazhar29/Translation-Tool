@@ -30,7 +30,7 @@ export const Highlighted = ({ text, terms, side, onTerm, className = 'text-sm le
             onClick={() => {
               onTerm(term)
             }}
-            className={`cursor-pointer rounded px-0.5 ${term.ok ? '' : 'underline decoration-red-600 decoration-wavy'}`}
+            className={`cursor-pointer rounded px-0.5 text-left ${term.ok ? '' : 'underline decoration-red-600 decoration-wavy'}`}
             style={{ backgroundColor: `${color}33`, borderBottom: `2px solid ${color}` }}
           >
             {c.text}

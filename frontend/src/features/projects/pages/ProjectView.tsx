@@ -16,6 +16,7 @@ import { PageView } from '../components/PageView'
 import { QualityPanel } from '../components/QualityPanel'
 import { SaveStatus } from '../components/SaveStatus'
 import { SegmentTable } from '../components/SegmentTable'
+import { SheetView } from '../components/SheetView'
 import { SourcePreview } from '../components/SourcePreview'
 import { TermLegend } from '../components/TermLegend'
 import { ViewSwitch } from '../components/ViewSwitch'
@@ -62,6 +63,7 @@ const ProjectView = () => {
   const running = p.job_state === 'running'
   const hasTranslation = p.segments.some((s) => Object.keys(s.translations).length > 0)
   const srcLang = p.source_lang === 'auto' ? p.detected_lang : p.source_lang
+  const isSheet = p.file_type === 'xlsx'
   const save = (seg: Segment, body: S['SegmentEdit']): void => {
     run(() => put(`/segments/${seg.id}/${lang}`, { ...body }))
   }
@@ -90,13 +92,24 @@ const ProjectView = () => {
           />
           <div className="flex flex-wrap items-center justify-between gap-3">
             <TermLegend />
-            <ViewSwitch value={view} onChange={setView} />
+            <ViewSwitch value={view} table={isSheet} onChange={setView} />
           </div>
         </>
       )}
       {panel === 'quality' && <QualityPanel projectId={id} lang={lang} />}
       {panel === 'history' && <HistoryPanel projectId={id} />}
-      {hasTranslation && view === 'page' && (
+      {hasTranslation && view === 'page' && isSheet && (
+        <SheetView
+          projectId={id}
+          segments={p.segments}
+          lang={lang}
+          srcLang={srcLang}
+          onTerm={(seg, term) => {
+            setModal({ kind: 'term', seg, term })
+          }}
+        />
+      )}
+      {hasTranslation && view === 'page' && !isSheet && (
         <PageView
           segments={p.segments}
           lang={lang}

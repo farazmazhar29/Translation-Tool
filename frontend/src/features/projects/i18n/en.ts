@@ -96,6 +96,9 @@ export const en: Texts<typeof de> = {
     sheets_one: '{{count}} sheet',
     sheets_other: '{{count}} sheets',
   },
+  sheet: {
+    name: 'Sheet “{{name}}”',
+  },
   preview: {
     title: 'Text found in the file',
     more_one: 'And {{count}} more segment, shown after the translation.',
@@ -103,6 +106,7 @@ export const en: Texts<typeof de> = {
   },
   view: {
     pageView: 'Page view',
+    tableView: 'Table view',
     listView: 'Edit segments',
     viewLabel: 'View',
     segments_one: '{{count}} segment',
