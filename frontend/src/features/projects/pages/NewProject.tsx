@@ -79,7 +79,7 @@ const NewProject = () => {
         </label>
         <p className="mt-3 text-center text-xs text-stone-600">{t('new.hint')}</p>
       </Card>
-      <Card className="grid gap-5 md:grid-cols-2">
+      <Card className="grid gap-5 lg:grid-cols-2">
         <TextField label={t('new.name')} placeholder={t('new.namePlaceholder')} value={f.name} onChange={set('name')} />
         <TextField label={t('new.customer')} value={f.customer} onChange={set('customer')} />
         <SelectField

@@ -15,7 +15,7 @@ import { useAuth } from '@/features/auth'
 import { get, type S } from '@/shared/api/client'
 import { EmptyState, Loading, PageHeader } from '@/shared/components/layout'
 import { Card, LinkBtn, StatusBadge } from '@/shared/components/ui'
-import { fmtDate } from '@/shared/lib/ui'
+import { fmtDate, fmtDay } from '@/shared/lib/ui'
 
 const Tile = ({ label, value, icon: Icon }: { label: string; value: number; icon: LucideIcon }) => (
   <div className="flex items-center gap-4 rounded-2xl border border-line bg-white p-5 shadow-card">
@@ -56,8 +56,8 @@ const Dashboard = () => {
         <Tile label={t('dashboard.approved')} value={d.approved} icon={CheckCircle2} />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-5">
-        <Card title={t('dashboard.recent')} className="lg:col-span-3">
+      <div className="grid gap-6 xl:grid-cols-5">
+        <Card title={t('dashboard.recent')} className="xl:col-span-3">
           {d.recent.length === 0 ? (
             <EmptyState
               icon={<FileText className="size-6" />}
@@ -92,7 +92,7 @@ const Dashboard = () => {
           )}
         </Card>
 
-        <Card title={t('dashboard.topTerms')} className="lg:col-span-2">
+        <Card title={t('dashboard.topTerms')} className="xl:col-span-2">
           {d.top_terms.length === 0 ? (
             <EmptyState>{t('dashboard.noUsage')}</EmptyState>
           ) : (
@@ -115,7 +115,7 @@ const Dashboard = () => {
           )}
         </Card>
 
-        <Card title={t('dashboard.stats')} className="lg:col-span-2">
+        <Card title={t('dashboard.stats')} className="xl:col-span-2">
           <dl className="grid grid-cols-2 gap-x-6 gap-y-5">
             {[
               [t('dashboard.projects'), stats.projects_total],
@@ -132,18 +132,25 @@ const Dashboard = () => {
           </dl>
         </Card>
 
-        <Card title={t('dashboard.releases')} className="lg:col-span-3">
+        <Card title={t('dashboard.releases')} className="xl:col-span-3">
           <p className="-mt-2 mb-4 text-sm text-stone-600">{t('dashboard.releasesTotal', { count: releases })}</p>
           <div className="flex h-32 items-end gap-1.5">
             {days.map(([day, n]) => (
-              <div key={day} className="flex h-full flex-1 flex-col justify-end" title={`${day}: ${n}`}>
+              <div key={day} className="flex h-full flex-1 flex-col justify-end" title={`${fmtDay(day)}: ${String(n)}`}>
+                {n > 0 && <span className="mb-1 text-center text-xs font-semibold">{n}</span>}
                 <div
-                  className={`w-full rounded-full ${n ? 'bg-brand' : 'bg-stone-200'}`}
-                  style={{ height: n ? `${(n / maxDay) * 100}%` : 4 }}
+                  className={`mx-auto w-full max-w-8 ${n ? 'rounded-t-md bg-brand' : 'rounded-full bg-stone-200'}`}
+                  style={{ height: n ? `${String((n / maxDay) * 80)}%` : 4 }}
                 />
               </div>
             ))}
           </div>
+          {days.length > 0 && (
+            <div className="mt-2 flex justify-between text-xs text-stone-600">
+              <span>{fmtDay(days[0]?.[0] ?? '')}</span>
+              <span>{t('dashboard.today')}</span>
+            </div>
+          )}
         </Card>
       </div>
     </div>

@@ -1,12 +1,14 @@
 import { useQuery } from '@tanstack/react-query'
-import { Plus } from 'lucide-react'
+import { useState } from 'react'
+import { Archive, ArchiveRestore, Copy, Plus, Trash2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Link, useSearchParams } from 'react-router-dom'
 import { can, del, get, post, qs, type S } from '@/shared/api/client'
 import { useAuth } from '@/features/auth'
 import { SelectField, TextField } from '@/shared/components/form'
 import { PageHeader, Table } from '@/shared/components/layout'
-import { Btn, Card, LinkBtn, StatusBadge } from '@/shared/components/ui'
+import { useConfirm } from '@/shared/components/confirm'
+import { Card, IconAction, LinkBtn, StatusBadge } from '@/shared/components/ui'
 import { useAction, useFields } from '@/shared/lib/hooks'
 import { LANGS, STATUSES } from '@/shared/constants'
 import { fmtDate, optionsOf, type Option } from '@/shared/lib/ui'
@@ -21,6 +23,8 @@ type Action = 'archive' | 'unarchive' | 'copy' | 'delete'
 const Projects = () => {
   const { t } = useTranslation(['projects', 'common'])
   const { user } = useAuth()
+  const { confirm, dialog } = useConfirm()
+  const [moreFilters, setMoreFilters] = useState(false)
   const [params] = useSearchParams()
   const { values: f, set } = useFields<Filters>({
     q: '',
@@ -56,7 +60,7 @@ const Projects = () => {
         </LinkBtn>
       </PageHeader>
       <Card>
-        <div className="grid gap-2 md:grid-cols-4">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <TextField
             hideLabel
             label={t('filters.search')}
@@ -64,58 +68,72 @@ const Projects = () => {
             value={f.q}
             onChange={set('q')}
           />
-          <TextField
-            hideLabel
-            label={t('filters.term')}
-            placeholder={t('filters.termPlaceholder')}
-            value={f.term}
-            onChange={set('term')}
-          />
-          <TextField
-            hideLabel
-            label={t('filters.customer')}
-            placeholder={t('filters.customer')}
-            value={f.customer}
-            onChange={set('customer')}
-          />
-          <SelectField
-            hideLabel
-            label={t('filters.editor')}
-            value={f.editor}
-            onChange={set('editor')}
-            options={[['', t('filters.editorAll')], ...editors.map((name): Option => [name, name])]}
-          />
-          <SelectField
-            hideLabel
-            label={t('filters.status')}
-            value={f.status}
-            onChange={set('status')}
-            options={optionsOf(STATUSES, (s) => t(`common:status.${s}`), ['', t('filters.statusAll')])}
-          />
-          <SelectField
-            hideLabel
-            label={t('filters.language')}
-            value={f.lang}
-            onChange={set('lang')}
-            options={optionsOf(LANGS, (l) => t(`common:lang.${l}`), ['', t('filters.langAll')])}
-          />
-          <TextField
-            hideLabel
-            label={t('filters.changedFrom')}
-            title={t('filters.changedFromTitle')}
-            type="date"
-            value={f.date_from}
-            onChange={set('date_from')}
-          />
-          <TextField
-            hideLabel
-            label={t('filters.changedTo')}
-            title={t('filters.changedToTitle')}
-            type="date"
-            value={f.date_to}
-            onChange={set('date_to')}
-          />
+          <div className={`${moreFilters ? 'contents' : 'hidden'} lg:contents`}>
+            <TextField
+              hideLabel
+              label={t('filters.term')}
+              placeholder={t('filters.termPlaceholder')}
+              value={f.term}
+              onChange={set('term')}
+            />
+            <TextField
+              hideLabel
+              label={t('filters.customer')}
+              placeholder={t('filters.customer')}
+              value={f.customer}
+              onChange={set('customer')}
+            />
+            <SelectField
+              hideLabel
+              label={t('filters.editor')}
+              value={f.editor}
+              onChange={set('editor')}
+              options={[['', t('filters.editorAll')], ...editors.map((name): Option => [name, name])]}
+            />
+            <SelectField
+              hideLabel
+              label={t('filters.status')}
+              value={f.status}
+              onChange={set('status')}
+              options={optionsOf(STATUSES, (s) => t(`common:status.${s}`), ['', t('filters.statusAll')])}
+            />
+            <SelectField
+              hideLabel
+              label={t('filters.language')}
+              value={f.lang}
+              onChange={set('lang')}
+              options={optionsOf(LANGS, (l) => t(`common:lang.${l}`), ['', t('filters.langAll')])}
+            />
+            <TextField
+              hideLabel
+              label={t('filters.changedFrom')}
+              title={t('filters.changedFromTitle')}
+              prefix={t('filters.changedFromTitle')}
+              type="date"
+              value={f.date_from}
+              onChange={set('date_from')}
+            />
+            <TextField
+              hideLabel
+              label={t('filters.changedTo')}
+              title={t('filters.changedToTitle')}
+              prefix={t('filters.changedToTitle')}
+              type="date"
+              value={f.date_to}
+              onChange={set('date_to')}
+            />
+          </div>
         </div>
+        <button
+          type="button"
+          aria-expanded={moreFilters}
+          className="mt-3 text-sm font-semibold text-brand-dark hover:underline lg:hidden"
+          onClick={() => {
+            setMoreFilters(!moreFilters)
+          }}
+        >
+          {moreFilters ? t('filters.fewer') : t('filters.more')}
+        </button>
         <div className="mt-4 flex w-fit rounded-full bg-stone-100 p-1 text-sm">
           {ARCHIVE_VALUES.map((value) => (
             <label
@@ -138,72 +156,74 @@ const Projects = () => {
       <Table
         headers={[
           t('list.headers.project'),
-          t('list.headers.customer'),
-          t('list.headers.file'),
-          t('list.headers.languages'),
+          { label: t('list.headers.customer'), className: 'hidden 2xl:table-cell' },
+          { label: t('list.headers.languages'), className: 'hidden lg:table-cell' },
           t('list.headers.status'),
-          t('list.headers.changed'),
-          t('list.headers.createdBy'),
+          { label: t('list.headers.changed'), className: 'hidden xl:table-cell' },
+          { label: t('list.headers.createdBy'), className: 'hidden 2xl:table-cell' },
           '',
         ]}
         rowCount={isLoading ? undefined : projects.length}
         emptyText={t('list.empty')}
       >
         {projects.map((p) => (
-          <tr key={p.id} className="hover:bg-stone-50">
-            <td className="px-4 py-3 font-semibold">
-              <Link to={`/projects/${p.id}`} className="hover:text-brand">
+          <tr key={p.id}>
+            <td className="w-full max-w-0 px-4 py-3">
+              <Link to={`/projects/${p.id}`} className="block truncate font-semibold hover:text-brand">
                 {p.name}
               </Link>
+              <span className="block truncate text-xs text-stone-600">{p.filename}</span>
             </td>
-            <td className="px-4 py-3">{p.customer}</td>
-            <td className="px-4 py-3 text-stone-600">{p.filename}</td>
-            <td className="px-4 py-3 uppercase">
+            <td className="hidden whitespace-nowrap px-4 py-3 2xl:table-cell">{p.customer}</td>
+            <td className="hidden whitespace-nowrap px-4 py-3 uppercase lg:table-cell">
               {(p.source_lang === 'auto' ? p.detected_lang : p.source_lang) || '?'} → {p.target_langs.join(', ')}
             </td>
-            <td className="px-4 py-3">
+            <td className="whitespace-nowrap px-3 py-3">
               <StatusBadge status={p.status} />
             </td>
-            <td className="px-4 py-3 text-stone-600">{fmtDate(p.updated_at)}</td>
-            <td className="px-4 py-3">{p.created_by}</td>
-            <td className="whitespace-nowrap px-4 py-3 text-right">
+            <td className="hidden whitespace-nowrap px-4 py-3 text-stone-600 xl:table-cell">{fmtDate(p.updated_at)}</td>
+            <td className="hidden whitespace-nowrap px-4 py-3 2xl:table-cell">{p.created_by}</td>
+            <td className="whitespace-nowrap py-3 pl-1 pr-3 text-right">
               {can(user, 'translator') && (
                 <>
-                  <Btn
-                    variant="ghost"
-                    className="!px-3 !py-1.5"
+                  <IconAction
+                    label={t('list.copy')}
+                    icon={Copy}
                     onClick={() => {
                       run(p.id, 'copy')
                     }}
-                  >
-                    {t('list.copy')}
-                  </Btn>
-                  <Btn
-                    variant="ghost"
-                    className="!px-3 !py-1.5"
+                  />
+                  <IconAction
+                    label={p.archived ? t('list.unarchive') : t('list.archive')}
+                    icon={p.archived ? ArchiveRestore : Archive}
                     onClick={() => {
                       run(p.id, p.archived ? 'unarchive' : 'archive')
                     }}
-                  >
-                    {p.archived ? t('list.unarchive') : t('list.archive')}
-                  </Btn>
+                  />
                 </>
               )}
               {can(user, 'admin') && (
-                <Btn
-                  variant="ghost"
-                  className="!px-3 !py-1.5"
+                <IconAction
+                  label={t('common:delete')}
+                  icon={Trash2}
+                  destructive
                   onClick={() => {
-                    if (window.confirm(t('list.confirmDelete', { name: p.name }))) run(p.id, 'delete')
+                    void confirm({
+                      title: t('list.deleteTitle'),
+                      message: t('list.confirmDelete', { name: p.name }),
+                      confirmLabel: t('common:delete'),
+                      destructive: true,
+                    }).then((ok) => {
+                      if (ok) run(p.id, 'delete')
+                    })
                   }}
-                >
-                  {t('common:delete')}
-                </Btn>
+                />
               )}
             </td>
           </tr>
         ))}
       </Table>
+      {dialog}
     </div>
   )
 }

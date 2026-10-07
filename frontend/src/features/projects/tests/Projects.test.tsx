@@ -21,7 +21,7 @@ const setup = (role: 'translator' | 'admin' = 'translator') => {
       urls.push(new URL(request.url).search)
       return HttpResponse.json([
         project({ name: 'Anleitung A', customer: 'ACME' }),
-        project({ id: 2, name: 'Preisliste', status: 'in_review' }),
+        project({ id: 2, name: 'Preisliste', status: 'preview_ready' }),
       ])
     }),
   )

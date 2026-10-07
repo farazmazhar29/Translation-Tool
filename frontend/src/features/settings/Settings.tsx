@@ -33,7 +33,7 @@ const SettingsForm = ({ initial }: { initial: S['SettingsOut'] }) => {
         </p>
       </Card>
       <Card title={t('defaultsCard')}>
-        <div className="grid gap-5 md:grid-cols-2">
+        <div className="grid gap-5 lg:grid-cols-2">
           <SelectField
             label={t('defaultExport')}
             disabled={disabled}

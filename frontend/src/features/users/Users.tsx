@@ -1,11 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
-import { Check, Minus, Plus } from 'lucide-react'
+import { Check, Minus, Pencil, Plus } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { get, post, put, type S } from '@/shared/api/client'
 import { Checkbox, SelectField, TextField } from '@/shared/components/form'
 import { Form, PageHeader, Table } from '@/shared/components/layout'
-import { Btn, Modal } from '@/shared/components/ui'
+import { Btn, IconAction, Modal } from '@/shared/components/ui'
 import { useAction, useFields } from '@/shared/lib/hooks'
 import { optionsOf } from '@/shared/lib/ui'
 import { ROLES } from '@/shared/constants'
@@ -69,36 +69,45 @@ const Users = () => {
           {t('addUser')}
         </Btn>
       </PageHeader>
-      <Table headers={[t('user'), t('name'), t('role'), t('active'), '']}>
+      <Table
+        headers={[
+          t('user'),
+          { label: t('name'), className: 'hidden lg:table-cell' },
+          t('role'),
+          { label: t('active'), className: 'hidden sm:table-cell' },
+          '',
+        ]}
+      >
         {users.map((u) => (
           <tr key={u.id}>
-            <td className="px-4 py-3 font-medium">{u.username}</td>
-            <td className="px-4 py-3">{u.full_name}</td>
-            <td className="px-4 py-3">
+            <td className="w-full max-w-0 px-4 py-3">
+              <span className="block truncate font-medium">{u.username}</span>
+              <span className="block truncate text-xs text-stone-600 lg:hidden">{u.full_name}</span>
+            </td>
+            <td className="hidden whitespace-nowrap px-4 py-3 lg:table-cell">{u.full_name}</td>
+            <td className="whitespace-nowrap px-4 py-3">
               <span className="rounded-full bg-stone-100 px-3 py-1 text-xs font-semibold text-stone-700">
                 {t(`common:role.${u.role}`)}
               </span>
             </td>
-            <td className="px-4 py-3">
+            <td className="hidden px-4 py-3 sm:table-cell">
               {u.active ? (
                 <Check className="size-4 text-emerald-600" aria-label={t('activeYes')} />
               ) : (
                 <Minus className="size-4 text-stone-400" aria-label={t('activeNo')} />
               )}
             </td>
-            <td className="px-4 py-3 text-right">
-              <Btn
-                variant="ghost"
-                className="!px-3 !py-1.5"
+            <td className="whitespace-nowrap px-4 py-3 text-right">
+              <IconAction
+                label={t('common:edit')}
+                icon={Pencil}
                 onClick={() => {
                   setEditing({
                     id: u.id,
                     initial: { ...EMPTY, username: u.username, full_name: u.full_name, role: u.role, active: u.active },
                   })
                 }}
-              >
-                {t('common:edit')}
-              </Btn>
+              />
             </td>
           </tr>
         ))}
