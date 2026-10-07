@@ -394,6 +394,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/projects/{pid}/cells": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** All non-empty cells of an Excel project, for the table view */
+        get: operations["sheet_cells_api_projects__pid__cells_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/projects/{pid}/translate": {
         parameters: {
             query?: never;
@@ -492,6 +509,27 @@ export interface paths {
         /** Quality Check */
         get: operations["quality_check_api_projects__pid__quality_get"];
         put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{pid}/quality/accepted": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Accept findings as they are (or reopen them with [])
+         * @description A judgment call (a long translation, a different number of line breaks, an ambiguous term) can be accepted;
+         *     an error (a missing translation, a broken glossary term) cannot, it has to be fixed.
+         */
+        put: operations["accept_findings_api_projects__pid__quality_accepted_put"];
         post?: never;
         delete?: never;
         options?: never;
@@ -677,6 +715,14 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AcceptedIn */
+        AcceptedIn: {
+            /**
+             * Keys
+             * @description All accepted findings of the project (`QualityWarning.key`); [] reopens all
+             */
+            keys: string[];
+        };
         /**
          * ArchiveFilter
          * @description Which projects the project list shows.
@@ -704,15 +750,10 @@ export interface components {
             customer: string;
             /**
              * Source Lang
+             * @description 'auto', 'de' or 'en'; the target is always the other one
              * @default auto
              */
             source_lang: string;
-            /**
-             * Target Langs
-             * @description comma separated, e.g. 'en,de'
-             * @default
-             */
-            target_langs: string;
         };
         /** Body_import_xlsx_api_glossary_import_xlsx_post */
         Body_import_xlsx_api_glossary_import_xlsx_post: {
@@ -742,6 +783,27 @@ export interface components {
              * Format: password
              */
             client_secret?: string | null;
+        };
+        /** CellOut */
+        CellOut: {
+            /**
+             * Ref
+             * @description Cell coordinate, e.g. "B5"; text cells match a segment locator "cell"
+             */
+            ref: string;
+            /** Value */
+            value: string | number;
+            /**
+             * Decimals
+             * @description Decimals of the cell's number format
+             * @default 0
+             */
+            decimals: number;
+            /**
+             * Bold
+             * @default false
+             */
+            bold: boolean;
         };
         /** DashboardOut */
         DashboardOut: {
@@ -1043,7 +1105,10 @@ export interface components {
             source_lang: string;
             /** Detected Lang */
             detected_lang: string;
-            /** Target Langs */
+            /**
+             * Target Langs
+             * @description Always the other language; empty while the source is unknown
+             */
             target_langs: string[];
             status: components["schemas"]["ProjectStatus"];
             /** Archived */
@@ -1087,7 +1152,10 @@ export interface components {
             source_lang: string;
             /** Detected Lang */
             detected_lang: string;
-            /** Target Langs */
+            /**
+             * Target Langs
+             * @description Always the other language; empty while the source is unknown
+             */
             target_langs: string[];
             status: components["schemas"]["ProjectStatus"];
             /** Archived */
@@ -1122,14 +1190,14 @@ export interface components {
             customer?: string | null;
             /** Source Lang */
             source_lang?: components["schemas"]["Lang"] | "auto" | null;
-            /** Target Langs */
-            target_langs?: components["schemas"]["Lang"][] | null;
         };
         /**
          * ProjectStatus
+         * @description Where a project is in the workflow. Archiving is not a step: it is the separate flag `Project.archived`,
+         *     so an archived project keeps its status and returns to it when it is taken out of the archive.
          * @enum {string}
          */
-        ProjectStatus: "new" | "preview_ready" | "approved" | "archived";
+        ProjectStatus: "new" | "preview_ready" | "approved";
         /**
          * QualityCode
          * @description What the quality check found. The interface writes the sentence for each code in its own language.
@@ -1166,6 +1234,16 @@ export interface components {
             severity: components["schemas"]["Severity"];
             /** Message */
             message: string;
+            /**
+             * Key
+             * @default
+             */
+            key: string;
+            /**
+             * Accepted
+             * @default false
+             */
+            accepted: boolean;
         };
         /**
          * RegisterIn
@@ -1271,8 +1349,6 @@ export interface components {
             llm_model: string;
             /** Default Source Lang */
             default_source_lang: string;
-            /** Default Target Langs */
-            default_target_langs: string[];
             /** Default Export Format */
             default_export_format: string;
             /** Default Export Mode */
@@ -1292,6 +1368,13 @@ export interface components {
          * @enum {string}
          */
         Severity: "error" | "warning" | "info";
+        /** SheetOut */
+        SheetOut: {
+            /** Name */
+            name: string;
+            /** Cells */
+            cells: components["schemas"]["CellOut"][];
+        };
         /** SkippedRow */
         SkippedRow: {
             /**
@@ -1421,10 +1504,11 @@ export interface components {
         };
         /** TranslateIn */
         TranslateIn: {
-            /** Source Lang */
+            /**
+             * Source Lang
+             * @description The target is always the other language
+             */
             source_lang?: components["schemas"]["Lang"] | "auto" | null;
-            /** Target Langs */
-            target_langs?: components["schemas"]["Lang"][] | null;
         };
         /** TranslationOut */
         TranslationOut: {
@@ -2354,6 +2438,37 @@ export interface operations {
             };
         };
     };
+    sheet_cells_api_projects__pid__cells_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pid: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SheetOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     start_translation_api_projects__pid__translate_post: {
         parameters: {
             query?: never;
@@ -2545,6 +2660,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["QualityOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    accept_findings_api_projects__pid__quality_accepted_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pid: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AcceptedIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string[];
                 };
             };
             /** @description Validation Error */

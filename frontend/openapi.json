@@ -1405,6 +1405,57 @@
     }
    }
   },
+  "/api/projects/{pid}/cells": {
+   "get": {
+    "tags": [
+     "Projects"
+    ],
+    "summary": "All non-empty cells of an Excel project, for the table view",
+    "operationId": "sheet_cells_api_projects__pid__cells_get",
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "pid",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "integer",
+       "title": "Pid"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "$ref": "#/components/schemas/SheetOut"
+         },
+         "title": "Response Sheet Cells Api Projects  Pid  Cells Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
   "/api/projects/{pid}/translate": {
    "post": {
     "tags": [
@@ -1746,6 +1797,68 @@
        "application/json": {
         "schema": {
          "$ref": "#/components/schemas/QualityOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/projects/{pid}/quality/accepted": {
+   "put": {
+    "tags": [
+     "Quality"
+    ],
+    "summary": "Accept findings as they are (or reopen them with [])",
+    "description": "A judgment call (a long translation, a different number of line breaks, an ambiguous term) can be accepted;\nan error (a missing translation, a broken glossary term) cannot, it has to be fixed.",
+    "operationId": "accept_findings_api_projects__pid__quality_accepted_put",
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "pid",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "integer",
+       "title": "Pid"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/AcceptedIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "type": "string"
+         },
+         "title": "Response Accept Findings Api Projects  Pid  Quality Accepted Put"
         }
        }
       }
@@ -2230,6 +2343,23 @@
  },
  "components": {
   "schemas": {
+   "AcceptedIn": {
+    "properties": {
+     "keys": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Keys",
+      "description": "All accepted findings of the project (`QualityWarning.key`); [] reopens all"
+     }
+    },
+    "type": "object",
+    "required": [
+     "keys"
+    ],
+    "title": "AcceptedIn"
+   },
    "ArchiveFilter": {
     "type": "string",
     "enum": [
@@ -2273,13 +2403,8 @@
      "source_lang": {
       "type": "string",
       "title": "Source Lang",
+      "description": "'auto', 'de' or 'en'; the target is always the other one",
       "default": "auto"
-     },
-     "target_langs": {
-      "type": "string",
-      "title": "Target Langs",
-      "description": "comma separated, e.g. 'en,de'",
-      "default": ""
      }
     },
     "type": "object",
@@ -2360,6 +2485,43 @@
      "password"
     ],
     "title": "Body_login_api_auth_login_post"
+   },
+   "CellOut": {
+    "properties": {
+     "ref": {
+      "type": "string",
+      "title": "Ref",
+      "description": "Cell coordinate, e.g. \"B5\"; text cells match a segment locator \"cell\""
+     },
+     "value": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "number"
+       }
+      ],
+      "title": "Value"
+     },
+     "decimals": {
+      "type": "integer",
+      "title": "Decimals",
+      "description": "Decimals of the cell's number format",
+      "default": 0
+     },
+     "bold": {
+      "type": "boolean",
+      "title": "Bold",
+      "default": false
+     }
+    },
+    "type": "object",
+    "required": [
+     "ref",
+     "value"
+    ],
+    "title": "CellOut"
    },
    "DashboardOut": {
     "properties": {
@@ -2987,7 +3149,8 @@
        "type": "string"
       },
       "type": "array",
-      "title": "Target Langs"
+      "title": "Target Langs",
+      "description": "Always the other language; empty while the source is unknown"
      },
      "status": {
       "$ref": "#/components/schemas/ProjectStatus"
@@ -3091,7 +3254,8 @@
        "type": "string"
       },
       "type": "array",
-      "title": "Target Langs"
+      "title": "Target Langs",
+      "description": "Always the other language; empty while the source is unknown"
      },
      "status": {
       "$ref": "#/components/schemas/ProjectStatus"
@@ -3194,20 +3358,6 @@
        }
       ],
       "title": "Source Lang"
-     },
-     "target_langs": {
-      "anyOf": [
-       {
-        "items": {
-         "$ref": "#/components/schemas/Lang"
-        },
-        "type": "array"
-       },
-       {
-        "type": "null"
-       }
-      ],
-      "title": "Target Langs"
      }
     },
     "type": "object",
@@ -3218,10 +3368,10 @@
     "enum": [
      "new",
      "preview_ready",
-     "approved",
-     "archived"
+     "approved"
     ],
-    "title": "ProjectStatus"
+    "title": "ProjectStatus",
+    "description": "Where a project is in the workflow. Archiving is not a step: it is the separate flag `Project.archived`,\nso an archived project keeps its status and returns to it when it is taken out of the archive."
    },
    "QualityCode": {
     "type": "string",
@@ -3315,6 +3465,16 @@
      "message": {
       "type": "string",
       "title": "Message"
+     },
+     "key": {
+      "type": "string",
+      "title": "Key",
+      "default": ""
+     },
+     "accepted": {
+      "type": "boolean",
+      "title": "Accepted",
+      "default": false
      }
     },
     "type": "object",
@@ -3560,13 +3720,6 @@
       "type": "string",
       "title": "Default Source Lang"
      },
-     "default_target_langs": {
-      "items": {
-       "type": "string"
-      },
-      "type": "array",
-      "title": "Default Target Langs"
-     },
      "default_export_format": {
       "type": "string",
       "title": "Default Export Format"
@@ -3593,7 +3746,6 @@
      "llm_provider",
      "llm_model",
      "default_source_lang",
-     "default_target_langs",
      "default_export_format",
      "default_export_mode",
      "colors"
@@ -3608,6 +3760,27 @@
      "info"
     ],
     "title": "Severity"
+   },
+   "SheetOut": {
+    "properties": {
+     "name": {
+      "type": "string",
+      "title": "Name"
+     },
+     "cells": {
+      "items": {
+       "$ref": "#/components/schemas/CellOut"
+      },
+      "type": "array",
+      "title": "Cells"
+     }
+    },
+    "type": "object",
+    "required": [
+     "name",
+     "cells"
+    ],
+    "title": "SheetOut"
    },
    "SkippedRow": {
     "properties": {
@@ -3869,21 +4042,8 @@
         "type": "null"
        }
       ],
-      "title": "Source Lang"
-     },
-     "target_langs": {
-      "anyOf": [
-       {
-        "items": {
-         "$ref": "#/components/schemas/Lang"
-        },
-        "type": "array"
-       },
-       {
-        "type": "null"
-       }
-      ],
-      "title": "Target Langs"
+      "title": "Source Lang",
+      "description": "The target is always the other language"
      }
     },
     "type": "object",
