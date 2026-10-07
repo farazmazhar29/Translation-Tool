@@ -117,13 +117,13 @@ export const ProjectToolbar = ({
             {t('view.approve')}
           </Btn>
         )}
-        {(p.status === 'approved' || p.status === 'archived') && (
+        {p.status === 'approved' && (
           <Btn variant="primary" onClick={onExport}>
             <Download className={icon} aria-hidden="true" />
             {t('view.export')}
           </Btn>
         )}
-        {isTranslator && (p.status === 'approved' || p.status === 'archived') && (
+        {isTranslator && p.status === 'approved' && (
           <Btn onClick={step('reopen')}>
             <RotateCcw className={icon} aria-hidden="true" />
             {t('view.reopen')}

@@ -83,7 +83,7 @@ const Dashboard = () => {
                         {p.filename} · {fmtDate(p.updated_at)}
                       </span>
                     </span>
-                    <StatusBadge status={p.status} />
+                    <StatusBadge status={p.status} archived={p.archived} />
                     <ChevronRight className="size-4 shrink-0 text-stone-400" aria-hidden="true" />
                   </Link>
                 </li>

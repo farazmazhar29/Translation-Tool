@@ -4,10 +4,10 @@ import type { S } from '@/shared/api/client'
 
 const STEPS = ['new', 'preview_ready', 'approved'] as const
 
-/** Where the project is in the process: translated (in review), approved. An archived project counts as approved. */
+/** Where the project is in the process: translated (in review), approved. Archiving is not a step. */
 export const WorkflowSteps = ({ status }: { status: S['ProjectOut']['status'] }) => {
   const { t } = useTranslation('common')
-  const current = status === 'archived' ? STEPS.length - 1 : STEPS.indexOf(status)
+  const current = STEPS.indexOf(status)
   return (
     <ol className="flex items-start">
       {STEPS.map((step, i) => {

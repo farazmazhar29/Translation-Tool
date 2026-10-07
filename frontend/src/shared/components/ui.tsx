@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, type ButtonHTMLAttributes, type ReactNode } f
 import { useTranslation } from 'react-i18next'
 import { AlertCircle, X, type LucideIcon } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { STATUS_STYLE, isStatus } from '../constants'
+import { ARCHIVED_STYLE, STATUS_STYLE, isStatus } from '../constants'
 import { btnClass, errMsg, type Variant } from '../lib/ui'
 
 export const Btn = ({
@@ -53,18 +53,17 @@ export const LinkBtn = ({
   </Link>
 )
 
-export const StatusBadge = ({ status }: { status: string }) => {
+/** The status of a project; an archived one shows "archived" (it keeps its status underneath). */
+export const StatusBadge = ({ status, archived = false }: { status: string; archived?: boolean }) => {
   const { t } = useTranslation()
-  const known = isStatus(status)
+  const style = archived ? ARCHIVED_STYLE : isStatus(status) ? STATUS_STYLE[status] : null
+  const label = archived ? t('status.archived') : isStatus(status) ? t(`status.${status}`) : status
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${known ? STATUS_STYLE[status].chip : 'bg-stone-100 text-stone-700'}`}
+      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${style?.chip ?? 'bg-stone-100 text-stone-700'}`}
     >
-      <span
-        className={`size-1.5 rounded-full ${known ? STATUS_STYLE[status].dot : 'bg-stone-400'}`}
-        aria-hidden="true"
-      />
-      {known ? t(`status.${status}`) : status}
+      <span className={`size-1.5 rounded-full ${style?.dot ?? 'bg-stone-400'}`} aria-hidden="true" />
+      {label}
     </span>
   )
 }

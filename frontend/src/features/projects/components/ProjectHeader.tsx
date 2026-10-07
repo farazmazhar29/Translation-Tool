@@ -61,9 +61,9 @@ export const ProjectHeader = ({
           </span>
           <div className="min-w-0">
             <h1 className="truncate text-2xl font-bold">{p.name}</h1>
-            {p.status === 'archived' && (
+            {p.archived && (
               <div className="mt-3">
-                <StatusBadge status={p.status} />
+                <StatusBadge status={p.status} archived />
               </div>
             )}
           </div>

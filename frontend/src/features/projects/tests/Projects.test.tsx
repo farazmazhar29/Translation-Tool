@@ -42,6 +42,14 @@ describe('Projects', () => {
     expect(table.getByText('In Prüfung')).toBeInTheDocument()
   })
 
+  it('shows an archived project as archived, whatever its status', async () => {
+    setup()
+    server.use(http.get('*/api/projects', () => HttpResponse.json([project({ status: 'approved', archived: true })])))
+    await userEvent.click(await screen.findByLabelText('Archivierte'))
+    expect(await within(screen.getByRole('table')).findByText('Archiviert')).toBeInTheDocument()
+    expect(within(screen.getByRole('table')).queryByText('Freigegeben')).not.toBeInTheDocument()
+  })
+
   it('hides archived projects by default and re-queries when filters change', async () => {
     const urls = setup()
     await screen.findByText('Anleitung A')

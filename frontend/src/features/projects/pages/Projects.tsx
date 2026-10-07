@@ -179,7 +179,7 @@ const Projects = () => {
               {(p.source_lang === 'auto' ? p.detected_lang : p.source_lang) || '?'} → {p.target_langs.join(', ')}
             </td>
             <td className="whitespace-nowrap px-3 py-3">
-              <StatusBadge status={p.status} />
+              <StatusBadge status={p.status} archived={p.archived} />
             </td>
             <td className="hidden whitespace-nowrap px-4 py-3 text-stone-600 xl:table-cell">{fmtDate(p.updated_at)}</td>
             <td className="hidden whitespace-nowrap px-4 py-3 2xl:table-cell">{p.created_by}</td>
