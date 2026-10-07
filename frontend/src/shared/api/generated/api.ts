@@ -475,9 +475,13 @@ export interface SettingsOut {
     'colors': { [key: string]: string; };
     'gemini_key_configured': boolean;
     /**
-     * The models to choose from per provider (read-only; none for the mock)
+     * The providers and their models to choose from (read-only)
      */
     'model_choices': { [key: string]: Array<string>; };
+    /**
+     * The server runs with LLM_PROVIDER=mock: the choice above is not used (read-only)
+     */
+    'offline_mock': boolean;
 }
 
 export const Severity = {

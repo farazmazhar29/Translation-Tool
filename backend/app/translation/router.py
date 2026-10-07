@@ -11,8 +11,8 @@ from app.projects.language import target_languages
 from app.projects.models import Project, Segment, Translation
 from app.projects.queries import editable, get_project, get_segment
 from app.projects.schemas import JobStatus, ProjectOut, SegmentEdit, SegmentOut
-from app.translation.llm import LLMError, get_provider
-from app.translation.pipeline import run_project_translation, runtime_settings, translate_segments
+from app.translation.llm import LLMError
+from app.translation.pipeline import chosen_provider, run_project_translation, translate_segments
 from app.translation.schemas import TermReplace, TranslateIn
 
 router = APIRouter(prefix="/api", tags=["Translation"])
@@ -65,10 +65,7 @@ def edit_segment(db: DB, user: Translator, sid: int, lang: str, body: SegmentEdi
 def retranslate_segment(db: DB, _: Translator, sid: int, lang: str) -> Segment:
     seg = get_segment(db, sid)
     try:
-        rt = runtime_settings(db)
-        translate_segments(
-            db, [seg], seg.project.source, lang, get_provider(rt.get("llm_provider"), rt.get("llm_model"))
-        )
+        translate_segments(db, [seg], seg.project.source, lang, chosen_provider(db))
     except LLMError as e:
         raise HTTPException(502, str(e)) from None
     return seg

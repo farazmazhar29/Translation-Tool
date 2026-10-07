@@ -15,7 +15,7 @@ from app.translation.llm import model_choices
 router = APIRouter(prefix="/api")
 
 DEFAULTS: dict[str, Any] = {
-    "llm_provider": settings.llm_provider,
+    "llm_provider": Provider.GEMINI,
     "llm_model": settings.gemini_model,
     "default_source_lang": AUTO,
     "default_export_format": FileFormat.DOCX,
@@ -32,22 +32,25 @@ DEFAULTS: dict[str, Any] = {
 
 def read_settings(db: DB) -> SettingsOut:
     row = db.get(AppSetting, "general")
+    values = {**DEFAULTS, **(row.value if row else {})}
+    if values["llm_provider"] not in model_choices():  # "mock" stored before it stopped being a choice
+        values["llm_provider"] = DEFAULTS["llm_provider"]
     return SettingsOut.model_validate(
         {
-            **DEFAULTS,
-            **(row.value if row else {}),
+            **values,
             "gemini_key_configured": bool(settings.gemini_api_key),
             "model_choices": model_choices(),
+            "offline_mock": settings.llm_provider == Provider.MOCK,
         }
     )
 
 
 def check_model(provider: object, model: object) -> None:
-    """Only a provider the app has and, for it, one of its models: a typo must not break every translation."""
-    if provider not in list(Provider):
+    """Only a provider the app offers and, for it, one of its models: a typo must not break every translation."""
+    if provider not in model_choices():
         raise HTTPException(400, f"Unbekannter KI-Anbieter: {provider}")
     choices = model_choices()[str(provider)]
-    if choices and model not in choices:
+    if model not in choices:
         raise HTTPException(400, f"Unbekanntes Modell: {model}. Möglich: {', '.join(choices)}")
 
 
@@ -61,7 +64,8 @@ def put_settings(db: DB, _: Admin, body: dict[str, Any]) -> SettingsOut:
     values = {k: v for k, v in body.items() if k in DEFAULTS}
     row = db.get(AppSetting, "general") or AppSetting(key="general", value={})
     if "llm_provider" in values or "llm_model" in values:  # checked as they will be stored together
-        merged = {**DEFAULTS, **row.value, **values}
+        current = read_settings(db)
+        merged = {"llm_provider": current.llm_provider, "llm_model": current.llm_model, **values}
         check_model(merged["llm_provider"], merged["llm_model"])
     row.value = {**row.value, **values}
     db.add(row)

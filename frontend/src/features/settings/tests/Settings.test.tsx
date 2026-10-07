@@ -44,15 +44,22 @@ describe('Settings', () => {
     expect(saved[0]).toMatchObject({ llm_provider: 'gemini', llm_model: 'test-2' })
   })
 
-  it('needs no model for the offline mock', async () => {
-    setup({ llm_provider: 'mock' })
-    expect(await screen.findByText('Der Offline-Modus braucht kein Modell.')).toBeInTheDocument()
-    expect(screen.queryByRole('combobox', { name: 'Modell' })).not.toBeInTheDocument()
+  it('does not offer the offline mock as a provider', async () => {
+    setup()
+    const provider = await screen.findByRole('combobox', { name: 'Provider' })
+    expect([...(provider as HTMLSelectElement).options].map((o) => o.value)).toEqual(['gemini'])
+    expect(screen.queryByText(/Offline-Testmodus/)).not.toBeInTheDocument()
   })
 
-  it('switching the provider picks one of its models', async () => {
-    setup({ llm_provider: 'mock', llm_model: 'from-before' })
-    await userEvent.selectOptions(await screen.findByRole('combobox', { name: 'Provider' }), 'gemini')
-    expect(screen.getByRole('combobox', { name: 'Modell' })).toHaveValue('test')
+  it('says when the server runs the offline mock', async () => {
+    setup({ offline_mock: true })
+    expect(await screen.findByText(/Offline-Testmodus/)).toBeInTheDocument()
+  })
+
+  it('keeps a stored model the list no longer has visible', async () => {
+    setup({ llm_model: 'retired-model' })
+    const model = await screen.findByRole('combobox', { name: 'Modell' })
+    expect(model).toHaveValue('retired-model')
+    expect([...(model as HTMLSelectElement).options].map((o) => o.value)).toEqual(['retired-model', 'test', 'test-2'])
   })
 })

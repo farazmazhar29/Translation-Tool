@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.core.db import SessionLocal
-from app.core.enums import JobState, TermCategory
+from app.core.enums import JobState, Provider, TermCategory
 from app.main import recover_interrupted_jobs
 from app.projects.language import detect_language
 from app.projects.models import Project, Segment
@@ -146,14 +146,11 @@ def test_undetectable_language_asks_the_user_to_choose(client: TestClient, trans
 
 
 def test_provider_errors_are_shown_to_the_user(
-    client: TestClient, translator: Headers, admin: Headers, translated_project: int
+    client: TestClient, translator: Headers, translated_project: int, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    client.put("/api/settings", headers=admin, json={"llm_provider": "gemini"})  # no API key configured in tests
-    try:
-        assert client.post(f"/api/projects/{translated_project}/translate", headers=translator).status_code == 200
-        status = wait_for_job(client, translator, translated_project)
-    finally:
-        client.put("/api/settings", headers=admin, json={"llm_provider": "mock"})
+    monkeypatch.setattr(settings, "llm_provider", Provider.GEMINI)  # no API key configured in tests
+    assert client.post(f"/api/projects/{translated_project}/translate", headers=translator).status_code == 200
+    status = wait_for_job(client, translator, translated_project)
     assert status["job_state"] == "error"
     assert "GEMINI_API_KEY" in str(status["job_error"])
 

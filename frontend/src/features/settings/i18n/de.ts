@@ -4,9 +4,10 @@ export const de = {
   adminOnly: 'Nur Administratoren können Einstellungen ändern.',
   aiCard: 'KI-Modell & Schnittstellen',
   provider: 'Provider',
-  providers: { gemini: 'Google Gemini (API)', mock: 'Mock (offline, nur Test)' },
+  providers: { gemini: 'Google Gemini (API)' },
   model: 'Modell',
-  noModel: 'Der Offline-Modus braucht kein Modell.',
+  offlineMock:
+    'Der Server läuft im Offline-Testmodus (LLM_PROVIDER=mock): Übersetzt werden nur einzelne bekannte Wörter, die Auswahl unten wird nicht verwendet.',
   apiKey:
     'API-Schlüssel: {{status}}. Weitere Schnittstellen (z. B. DeepL) lassen sich über die Provider-Schicht ergänzen.',
   keyConfigured: '✔ Gemini-Key ist serverseitig konfiguriert',

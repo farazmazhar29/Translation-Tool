@@ -385,6 +385,14 @@ Tests (D-58): the API configuration is tested through generated factories (token
 
 Tests: deletion with the history intact, the dead token and the refused sign-in, the retired name for both creation paths (also in other letter case), the case-insensitive check, and the 400/404/403 cases. In the frontend: confirm and delete, no button on your own row, and no "active" choice for a new user.
 
+**D-60 - The offline mock is a server mode, not a choice in the settings (2026-10-07).** The settings page offered "Mock (offline, nur Test)" next to Gemini. The mock is a dictionary of about 30 words: it swaps those and leaves everything else in German ("The Carcass and the Front panel sind white. Bitte nur geeignete Dübel verwenden."). An admin who picked it would get unusable "translations", the same kind of mistake the model dropdown prevents.
+* The mock stays, because it is what the tests run on: all backend tests and the end-to-end tests translate with it, with no network, no quota and the same result every time. It is switched on only by `LLM_PROVIDER=mock` in the environment and then wins over the settings for the whole server.
+* The settings offer only Gemini; saving `"mock"` is refused (400) like any unknown provider. A `"mock"` stored earlier (local databases have it) reads as Gemini, so nothing breaks; reading is lenient, saving is strict.
+* `GET /api/settings` sends `offline_mock`, and the page then says that the server runs in offline test mode and the choice is not used, so a demo without a key does not look like a broken Gemini.
+* `get_provider(model)` no longer takes a provider name, there is only one to choose; the provider list stays a constant so another (DeepL, Azure OpenAI) is one entry plus its class.
+
+Tests: the mock as a server mode winning over the chosen model, Gemini with the chosen model, the refused `"mock"`, the stored legacy value, `offline_mock`. The two tests that check a missing Gemini key now switch the server mode instead of the settings. In the frontend: only Gemini in the list, the offline note, a retired model stays visible.
+
 ## 6. Problems found and how they were fixed
 
 | Problem | Cause | Fix |
@@ -487,6 +495,7 @@ TanStack Query lint, Knip, `prettier --check` + `npm audit` in CI, Husky + lint-
 * **2026-10-07** - "Active" is only offered when editing a user: a new account is always active; deactivating removes access while the history keeps the name (there is no delete).
 * **2026-10-07** - Users can be deleted; the name stays in the history and is retired; migration 0007 (D-59).
 * **2026-10-07** - The AI model is chosen from a list, not typed: the settings send `model_choices` (the configured Gemini model and its fallbacks), saving accepts only those (400 otherwise, naming the choices), and the page shows a dropdown. A typo can no longer break every translation.
+* **2026-10-07** - The offline mock is no longer offered in the settings; only `LLM_PROVIDER=mock` turns it on, and the page says so (D-60).
 * **2026-10-07** - README rewritten as a short guide: tools, Docker steps, development commands, AI and architecture in brief; requirement table and links to this log removed.
 
 ## 9. Sources (research, 2026-10-01 and 2026-10-03)

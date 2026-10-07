@@ -1,14 +1,15 @@
 import type { ProjectDetail, ProjectOut, SegmentOut, SettingsOut, Term } from '@/shared/api/generated'
 
 export const settings = (): SettingsOut => ({
-  llm_provider: 'mock',
+  llm_provider: 'gemini',
   llm_model: 'test',
   default_source_lang: 'auto',
   default_export_format: 'docx',
   default_export_mode: 'translation',
   colors: { technical: '#3b82f6', glossary: '#22c55e', ambiguous: '#f59e0b', unknown: '#ef4444', protected: '#a855f7' },
   gemini_key_configured: false,
-  model_choices: { gemini: ['test', 'test-2'], mock: [] },
+  model_choices: { gemini: ['test', 'test-2'] },
+  offline_mock: false,
 })
 
 export const term = (over: Partial<Term> = {}): Term => ({

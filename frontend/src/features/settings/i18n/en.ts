@@ -6,9 +6,10 @@ export const en: Texts<typeof de> = {
   adminOnly: 'Only administrators can change settings.',
   aiCard: 'AI model & interfaces',
   provider: 'Provider',
-  providers: { gemini: 'Google Gemini (API)', mock: 'Mock (offline, test only)' },
+  providers: { gemini: 'Google Gemini (API)' },
   model: 'Model',
-  noModel: 'The offline mode needs no model.',
+  offlineMock:
+    'The server runs in offline test mode (LLM_PROVIDER=mock): only a few known words are translated, the choice below is not used.',
   apiKey: 'API key: {{status}}. Further interfaces (e.g. DeepL) can be added via the provider layer.',
   keyConfigured: '✔ Gemini key is configured on the server',
   keyMissing: '✖ GEMINI_API_KEY is missing in the .env',

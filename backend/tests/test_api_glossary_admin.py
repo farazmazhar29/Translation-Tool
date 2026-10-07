@@ -2,16 +2,26 @@
 
 import io
 import uuid
+from collections.abc import Iterator
 from typing import Any
 
 import pytest
 from conftest import Headers, docx_bytes, upload
 from fastapi.testclient import TestClient
 from openpyxl import Workbook, load_workbook
+from sqlalchemy.orm import Session
 
 from app.core.config import settings
+from app.core.db import SessionLocal
+from app.preferences.models import AppSetting
 
 XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+
+
+@pytest.fixture
+def db(client: TestClient) -> Iterator[Session]:  # the client fixture starts the app and migrates the test database
+    with SessionLocal() as session:
+        yield session
 
 
 def word() -> str:
@@ -349,14 +359,15 @@ def test_settings_defaults_merge_and_ignore_unknown_keys(
 def test_the_model_is_chosen_from_a_list_not_typed(client: TestClient, admin: Headers) -> None:
     choices = client.get("/api/settings", headers=admin).json()["model_choices"]
     # the configured model first, then its fallbacks
-    assert choices["gemini"] == list(dict.fromkeys([settings.gemini_model, *settings.gemini_fallback_models]))
-    assert choices["mock"] == []  # the offline mock needs no model
+    assert choices == {"gemini": list(dict.fromkeys([settings.gemini_model, *settings.gemini_fallback_models]))}
     original = client.get("/api/settings", headers=admin).json()
     try:
         typo = client.put("/api/settings", headers=admin, json={"llm_provider": "gemini", "llm_model": "gemini-flsh"})
         assert typo.status_code == 400
         assert settings.gemini_model in typo.json()["detail"]  # says what is possible
         assert client.put("/api/settings", headers=admin, json={"llm_provider": "openai"}).status_code == 400
+        # the offline mock is a server mode, not a choice
+        assert client.put("/api/settings", headers=admin, json={"llm_provider": "mock"}).status_code == 400
         other = choices["gemini"][-1]
         saved = client.put("/api/settings", headers=admin, json={"llm_provider": "gemini", "llm_model": other})
         assert saved.json()["llm_model"] == other
@@ -366,6 +377,23 @@ def test_the_model_is_chosen_from_a_list_not_typed(client: TestClient, admin: He
             headers=admin,
             json={"llm_provider": original["llm_provider"], "llm_model": original["llm_model"]},
         )
+
+
+def test_the_settings_say_when_the_server_runs_the_offline_mock(
+    client: TestClient, admin: Headers, db: Session
+) -> None:
+    assert client.get("/api/settings", headers=admin).json()["offline_mock"] is True  # LLM_PROVIDER=mock in tests
+    row = db.get(AppSetting, "general") or AppSetting(key="general", value={})
+    before = dict(row.value)
+    row.value = {**before, "llm_provider": "mock"}  # stored while the mock could still be chosen
+    db.add(row)
+    db.commit()
+    try:
+        assert client.get("/api/settings", headers=admin).json()["llm_provider"] == "gemini"
+        assert client.put("/api/settings", headers=admin, json={"llm_model": settings.gemini_model}).status_code == 200
+    finally:
+        row.value = before
+        db.commit()
 
 
 def test_dashboard_reports_work_in_progress(

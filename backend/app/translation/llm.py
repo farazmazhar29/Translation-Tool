@@ -1,4 +1,5 @@
-"""Provider-agnostic LLM layer. Switch providers with LLM_PROVIDER in .env or in the settings page."""
+"""Provider-agnostic LLM layer. The provider and model are chosen in the settings page; LLM_PROVIDER=mock in .env
+switches the whole server to the offline mock (tests, runs without a key)."""
 
 import json
 import logging
@@ -217,17 +218,15 @@ class Mock(LLMProvider):
 
 
 def model_choices() -> dict[str, list[str]]:
-    """The models an admin may choose, per provider: the configured Gemini model and its fallbacks (the ones the app
-    knows to work), nothing for the offline mock. A free-text model name only invites typos."""
-    gemini = list(dict.fromkeys([settings.gemini_model, *settings.gemini_fallback_models]))
-    return {Provider.GEMINI: gemini, Provider.MOCK: []}
+    """The providers and models an admin may choose: the configured Gemini model and its fallbacks (the ones the app
+    knows to work). A free-text model name only invites typos. The mock is not a choice, see `get_provider`."""
+    return {Provider.GEMINI: list(dict.fromkeys([settings.gemini_model, *settings.gemini_fallback_models]))}
 
 
-def get_provider(name: str | None = None, model: str | None = None) -> LLMProvider:
-    try:
-        provider = Provider((name or settings.llm_provider).lower())
-    except ValueError:
-        raise LLMError(f"Unbekannter LLM-Provider: {name}") from None
-    if provider == Provider.MOCK:
+def get_provider(model: str | None = None) -> LLMProvider:
+    """Gemini with the model chosen in the settings. The offline mock only translates the few words it knows, so it is
+    a server mode (LLM_PROVIDER=mock, for the tests and runs without a key) that wins over the settings, never a
+    choice."""
+    if settings.llm_provider == Provider.MOCK:
         return Mock()
     return Gemini(settings.gemini_api_key, model or settings.gemini_model)

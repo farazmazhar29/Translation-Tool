@@ -10,13 +10,13 @@ glossary, keeps product names and article numbers unchanged, and nothing is fina
 | Docker Desktop | current | running the app with Docker; regenerating the API client |
 | Python | 3.12 | backend |
 | Node.js | 20 or newer | frontend (React 19, Vite 6) |
-| Gemini API key | free | real translations ([aistudio.google.com](https://aistudio.google.com) → Get API key). Without a key, use `LLM_PROVIDER=mock` |
+| Gemini API key | free | real translations ([aistudio.google.com](https://aistudio.google.com) → Get API key). Without a key, `LLM_PROVIDER=mock` starts the app, but it only translates a few known words |
 
 ## Run with Docker
 
 1. Start Docker Desktop.
 2. In the project folder, create the settings file: `copy .env.example .env` (macOS/Linux: `cp .env.example .env`).
-3. Open `.env` and set `GEMINI_API_KEY=...` (or `LLM_PROVIDER=mock` to run offline without a key).
+3. Open `.env` and set `GEMINI_API_KEY=...` (or `LLM_PROVIDER=mock` to try the app without a key; see below).
 4. Start: `docker compose up -d --build`
 5. Open **http://localhost:8000** (API documentation: http://localhost:8000/docs).
 6. Stop: `docker compose down`
@@ -67,8 +67,9 @@ PowerShell; on macOS/Linux use `.venv/bin/` instead of `.venv\Scripts\`.
    for missing translations, different numbers, inconsistent terms and frequent terms missing from the glossary.
 5. **Human decides:** the translator edits, the reviewer approves. Only then can it be exported.
 
-The AI sits behind a small interface (`backend/app/translation/llm.py`): Gemini and an offline mock are included;
-another provider (DeepL, Azure OpenAI, a local model) can be added there. It is chosen under *Einstellungen*.
+The AI sits behind a small interface (`backend/app/translation/llm.py`); another provider (DeepL, Azure OpenAI, a
+local model) can be added there. The Gemini model is chosen under *Einstellungen*. An offline mock that only knows a
+few kitchen words is used by the automated tests; `LLM_PROVIDER=mock` turns it on for the whole server.
 
 ## Architecture
 
@@ -94,7 +95,7 @@ All settings are environment variables, kept in `.env` (see [`.env.example`](.en
 | Variable | Meaning |
 |---|---|
 | `GEMINI_API_KEY` | Gemini key for real translations |
-| `LLM_PROVIDER` | `gemini` or `mock` (offline, no key) |
+| `LLM_PROVIDER` | `gemini`, or `mock` (offline test mode, no key, translates only a few known words) |
 | `ENVIRONMENT` | `production` requires a strong `SECRET_KEY` and `SEED_DEMO_DATA=false` |
 | `ALLOW_REGISTRATION` | `false` = only admins create users |
 | `DATABASE_URL` | default: SQLite in `data/`; Docker sets PostgreSQL |

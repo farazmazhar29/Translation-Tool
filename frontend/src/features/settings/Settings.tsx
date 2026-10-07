@@ -26,6 +26,7 @@ const SettingsForm = ({ initial }: { initial: SettingsOut }) => {
       <PageHeader title={t('title')} />
       {disabled && <p className="rounded bg-amber-50 px-3 py-2 text-sm text-amber-800">{t('adminOnly')}</p>}
       <Card title={t('aiCard')} className="space-y-3">
+        {s.offline_mock && <p className="rounded bg-amber-50 px-3 py-2 text-sm text-amber-800">{t('offlineMock')}</p>}
         <SelectField
           label={t('provider')}
           disabled={disabled}
@@ -37,17 +38,13 @@ const SettingsForm = ({ initial }: { initial: SettingsOut }) => {
           }}
           options={optionsOf(PROVIDERS, (p) => t(`providers.${p}`))}
         />
-        {models.length > 0 ? (
-          <SelectField
-            label={t('model')}
-            disabled={disabled}
-            value={s.llm_model}
-            onChange={set('llm_model')}
-            options={optionsOf(modelOptions, (m) => m)}
-          />
-        ) : (
-          <p className="text-sm text-stone-600">{t('noModel')}</p>
-        )}
+        <SelectField
+          label={t('model')}
+          disabled={disabled}
+          value={s.llm_model}
+          onChange={set('llm_model')}
+          options={optionsOf(modelOptions, (m) => m)}
+        />
         <p className="rounded-xl bg-stone-100 px-4 py-3 text-xs text-stone-600">
           {t('apiKey', { status: s.gemini_key_configured ? t('keyConfigured') : t('keyMissing') })}
         </p>

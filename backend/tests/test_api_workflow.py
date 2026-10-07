@@ -6,6 +6,9 @@ import pytest
 from conftest import Headers, docx_bytes, upload
 from fastapi.testclient import TestClient
 
+from app.core.config import settings
+from app.core.enums import Provider
+
 BODY = "Der Korpus und die Frontblende sind weiß. Preis 49,90 EUR, Artikel UK-4711."
 
 
@@ -123,14 +126,11 @@ def test_regenerating_a_segment_restores_the_machine_translation(
 
 
 def test_regeneration_reports_provider_problems_as_502(
-    client: TestClient, translator: Headers, admin: Headers, translated_project: int
+    client: TestClient, translator: Headers, translated_project: int, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     sid = segments(client, translator, translated_project)[0]["id"]
-    client.put("/api/settings", headers=admin, json={"llm_provider": "gemini"})  # no key in the test environment
-    try:
-        r = client.post(f"/api/segments/{sid}/en/retranslate", headers=translator)
-    finally:
-        client.put("/api/settings", headers=admin, json={"llm_provider": "mock"})
+    monkeypatch.setattr(settings, "llm_provider", Provider.GEMINI)  # no key in the test environment
+    r = client.post(f"/api/segments/{sid}/en/retranslate", headers=translator)
     assert r.status_code == 502
     assert "GEMINI_API_KEY" in r.json()["detail"]
 

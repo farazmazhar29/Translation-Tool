@@ -17,9 +17,11 @@ from app.translation.llm import LLMError, LLMProvider, LLMSegment, get_provider
 log = logging.getLogger(__name__)
 
 
-def runtime_settings(db: Session) -> dict[str, str]:
+def chosen_provider(db: Session) -> LLMProvider:
+    """The provider for the model chosen in the settings (read on every job, so a change applies at once)."""
     row = db.get(AppSetting, "general")
-    return {k: str(v) for k, v in (row.value if row else {}).items() if k.startswith("llm_")}
+    model = row.value.get("llm_model") if row else None
+    return get_provider(str(model) if model else None)
 
 
 def translate_segments(
@@ -89,8 +91,7 @@ def run_project_translation(project_id: int) -> None:
         try:
             p.job_state, p.job_progress, p.job_error = JobState.RUNNING, 0, ""
             db.commit()
-            rt = runtime_settings(db)
-            provider = get_provider(rt.get("llm_provider"), rt.get("llm_model"))
+            provider = chosen_provider(db)
             if not p.source:
                 raise LLMError("Ausgangssprache konnte nicht erkannt werden – bitte manuell wählen.")
             targets = p.targets

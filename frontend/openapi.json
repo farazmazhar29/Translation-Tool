@@ -3877,7 +3877,13 @@
       },
       "type": "object",
       "title": "Model Choices",
-      "description": "The models to choose from per provider (read-only; none for the mock)"
+      "description": "The providers and their models to choose from (read-only)"
+     },
+     "offline_mock": {
+      "type": "boolean",
+      "title": "Offline Mock",
+      "description": "The server runs with LLM_PROVIDER=mock: the choice above is not used (read-only)",
+      "default": false
      }
     },
     "type": "object",
@@ -3889,7 +3895,8 @@
      "default_export_mode",
      "colors",
      "gemini_key_configured",
-     "model_choices"
+     "model_choices",
+     "offline_mock"
     ],
     "title": "SettingsOut"
    },

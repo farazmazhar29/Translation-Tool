@@ -5,6 +5,7 @@ import httpx
 import pytest
 
 from app.core.config import settings
+from app.core.enums import Provider
 from app.translation import llm
 from app.translation.llm import Gemini, Hint, LLMError, LLMResult, LLMSegment, Mock, get_provider
 
@@ -161,17 +162,21 @@ def test_calls_are_spaced_to_respect_the_free_tier(monkeypatch: pytest.MonkeyPat
 
 # provider factory
 def test_missing_api_key_is_reported_clearly(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(settings, "llm_provider", Provider.GEMINI)
     monkeypatch.setattr(settings, "gemini_api_key", "")
     with pytest.raises(LLMError, match="GEMINI_API_KEY"):
-        get_provider("gemini")
+        get_provider()
 
 
-def test_factory_returns_the_requested_provider(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_factory_returns_gemini_with_the_chosen_model(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(settings, "llm_provider", Provider.GEMINI)
     monkeypatch.setattr(settings, "gemini_api_key", "k")
-    assert isinstance(get_provider("mock"), Mock)
-    assert get_provider("GEMINI", "custom-model").models[0] == "custom-model"  # type: ignore[attr-defined]  # pyright: ignore[reportAttributeAccessIssue]
-    with pytest.raises(LLMError, match="Unbekannter"):
-        get_provider("skynet")
+    assert get_provider("custom-model").models[0] == "custom-model"  # type: ignore[attr-defined]  # pyright: ignore[reportAttributeAccessIssue]
+
+
+def test_the_offline_mock_is_a_server_mode_that_wins_over_the_chosen_model() -> None:
+    assert settings.llm_provider == Provider.MOCK  # how the tests run
+    assert isinstance(get_provider("gemini-flash-lite-latest"), Mock)
 
 
 # mock provider

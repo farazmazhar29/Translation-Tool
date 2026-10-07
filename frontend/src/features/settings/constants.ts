@@ -1,1 +1,1 @@
-export const PROVIDERS = ['gemini', 'mock'] as const
+export const PROVIDERS = ['gemini'] as const

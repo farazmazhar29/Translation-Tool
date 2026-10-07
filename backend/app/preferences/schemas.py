@@ -14,5 +14,8 @@ class SettingsOut(Schema):
     colors: dict[str, str]
     gemini_key_configured: bool = False
     model_choices: dict[str, list[str]] = Field(
-        default_factory=dict, description="The models to choose from per provider (read-only; none for the mock)"
+        default_factory=dict, description="The providers and their models to choose from (read-only)"
+    )
+    offline_mock: bool = Field(
+        default=False, description="The server runs with LLM_PROVIDER=mock: the choice above is not used (read-only)"
     )
