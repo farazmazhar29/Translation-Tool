@@ -26,7 +26,8 @@ cd frontend && npm install && npm run dev                                       
 ```
 
 Demo users (development only): `translator/translator123`, `reviewer/reviewer123`, `admin/admin123`. Sample files are in
-[`samples/`](samples) (a German assembly manual, a price list, an English PDF, a glossary to import). With
+[`samples/`](samples) (German assembly manuals, care instructions (PDF), warranty terms (Word), a spare parts list
+(Excel), a price list, an English PDF and a glossary to import; `backend/make_samples.py` creates them). With
 `LLM_PROVIDER=mock` the whole app runs offline with a tiny dictionary translator, which is what the automated tests use.
 
 ### Configuration
