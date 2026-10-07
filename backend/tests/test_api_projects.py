@@ -248,7 +248,6 @@ def test_only_admins_delete_and_everything_belonging_to_the_project_goes(
         ("GET", "/api/projects/999999/status"),
         ("GET", "/api/projects/999999/original"),
         ("POST", "/api/projects/999999/reopen"),
-        ("POST", "/api/projects/999999/submit-review"),
     ],
 )
 def test_unknown_projects_are_404(client: TestClient, translator: Headers, method: str, path: str) -> None:

@@ -27,18 +27,10 @@ def test_actions_are_only_allowed_in_the_right_state(
 ) -> None:
     pid = upload(client, translator, "sm.docx", docx_bytes("Montage", BODY), target_langs="en")["id"]
     assert status_of(client, translator, pid) == "new"
-    for action in ("submit-review", "reject", "approve"):
-        assert post(client, reviewer, pid, action) == 409, action  # nothing to review yet
+    assert post(client, reviewer, pid, "approve") == 409  # nothing to review yet
     assert post(client, translator, pid, "export", json={"lang": "en", "format": "docx"}) == 409
 
     assert post(client, translator, pid, "translate") == 200
-    assert status_of(client, translator, pid) == "preview_ready"
-    assert post(client, reviewer, pid, "reject") == 409  # not in review
-
-    assert post(client, translator, pid, "submit-review") == 200
-    assert post(client, translator, pid, "submit-review") == 409  # already submitted
-    assert post(client, translator, pid, "reject") == 403  # translators cannot reject
-    assert post(client, reviewer, pid, "reject") == 200
     assert status_of(client, translator, pid) == "preview_ready"
 
     assert post(client, translator, pid, "approve") == 403  # translators cannot approve
@@ -46,7 +38,7 @@ def test_actions_are_only_allowed_in_the_right_state(
     assert status_of(client, translator, pid) == "approved"
 
     # once approved the content is frozen
-    for action in ("approve", "submit-review", "translate"):
+    for action in ("approve", "translate"):
         assert post(client, reviewer, pid, action) == 409, action
     sid = segments(client, translator, pid)[0]["id"]
     assert client.put(f"/api/segments/{sid}/en", headers=translator, json={"text": "x"}).status_code == 409

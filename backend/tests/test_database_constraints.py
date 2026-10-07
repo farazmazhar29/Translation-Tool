@@ -197,6 +197,25 @@ def test_upgrading_repairs_data_the_new_rules_would_reject(tmp_path: Path, monke
     engine.dispose()
 
 
+def test_projects_that_were_in_review_wait_for_approval_after_the_upgrade(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Migration 0003 removed the separate "in review" state: those projects are now simply "preview_ready"."""
+    url = f"sqlite:///{tmp_path / 'review.db'}"
+    engine = create_engine(url)
+    monkeypatch.setattr(settings, "database_url", url)
+    monkeypatch.setattr(migrate, "engine", engine)
+    command.upgrade(migrate.alembic_config(), "0002")
+    add_project(engine)
+    run(engine, "UPDATE projects SET status = 'in_review'")  # allowed before the migration
+    migrate.upgrade_to_head()
+    with engine.connect() as conn:
+        assert conn.execute(text("SELECT status FROM projects")).scalar_one() == "preview_ready"
+    with pytest.raises(IntegrityError):
+        run(engine, "UPDATE projects SET status = 'in_review'")  # and refused afterwards
+    engine.dispose()
+
+
 def test_downgrade_restores_the_previous_schema(db: Engine) -> None:
     add_project(db)
     add_export(db)  # no release: stored as 0 again after the downgrade

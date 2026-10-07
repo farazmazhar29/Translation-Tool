@@ -19,12 +19,11 @@ class Role(StrEnum):
 class ProjectStatus(StrEnum):
     NEW = "new"
     PREVIEW_READY = "preview_ready"
-    IN_REVIEW = "in_review"
     APPROVED = "approved"
     ARCHIVED = "archived"
 
 
-EDITABLE_STATUSES = (ProjectStatus.NEW, ProjectStatus.PREVIEW_READY, ProjectStatus.IN_REVIEW)
+EDITABLE_STATUSES = (ProjectStatus.NEW, ProjectStatus.PREVIEW_READY)
 FINISHED_STATUSES = (ProjectStatus.APPROVED, ProjectStatus.ARCHIVED)  # export is possible, edits are not
 
 

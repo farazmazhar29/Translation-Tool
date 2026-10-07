@@ -1,4 +1,4 @@
-"""Review workflow: submit, reject, approve, reopen; release history."""
+"""Review workflow: approve, reopen; release history."""
 
 from fastapi import APIRouter, HTTPException
 
@@ -17,31 +17,11 @@ from app.review.schemas import HistoryOut, ReleaseDetail
 router = APIRouter(prefix="/api", tags=["Review"])
 
 
-@router.post("/projects/{pid}/submit-review", response_model=ProjectOut, summary="Send to a reviewer")
-def submit_review(db: DB, _: Translator, pid: int) -> Project:
-    p = get_project(db, pid)
-    if p.status != ProjectStatus.PREVIEW_READY:
-        raise HTTPException(409, "Erst eine Vorschau erzeugen.")
-    p.status = ProjectStatus.IN_REVIEW
-    db.commit()
-    return p
-
-
-@router.post("/projects/{pid}/reject", response_model=ProjectOut, summary="Send back to the translator")
-def reject(db: DB, _: Reviewer, pid: int) -> Project:
-    p = get_project(db, pid)
-    if p.status != ProjectStatus.IN_REVIEW:
-        raise HTTPException(409, "Projekt ist nicht in Prüfung.")
-    p.status = ProjectStatus.PREVIEW_READY
-    db.commit()
-    return p
-
-
 @router.post("/projects/{pid}/approve", response_model=ProjectOut, summary="'Übersetzung freigeben'")
 def approve(db: DB, user: Reviewer, pid: int) -> Project:
     """Stores the final translation as a release (history). Export is only possible afterwards."""
     p = get_project(db, pid)
-    if p.status not in (ProjectStatus.PREVIEW_READY, ProjectStatus.IN_REVIEW):
+    if p.status != ProjectStatus.PREVIEW_READY:
         raise HTTPException(409, "Projekt kann in diesem Status nicht freigegeben werden.")
     missing = [
         s.idx + 1 for s in p.segments for lang in p.targets if not ((t := s.translation(lang)) and t.text.strip())
