@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useParams } from 'react-router-dom'
 import { useAuth } from '@/features/auth'
@@ -20,7 +20,7 @@ import { SheetView } from '../components/SheetView'
 import { SourcePreview } from '../components/SourcePreview'
 import { TermLegend } from '../components/TermLegend'
 import { ViewSwitch } from '../components/ViewSwitch'
-import { EDITABLE, POLL_MS, PROJECT_QUERIES } from '../constants'
+import { EDITABLE, FOCUS_MS, POLL_MS, PROJECT_QUERIES } from '../constants'
 import type { Panel, Run, Segment } from '../types'
 
 /** One project: translation setup, review workflow and the segments. The parts live in `../components`. */
@@ -30,6 +30,19 @@ const ProjectView = () => {
   const { user } = useAuth()
   const [panel, setPanel] = useState<Panel>(null)
   const [view, setView] = useState<'page' | 'list'>('page')
+  // a segment opened from the quality check; `at` makes a second click on the same finding scroll again
+  const [focus, setFocus] = useState<{ idx: number; at: number } | null>(null)
+  useEffect(() => {
+    if (!focus) return undefined
+    const row = document.getElementById(`seg-${String(focus.idx)}`)
+    row?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    row?.classList.add('ring-2', 'ring-brand', 'ring-inset')
+    const timer = setTimeout(() => row?.classList.remove('ring-2', 'ring-brand', 'ring-inset'), FOCUS_MS)
+    return () => {
+      clearTimeout(timer)
+      row?.classList.remove('ring-2', 'ring-brand', 'ring-inset')
+    }
+  }, [focus])
   const [modal, setModal] = useState<{ kind: 'term'; seg: Segment; term: S['Term'] } | { kind: 'export' } | null>(null)
 
   const { data: p, error } = useQuery({
@@ -96,7 +109,19 @@ const ProjectView = () => {
           </div>
         </>
       )}
-      {panel === 'quality' && <QualityPanel projectId={id} lang={lang} />}
+      {panel === 'quality' && (
+        <QualityPanel
+          projectId={id}
+          lang={lang}
+          srcLang={srcLang}
+          editable={canEdit}
+          run={run}
+          onSegment={(idx) => {
+            setView('list') // editing happens in the segment list
+            setFocus({ idx, at: Date.now() })
+          }}
+        />
+      )}
       {panel === 'history' && <HistoryPanel projectId={id} />}
       {hasTranslation && view === 'page' && isSheet && (
         <SheetView

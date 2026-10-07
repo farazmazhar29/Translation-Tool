@@ -1,5 +1,7 @@
 /** While a translation runs, its progress is asked for this often (milliseconds). */
 export const POLL_MS = 1500
+/** How long a segment opened from the quality check stays marked (milliseconds). */
+export const FOCUS_MS = 3000
 
 /** Project states in which segments may still be edited. */
 export const EDITABLE = ['new', 'preview_ready']

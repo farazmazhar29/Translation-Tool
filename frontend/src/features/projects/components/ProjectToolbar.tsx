@@ -35,8 +35,9 @@ export const ProjectToolbar = ({
   const isReviewer = can(user, 'reviewer')
   const approve = async (): Promise<void> => {
     const { warnings } = await get<S['QualityOut']>(`/projects/${id}/quality`)
-    // Hints (severity "info") are advice and stay in the quality check; only real problems are worth a question.
-    const problems = warnings.filter((w) => w.severity !== 'info')
+    // Hints (severity "info") are advice and stay in the quality check; only real problems are worth a question,
+    // and not the ones the reviewer already looked at and accepted.
+    const problems = warnings.filter((w) => w.severity !== 'info' && !w.accepted)
     const count = (severity: string): number => problems.filter((w) => w.severity === severity).length
     const message = problems.length
       ? t('view.confirmApproveProblems', { errors: count('error'), warnings: count('warning') })
