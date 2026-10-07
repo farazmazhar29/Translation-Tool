@@ -1,157 +1,108 @@
 # Rotpunkt Übersetzungstool
 
-Browser-based AI translation tool for kitchen-industry documents (Word, Excel, PDF). Glossary terms, technical terms
-and protected product names / article numbers are respected, every translation is a **project**, and nothing becomes
-final without a **human approval**. Implemented for **German ↔ English** (take-home task for Rotpunkt Küchen).
+A browser-based AI translation tool for kitchen documents (Word, Excel, PDF), German ↔ English. It respects the
+glossary, keeps product names and article numbers unchanged, and nothing is final until a reviewer approves it.
 
-> **Why was each tool and library chosen?** See the [engineering log](docs/ENGINEERING.md) (decisions, standards, quality gates).
+## Tools required
 
-## Quick start
-
-**Docker (one central server, PostgreSQL):**
-
-```bash
-cp .env.example .env        # add GEMINI_API_KEY (free: https://aistudio.google.com) or set LLM_PROVIDER=mock
-docker compose up --build   # → http://localhost:8000   (API docs / Swagger: http://localhost:8000/docs)
-```
-
-The database is migrated automatically at start-up. A database created by an earlier version is adopted without data loss.
-
-**Local development (SQLite, no Docker):**
-
-```bash
-cd backend && python -m venv .venv && .venv/Scripts/pip install -r requirements-dev.txt   # Linux/macOS: .venv/bin/pip
-.venv/Scripts/uvicorn app.main:app --reload --port 8000                                   # API + Swagger
-cd frontend && npm install && npm run dev                                                  # UI on :5173 (proxies /api)
-```
-
-Demo users (development only): `translator/translator123`, `reviewer/reviewer123`, `admin/admin123`. Sample files are in
-[`samples/`](samples) (German assembly manuals, care instructions (PDF), warranty terms (Word), a spare parts list
-(Excel), a price list, an English PDF and a glossary to import; `backend/make_samples.py` creates them). With
-`LLM_PROVIDER=mock` the whole app runs offline with a tiny dictionary translator, which is what the automated tests use.
-
-### Configuration
-
-Everything is configured through environment variables or a `.env` file (see [`.env.example`](.env.example)).
-
-| Variable | Default | Meaning |
+| Tool | Version | Needed for |
 |---|---|---|
-| `GEMINI_API_KEY`, `GEMINI_MODEL` | – / `gemini-flash-lite-latest` | Free Gemini key; the alias survives model retirements, overloaded models fall back automatically |
-| `LLM_PROVIDER` | `gemini` | `gemini` or `mock` (offline) |
-| `ENVIRONMENT` | `development` | `production` **refuses to start** without a strong `SECRET_KEY` and with demo data on |
-| `SECRET_KEY` | dev value | Random, >= 32 characters in production |
-| `ALLOW_REGISTRATION` | `true` | Self-service "Create account" on the login page. New accounts are always translators. `false`: only admins create users |
-| `SEED_DEMO_DATA` | `true` | Demo users and sample glossary. Must be `false` in production |
-| `BOOTSTRAP_ADMIN_USERNAME/PASSWORD` | – | First administrator, created only when no user exists |
-| `DATABASE_URL` | SQLite in `DATA_DIR` | e.g. `postgresql+psycopg2://user:pass@host/db` |
-| `MAX_UPLOAD_MB` | `20` | Larger uploads are refused with 413 |
-| `LOG_FORMAT`, `LOG_LEVEL` | `text`, `INFO` | `json` for log collectors |
-| `ENABLE_HSTS`, `DOCS_ENABLED`, `AUTO_MIGRATE` | `false`, `true`, `true` | HTTPS header, Swagger UI, migrate at start-up |
+| Docker Desktop | current | running the app with Docker; regenerating the API client |
+| Python | 3.12 | backend |
+| Node.js | 20 or newer | frontend (React 19, Vite 6) |
+| Gemini API key | free | real translations ([aistudio.google.com](https://aistudio.google.com) → Get API key). Without a key, use `LLM_PROVIDER=mock` |
 
-## Workflow
+## Run with Docker
 
-`Project → upload → languages → preview → highlight terms → manual correction → quality check → approval → export → archive`
+1. Start Docker Desktop.
+2. In the project folder, create the settings file: `copy .env.example .env` (macOS/Linux: `cp .env.example .env`).
+3. Open `.env` and set `GEMINI_API_KEY=...` (or `LLM_PROVIDER=mock` to run offline without a key).
+4. Start: `docker compose up -d --build`
+5. Open **http://localhost:8000** (API documentation: http://localhost:8000/docs).
+6. Stop: `docker compose down`
 
-* **Upload** creates the project automatically and detects text, structure (paragraphs/cells/blocks) and language.
-* **Start translation** only creates a **preview** (original left, translation right). The final version is stored when a
-  *Prüfer* clicks **Übersetzung freigeben**; export is blocked until then.
-* Click a highlighted term: used translation, alternatives, description, glossary entry, direct edit
-  (this segment / whole project) and "add to glossary".
+Docker runs the app with PostgreSQL. The database is created and migrated automatically.
+
+## Run for development
+
+The backend runs on port 8000, so stop the Docker app first (`docker compose down`). Commands are for Windows
+PowerShell; on macOS/Linux use `.venv/bin/` instead of `.venv\Scripts\`.
+
+**Backend** (API on http://localhost:8000, SQLite, reloads on change)
+
+1. `cd backend`
+2. `python -m venv .venv`
+3. `.venv\Scripts\pip install -r requirements-dev.txt`
+4. `copy ..\.env.example ..\.env` (once; then set the Gemini key as above)
+5. `.venv\Scripts\python -m uvicorn app.main:app --reload --port 8000`
+
+**Frontend** (UI on http://localhost:5173, reloads on change, forwards `/api` to the backend)
+
+1. `cd frontend`
+2. `npm install`
+3. `npm run dev`
+
+**API client** (only after changing the backend API; needs Docker running)
+
+1. `cd backend` → `.venv\Scripts\python export_openapi.py` (writes `frontend/openapi.json`)
+2. `cd frontend` → `npm run openapi:generate-specs` (writes `frontend/src/shared/api/generated/`)
+
+## Try it
+
+* **Users** (development only): `admin` / `admin123`, `reviewer` / `reviewer123`, `translator` / `translator123`.
+  New accounts can also be created on the sign-in page.
+* **Sample files** in [`samples/`](samples): a German PDF, Word and Excel document (one page each) and a glossary to
+  import (`glossar_beispiel.xlsx`).
+* **Flow:** New project (upload) → Translate (preview) → check and edit → quality check → approve → export.
 
 ## How the AI part works
 
-1. The file is split into **segments** with a locator (docx paragraph, xlsx cell, pdf block) so text goes back to exactly
-   the same place – Word/Excel keep their formatting and formulas.
-2. **Deterministic glossary matching** (synonyms, inflection tolerant, longest match first) and **article-number detection**
-   run *before* the model. Matches are passed to the LLM as hard constraints ("do not translate" terms stay unchanged).
-3. The LLM (Gemini, structured JSON output) translates batches of segments and classifies *further* terms as
-   technical / ambiguous (with alternatives) / unknown.
-4. **Post-verification:** every glossary term must actually appear in the translation, otherwise it is flagged. This
-   check also re-runs after every manual edit.
-5. The quality check adds: untranslated text, number mismatches, line-break/length problems, contradicting translations
-   of the same term, and frequent technical terms that are missing from the glossary.
+1. **Split:** the file is cut into segments (Word paragraph, Excel cell, PDF text block). Each remembers where it came
+   from, so the translation goes back to exactly that place.
+2. **Glossary first:** before the AI runs, the app finds glossary terms (also synonyms and plural forms) and article
+   numbers in each segment. They are given to the AI as fixed rules: "translate X as Y", "keep HS-9001 unchanged".
+3. **Translate:** Gemini translates the segments in batches and marks further terms as technical, ambiguous (with
+   alternatives) or unknown.
+4. **Check:** the app verifies that every glossary term really appears in the translation, and the quality check looks
+   for missing translations, different numbers, inconsistent terms and frequent terms missing from the glossary.
+5. **Human decides:** the translator edits, the reviewer approves. Only then can it be exported.
 
-The LLM sits behind a small provider interface ([`translation/llm.py`](backend/app/translation/llm.py)); Gemini and an offline
-mock are included, switchable in *Einstellungen*. DeepL, Azure OpenAI (EU) or a local Ollama model plug in the same way.
+The AI sits behind a small interface (`backend/app/translation/llm.py`): Gemini and an offline mock are included;
+another provider (DeepL, Azure OpenAI, a local model) can be added there. It is chosen under *Einstellungen*.
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-  B[Browser · React + TS] -->|REST + JWT| A[FastAPI]
-  A --> P[(PostgreSQL / SQLite)]
-  A --> F[(Uploads & exports)]
-  A --> G[Glossary matcher]
-  A --> L{LLM provider}
-  L --> Gem[Gemini]
-  L --> Mock[Mock / offline]
+  B[Browser: React] -->|REST API| A[FastAPI backend]
+  A --> D[(PostgreSQL / SQLite)]
+  A --> F[(Uploaded and exported files)]
+  A --> AI[AI provider: Gemini / mock]
 ```
 
-* **Backend:** Python 3.12, FastAPI, SQLAlchemy 2, Alembic, Pydantic v2 · python-docx, openpyxl, PyMuPDF, ReportLab.
-* **Frontend:** React 19, TypeScript (strict), React Query, Tailwind. API types are **generated from the Swagger schema**
-  (`python backend/export_openapi.py && npm --prefix frontend run gen:api`), so frontend and backend cannot drift.
-* **API docs:** Swagger UI at `/docs`, ReDoc at `/redoc`. Operations endpoints: `/api/health` (liveness), `/api/ready` (database).
-* **Deployment:** one Docker image serves API and built UI (central server, no client install); the app runs as a non-root
-  user; Compose adds PostgreSQL. Dependencies are installed from a hash-locked file.
-* Long translations run as a background job with a progress bar; Gemini's free-tier rate limit is handled by throttling
-  and retry with backoff.
+* **Backend** (`backend/app/`): Python, FastAPI, SQLAlchemy, Alembic. One folder per feature (`projects`, `glossary`,
+  `translation`, `quality`, `review`, `export`, ...), each with its router, schemas and logic.
+* **Frontend** (`frontend/src/`): React, TypeScript, TanStack Query, Tailwind. One folder per feature (`projects`,
+  `glossary`, `users`, ...). Each feature talks to the backend only through its service in `api/`
+  (e.g. `ProjectService.useFetchProject(id)`), which uses the API client generated from the backend's schema.
+* **Docker:** one image serves the API and the built UI; Docker Compose adds PostgreSQL.
 
-## Requirement coverage
+## Settings
 
-| # | Requirement | Status |
-|---|---|---|
-| 1 | Project management (create, copy, archive, reopen, status, search/filter) | ✅ |
-| 2 | Upload docx / xlsx / pdf, text + structure + language detection | ✅ · InDesign: Phase 2 (`.imdd` is probably `.indd`) |
-| 3 | Source auto-detect or manual, one or several target languages | ✅ (DE ↔ EN: the target is always the other language) |
-| 4 | Preview only, original left / translation right | ✅ |
-| 5 | 5 highlight colours + click details (translation, alternatives, description, glossary entry, edit) | ✅ colours configurable |
-| 6 | Manual editing, replace terms, add to glossary, comments, regenerate a segment | ✅ |
-| 7 | Glossary module: CRUD, synonyms, languages, "do not translate", Excel import/export, duplicates, versioning, approval status | ✅ |
-| 8 | Quality check before approval with warnings | ✅ |
-| 9 | Final translation only after "Übersetzung freigeben" | ✅ |
-| 10 | Export Word / Excel / PDF, options (translation only, original + translation, report, comments), free Excel columns, templates | ✅ |
-| 11 | History: original, preview, final, exports, editor, date, glossary version, number of changes, status | ✅ |
-| 12 | Search: project, file, customer, language, terms, editor, period | ✅ |
-| 13 | Roles Translator / Reviewer / Admin (enforced server-side) | ✅ |
-| 14 | Dashboard | ✅ |
-| 15 | Settings: languages, export defaults, colours, AI model, users, rights, API interfaces | ✅ (DeepL: via provider interface, not implemented) |
-| 16 | Central web server, browser only, multi-user, responsive | ✅ |
-| 17 | Planned workflow | ✅ |
+All settings are environment variables, kept in `.env` (see [`.env.example`](.env.example)). The important ones:
 
-**Assumptions:** only DE ↔ EN; data in examples is fictional; translators propose glossary terms (draft) which a
-reviewer/admin approves; "Projekt wird archiviert" happens after export (switchable in the export dialog).
+| Variable | Meaning |
+|---|---|
+| `GEMINI_API_KEY` | Gemini key for real translations |
+| `LLM_PROVIDER` | `gemini` or `mock` (offline, no key) |
+| `ENVIRONMENT` | `production` requires a strong `SECRET_KEY` and `SEED_DEMO_DATA=false` |
+| `ALLOW_REGISTRATION` | `false` = only admins create users |
+| `DATABASE_URL` | default: SQLite in `data/`; Docker sets PostgreSQL |
 
-**Known limitations:** PDF input is text-only (no OCR) and PDF output is re-typeset, not the original layout; within one
-Word paragraph only the first run's formatting is kept; no real-time multi-user editing of the same segment.
+## Tests
 
-## Data protection (GDPR) and production notes
-
-* No data leaves the server except the text sent to the configured LLM. For production use an **EU-hosted or on-premise
-  model** (provider interface); the Gemini *free tier* may use inputs for training – use it with fictional data only.
-* **Security measures:** Argon2id password hashing (old hashes are upgraded at next login), login rate limiting,
-  required-claim JWTs, role checks on every endpoint, strict Content-Security-Policy and further security headers, upload
-  size limit and file-signature check, a request id in every response and log line, no internals in error responses.
-  Production refuses to start with the development secret or with demo accounts (see Configuration).
-* All edits, approvals and exports record the user and time; every approved version is kept (preview and final text).
-* Put a reverse proxy with HTTPS in front (Caddy/Nginx) and set `ENABLE_HSTS=true`; set a real `POSTGRES_PASSWORD`.
-* **Known limits:** the login limiter and background jobs live in one process (use Redis and a queue for several workers);
-  tokens have no revocation or refresh. The full list is in the [engineering log](docs/ENGINEERING.md#7-status-and-roadmap).
-* Next steps: SSO (Entra ID), translation memory with pgvector (Phase 2), OCR, InDesign via IDML, job queue (Celery/RQ),
-  evaluation set (glossary compliance, COMET) to compare models.
-
-## Quality gates
-
-```bash
-cd backend  && ruff check . && ruff format --check . && pyright -p .. && pytest   # strict types; 287 tests, coverage gate 95 %
-cd backend  && pip-audit -r requirements.lock --no-deps --disable-pip             # known vulnerabilities
-cd frontend && npm run check                      # tsc + ESLint (strictTypeChecked + a11y) + 109 unit/component tests
-cd frontend && npm run knip && npm run format:check && npm audit --omit=dev --audit-level=high
-cd frontend && npm run e2e                        # Playwright end-to-end + axe accessibility scan (own backend, mock translator)
-```
-
-Changing `backend/requirements.txt`? Regenerate the lock:
-`uv pip compile requirements.txt --universal --generate-hashes --python-version 3.12 -o requirements.lock`.
-Changing a model? Add an Alembic migration (`alembic revision --autogenerate -m "..."`); a test fails otherwise.
-
-CI runs the same commands plus a container smoke test ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)); Git hooks (Husky)
-format staged files, enforce Conventional Commits and run the frontend and backend checks before a push. Why each tool was chosen: [engineering log](docs/ENGINEERING.md).
+| What | Command |
+|---|---|
+| Backend tests | `cd backend` → `.venv\Scripts\python -m pytest` |
+| Frontend checks and tests | `cd frontend` → `npm run check` |
+| End-to-end (browser) | `cd frontend` → `npx playwright install chromium` (once) → `npm run e2e` |

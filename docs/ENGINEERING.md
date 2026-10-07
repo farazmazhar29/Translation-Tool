@@ -50,7 +50,7 @@
 | **TanStack Query** | Server state | Caching, loading/error states, invalidation with little code | Redux (overkill), manual `useEffect` fetching |
 | **React Router** | Routing | De-facto standard | – |
 | **Tailwind CSS 4** | Styling | Consistent design tokens, responsive utilities, no CSS files to maintain | CSS modules / component library (heavier) |
-| **openapi-typescript** | API types | Generates types from the backend's Swagger schema, so front/back cannot drift | Hand-written interfaces |
+| **openapi-generator (`typescript-axios`, in Docker) + axios** | API client | Generates typed functions per endpoint (`ProjectsApiFactory(API_CONFIG).getProjectDetail({ pid })`) and the models from the backend's Swagger schema, so front/back cannot drift; Docker instead of its npm wrapper, which needs Java and pulled 16 audit findings into the dev tools (D-58) | openapi-typescript (types only, hand-written fetch calls), hand-written interfaces |
 | **ESLint + typescript-eslint `strictTypeChecked` + `stylisticTypeChecked`** | Lint | Type-aware rules catch real bugs (`no-floating-promises`, `no-unsafe-*`) | Biome (faster, but type-aware rules less complete) |
 | **eslint-plugin-react-hooks (v7)** | Hook rules | Also flags "copy props into state in an effect" – we removed those patterns | – |
 | **Prettier** | Formatting | One formatter, no style debates | Mixing formatters |
@@ -90,15 +90,15 @@
 
 **Frontend**
 * No `any`, no non-null assertions (`!`), type-only imports, `eqeqeq`, no `console`.
-* Server data via TanStack Query only; derive state instead of syncing it in effects.
+* **The backend is called only through services (D-58):** each feature has `api/<Name>Service.ts` (`ProjectService`, `GlossaryService` ...) with `useFetch…` hooks for reading (`useApiRequest`: data, loading, error) and mutation hooks or plain functions for changes. Every URL appears once, in the generated client; components never build a request. Derive state instead of syncing it in effects.
 * Non-component exports live in a `lib/` folder (keeps React fast-refresh working and files focused).
-* Generated code (`src/shared/api/schema.d.ts`) is never edited by hand.
+* Generated code (`src/shared/api/generated/`) is never edited by hand; `npm run openapi:generate-specs` rewrites it.
 * **Feature-based structure (D-32):** code is grouped by feature (`src/features/<name>/`), code used by several features lives in `src/shared/`; a feature is imported through its `index.ts` only, and `shared/` never imports a feature. Both rules are enforced by ESLint.
 * **Accessibility is a gate, not a nice-to-have:** real `<button>`/`<label>` elements instead of `role` hacks, every form control has an accessible name, dialogs have `role="dialog"`, a title, Escape-to-close and focus handling, text meets WCAG contrast (>= 4.5:1), links inside text are underlined.
 * **Tests:** query by role/label, never by CSS class; every network request a test makes must be declared in MSW (unknown request = test failure); mocks are restored after each test (`restoreMocks`).
 * Side effects that tests must control (e.g. the session-expiry redirect) sit behind a small replaceable object (`session`), not hard-wired to `window.location`.
 * Unused exports and dependencies fail CI (Knip); the pinned `typescript-eslint` version only changes deliberately.
-* **Reuse before repetition:** forms are built from `shared/components/form.tsx` (`TextField`, `TextArea`, `SelectField`, `Checkbox`, `LangCheckboxes`; `onChange` receives the value, never the DOM event) and `shared/components/layout.tsx` (`PageHeader`, `Table`, `Form`, `Loading`, `EmptyState`); state and API calls use `useFields` and `useAction` from `shared/lib/hooks.ts`. A page does not write its own `<label><input>`, `<table>` shell or `useMutation` boilerplate.
+* **Reuse before repetition:** forms are built from `shared/components/form.tsx` (`TextField`, `TextArea`, `SelectField`, `Checkbox`, `TargetLanguage`; `onChange` receives the value, never the DOM event) and `shared/components/layout.tsx` (`PageHeader`, `Table`, `Form`, `Loading`, `EmptyState`); form state uses `useFields` (`shared/lib/hooks.ts`), API state the services (`useApiRequest`, `useMutation` from `shared/api/base.ts`). A page does not write its own `<label><input>`, `<table>` shell or TanStack boilerplate.
 * **One function style:** `const` + arrow functions everywhere (components, hooks, helpers, tests), enforced by ESLint (`func-style`, `prefer-arrow-callback`, `no-use-before-define`). Classes (the error boundary) are exempt: React has no hook for error boundaries.
 
 ## 4. Quality gates
@@ -154,7 +154,7 @@ Format: **decision → why → alternatives → consequence**.
 **D-07 · Pydantic schemas as the API contract (2026-09-30).** The `schemas.py` of each feature drives validation, responses and Swagger.
 *Why:* far less code than hand-written serialisation and no drift between code and docs.
 
-**D-08 · Frontend types generated from Swagger (2026-09-30).** `export_openapi.py` → `openapi-typescript`.
+**D-08 · Frontend types generated from Swagger (2026-09-30).** `export_openapi.py` → `openapi-typescript`. Replaced by a generated client in D-58.
 *Why:* a backend change that breaks the UI becomes a compile error, not a runtime surprise.
 
 **D-09 · Strict typing everywhere (2026-09-30).** Pyright strict (654 → 0 errors), TS strict, typed ESLint.
@@ -354,6 +354,28 @@ Checked on the user's project: after they added "Hängeschränke" and "Stellfuß
 
 Checked on the user's projects: both archived ones show "Archived", and the dashboard counts both as approved. Tests cover the migration, the export (approved and archived), and the badge in the archived list.
 
+**D-58 - A generated API client and one service per feature (2026-10-07).** Only the types were generated (openapi-typescript). The calls were written by hand: about 45 `get<…>('/projects/…')` in the components, so URLs were repeated (quality and replace-term twice each, the auth options twice), the response type was stated by hand at every call, and query keys were loose strings. Now:
+* **Generated client.** openapi-generator (`typescript-axios`, single request object) writes one factory per tag from the backend's schema, with typed functions and models: `ProjectsApiFactory(API_CONFIG).getProjectDetail({ pid })` returns `AxiosPromise<ProjectDetail>`. Every URL lives there once; a wrong parameter or field is a compile error.
+  * It runs in Docker (`npm run openapi:generate-specs`). Its npm wrapper needs Java and brought 16 audit findings (3 critical) into the dev tools, so it was not added.
+  * The output is committed, so building needs neither Docker nor Java. CI regenerates it and fails on any difference.
+* **Backend side.**
+  * Operation ids are the route function names (`get_project_detail` → `getProjectDetail` instead of `get_project_detail_api_projects__pid__get`); vague names were made specific (`approve` → `approve_project`).
+  * API models derive from `Schema`, which marks fields with a default as required in *response* schemas (`json_schema_serialization_defaults_required`). They are always sent, and the client now types them as present.
+  * A sheet cell is `text` or `number` instead of `value: str | float`, which the generator could only express as an empty interface.
+* **Generator quirks, handled in the script, not by hand-editing generated code.**
+  * 7.14 marked shared enums nullable once an optional query parameter used them; pinned to 7.26, which does not.
+  * Two parameter-property constructors are rewritten for `erasableSyntaxOnly`, and unused helper imports are removed for `noUnusedLocals`. The script stops if the generated code changes shape.
+* **`shared/api`.**
+  * `config.ts`: `API_CONFIG`, axios interceptors (bearer token; a 401 ends the session except on login; error answers become `ApiError` with the server's message, also for downloads whose error arrives as a file).
+  * `base.ts`: `useApiRequest` (`{ data, loading, error, refetch }`, with `key`, `postProcess`, `preventRequest`) and `useMutation` (refreshes the listed keys).
+  * `session.ts`: token and role check.
+  * TanStack Query stays underneath, so caching, polling and refresh-after-save are unchanged.
+* **Services.** `AuthService`, `UserService`, `GlossaryService`, `ProjectService`, `QualityService`, `ExportService`, and `SettingsService` in `shared/api/services`, because settings are read app-wide and `shared/` may not import features. Components call `ProjectService.useFetchProject(id)`, never a URL.
+  * The term dialog (glossary) receives "replace everywhere" from the project page, so the glossary feature does not depend on the projects feature.
+* **Bundles.** The generated client (37.6 kB, 5.3 kB gzipped) and the libraries are their own chunks, cached across app releases; no chunk passes Vite's 500 kB warning.
+
+Tests: the API configuration is tested through generated factories (token, errors, 401, download errors, saving a file) and `useApiRequest` directly. All 162 unit tests, 332 backend tests and 15 end-to-end tests pass unchanged in behaviour.
+
 ## 6. Problems found and how they were fixed
 
 | Problem | Cause | Fix |
@@ -452,6 +474,8 @@ TanStack Query lint, Knip, `prettier --check` + `npm audit` in CI, Husky + lint-
 * **2026-10-07** - Excel projects export to Word and PDF as tables (D-55).
 * **2026-10-07** - Quality check reads the current glossary; hints can be accepted; migration 0005 (D-56).
 * **2026-10-07** - Archived is a flag only; one badge for all archived projects; migration 0006 (D-57).
+* **2026-10-07** - Generated API client (openapi-generator, axios) and one service per feature (D-58).
+* **2026-10-07** - README rewritten as a short guide: tools, Docker steps, development commands, AI and architecture in brief; requirement table and links to this log removed.
 
 ## 9. Sources (research, 2026-10-01 and 2026-10-03)
 
