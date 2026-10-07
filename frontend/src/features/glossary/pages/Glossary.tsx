@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { Download, Plus, ScanSearch, Upload } from 'lucide-react'
+import { CheckCircle2, Download, Pencil, Plus, ScanSearch, Trash2, Upload } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { can, del, download, get, post, qs, type S } from '@/shared/api/client'
@@ -7,7 +7,8 @@ import { useAuth } from '@/features/auth'
 import { EntryForm } from '../components/EntryForm'
 import { SelectField, TextField } from '@/shared/components/form'
 import { PageHeader, Table } from '@/shared/components/layout'
-import { Btn, Card, ErrorText, Modal } from '@/shared/components/ui'
+import { useConfirm } from '@/shared/components/confirm'
+import { Btn, Card, ErrorText, IconAction, Modal } from '@/shared/components/ui'
 import { ENTRY_CATEGORIES, ENTRY_STATUSES, isEntryStatus, STATUS_CLS } from '../constants'
 import { EMPTY, toForm, type Form } from '../lib/entry'
 import { useAction, useFields, useInvalidate } from '@/shared/lib/hooks'
@@ -18,12 +19,14 @@ type Entry = S['GlossaryOut']
 const Glossary = () => {
   const { t } = useTranslation(['glossary', 'common'])
   const { user } = useAuth()
+  const { confirm, dialog } = useConfirm()
   const refresh = useInvalidate(['glossary'])
   const fileRef = useRef<HTMLInputElement>(null)
   const { values: f, set } = useFields({ q: '', status: '', category: '' })
   const [edit, setEdit] = useState<{ id?: number; form: Form } | null>(null)
   const [versions, setVersions] = useState<Entry | null>(null)
   const [note, setNote] = useState('')
+  const [skipped, setSkipped] = useState<S['SkippedRow'][]>([]) // rows of the last import that were not taken
   const { data: entries = [] } = useQuery({
     queryKey: ['glossary', f],
     queryFn: () => get<Entry[]>(`/glossary${qs(f)}`),
@@ -48,11 +51,13 @@ const Glossary = () => {
       invalidate: ['glossary'],
       onSuccess: (r) => {
         setNote(t('importResult', { created: r.created, updated: r.updated, skipped: r.skipped }))
+        setSkipped(r.skipped_rows)
       },
     },
   )
   const scan = useAction(() => get<S['DuplicateGroup'][]>('/glossary/duplicates/scan'), {
     onSuccess: (groups) => {
+      setSkipped([])
       setNote(
         groups.length
           ? t('duplicatesFound', {
@@ -112,9 +117,22 @@ const Glossary = () => {
           {t('addTerm')}
         </Btn>
       </PageHeader>
-      {note && <p className="rounded-xl bg-sky-50 px-4 py-3 text-sm text-sky-900">{note}</p>}
+      {note && (
+        <div className="rounded-xl bg-sky-50 px-4 py-3 text-sm text-sky-900" role="status">
+          <p>{note}</p>
+          {skipped.length > 0 && (
+            <ul className="mt-2 list-disc space-y-0.5 pl-5">
+              {skipped.map((s) => (
+                <li key={s.row}>
+                  {t('skippedRow', { row: s.row })}: {t(`skip.${s.code}`, { term: s.term })}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
       <ErrorText error={imp.error ?? act.error} />
-      <Card className="grid gap-2 md:grid-cols-3">
+      <Card className="grid gap-3 lg:grid-cols-3">
         <TextField hideLabel label={t('search')} placeholder={t('searchPlaceholder')} value={f.q} onChange={set('q')} />
         <SelectField
           hideLabel
@@ -135,16 +153,16 @@ const Glossary = () => {
         headers={[
           t('columns.german'),
           t('columns.english'),
-          t('columns.synonyms'),
-          t('columns.description'),
+          { label: t('columns.synonyms'), className: 'hidden xl:table-cell' },
+          { label: t('columns.description'), className: 'hidden 2xl:table-cell' },
           t('columns.status'),
-          t('columns.version'),
+          { label: t('columns.version'), className: 'hidden lg:table-cell' },
           '',
         ]}
       >
         {entries.map((e) => (
           <tr key={e.id} className="align-top hover:bg-stone-50">
-            <td className="px-4 py-3 font-medium">{e.terms['de']}</td>
+            <td className="break-words px-4 py-3 font-medium">{e.terms['de']}</td>
             <td className="px-4 py-3 font-medium">
               {e.do_not_translate ? (
                 <span className="rounded-full bg-purple-50 px-3 py-1 text-xs font-semibold text-purple-800">
@@ -154,8 +172,10 @@ const Glossary = () => {
                 e.terms['en']
               )}
             </td>
-            <td className="px-4 py-3 text-stone-600">{Object.values(e.synonyms).flat().join(', ')}</td>
-            <td className="px-4 py-3 text-stone-600">{e.description}</td>
+            <td className="hidden px-4 py-3 text-stone-600 lg:table-cell">
+              {Object.values(e.synonyms).flat().join(', ')}
+            </td>
+            <td className="hidden px-4 py-3 text-stone-600 2xl:table-cell">{e.description}</td>
             <td className="px-4 py-3">
               <span
                 className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${isEntryStatus(e.status) ? STATUS_CLS[e.status] : 'bg-stone-100 text-stone-700'}`}
@@ -163,7 +183,7 @@ const Glossary = () => {
                 {isEntryStatus(e.status) ? t(`status.${e.status}`) : e.status}
               </span>
             </td>
-            <td className="px-4 py-3">
+            <td className="hidden px-4 py-3 lg:table-cell">
               <button
                 type="button"
                 className="rounded-full bg-stone-100 px-2.5 py-0.5 text-xs font-bold text-stone-600 transition hover:bg-stone-200"
@@ -175,40 +195,40 @@ const Glossary = () => {
               </button>
             </td>
             <td className="whitespace-nowrap px-4 py-3 text-right">
+              {reviewer && e.status !== 'approved' && (
+                <IconAction
+                  label={t('approve')}
+                  icon={CheckCircle2}
+                  onClick={() => {
+                    act.mutate({ id: e.id, status: 'approved' })
+                  }}
+                />
+              )}
               {reviewer && (
-                <>
-                  {e.status !== 'approved' && (
-                    <Btn
-                      variant="ghost"
-                      className="!px-3 !py-1.5"
-                      onClick={() => {
-                        act.mutate({ id: e.id, status: 'approved' })
-                      }}
-                    >
-                      {t('approve')}
-                    </Btn>
-                  )}
-                  <Btn
-                    variant="ghost"
-                    className="!px-3 !py-1.5"
-                    onClick={() => {
-                      setEdit({ id: e.id, form: toForm(e) })
-                    }}
-                  >
-                    {t('common:edit')}
-                  </Btn>
-                </>
+                <IconAction
+                  label={t('common:edit')}
+                  icon={Pencil}
+                  onClick={() => {
+                    setEdit({ id: e.id, form: toForm(e) })
+                  }}
+                />
               )}
               {can(user, 'admin') && (
-                <Btn
-                  variant="ghost"
-                  className="!px-3 !py-1.5"
+                <IconAction
+                  label={t('common:delete')}
+                  icon={Trash2}
+                  destructive
                   onClick={() => {
-                    if (window.confirm(t('confirmDelete'))) act.mutate({ id: e.id })
+                    void confirm({
+                      title: t('deleteTitle'),
+                      message: t('confirmDelete'),
+                      confirmLabel: t('common:delete'),
+                      destructive: true,
+                    }).then((ok) => {
+                      if (ok) act.mutate({ id: e.id })
+                    })
                   }}
-                >
-                  {t('common:delete')}
-                </Btn>
+                />
               )}
             </td>
           </tr>
@@ -252,6 +272,7 @@ const Glossary = () => {
           </ul>
         </Modal>
       )}
+      {dialog}
     </div>
   )
 }

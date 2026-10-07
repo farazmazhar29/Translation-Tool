@@ -76,6 +76,17 @@ test('glossary: duplicates are detected and drafts need approval', async ({ page
   await expect(dialog.getByText('Dublette gefunden:')).toBeVisible()
 })
 
+test('glossary: the sample Excel imports and names every row it skips', async ({ page }) => {
+  await login(page, 'reviewer')
+  await page.goto('/glossary')
+  await page.locator('input[type=file]').setInputFiles('../samples/glossar_beispiel.xlsx')
+  const result = page.getByRole('status').filter({ hasText: 'Import:' })
+  await expect(result).toContainText('Zeile 12: Begriff oder Übersetzung fehlt')
+  await expect(result).toContainText('Zeile 13: „Arbeitsplatte“ steht schon im Glossar')
+  await expect(page.getByRole('cell', { name: 'Mehrwertsteuer' })).toBeVisible()
+  await expect(page.getByRole('cell', { name: 'HS-9001' })).toBeVisible() // "do not translate" needs no English
+})
+
 test('roles: translators do not see user administration', async ({ page }) => {
   await login(page, 'translator')
   await expect(page.getByRole('link', { name: 'Benutzer' })).toHaveCount(0)
