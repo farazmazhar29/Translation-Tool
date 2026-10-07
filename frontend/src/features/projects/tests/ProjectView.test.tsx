@@ -80,4 +80,21 @@ describe('ProjectView while a translation runs', () => {
     await new Promise((resolve) => setTimeout(resolve, 100))
     expect(statusRequests).toBe(0)
   })
+
+  it("shows a failed job's error in the interface language, from its code", async () => {
+    const failed = projectDetail({
+      job_state: 'error',
+      job_error: 'Gemini not reachable or limit exceeded (m1: HTTP 503)',
+      job_error_code: 'gemini_unreachable',
+      job_error_params: { error: 'm1: HTTP 503' },
+    })
+    server.use(
+      http.get('*/api/users/current-user', () => HttpResponse.json(user)),
+      http.get('*/api/projects/1', () => HttpResponse.json(failed)),
+    )
+    setup()
+    expect(
+      await screen.findByText('Gemini ist nicht erreichbar oder das Limit ist überschritten (m1: HTTP 503).'),
+    ).toBeInTheDocument()
+  })
 })

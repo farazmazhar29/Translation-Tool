@@ -2,12 +2,13 @@
 
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 
 from app.accounts.security import Admin, Me
 from app.core.config import settings
 from app.core.db import DB
 from app.core.enums import AUTO, ExportMode, FileFormat, Provider, TermCategory
+from app.core.errors import AppError, ErrorCode
 from app.preferences.models import AppSetting
 from app.preferences.schemas import SettingsOut
 from app.translation.llm import model_choices
@@ -48,10 +49,16 @@ def read_settings(db: DB) -> SettingsOut:
 def check_model(provider: object, model: object) -> None:
     """Only a provider the app offers and, for it, one of its models: a typo must not break every translation."""
     if provider not in model_choices():
-        raise HTTPException(400, f"Unbekannter KI-Anbieter: {provider}")
+        raise AppError(400, ErrorCode.UNKNOWN_PROVIDER, f"Unknown AI provider: {provider}", {"provider": str(provider)})
     choices = model_choices()[str(provider)]
     if model not in choices:
-        raise HTTPException(400, f"Unbekanntes Modell: {model}. Möglich: {', '.join(choices)}")
+        options = ", ".join(choices)
+        raise AppError(
+            400,
+            ErrorCode.UNKNOWN_MODEL,
+            f"Unknown model: {model}. Possible: {options}",
+            {"model": str(model), "options": options},
+        )
 
 
 @router.get("/settings", tags=["Settings"])

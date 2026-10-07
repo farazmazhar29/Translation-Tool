@@ -27,16 +27,16 @@ class ExcelLayout(Schema):
     @classmethod
     def valid_sheet_name(cls, v: str) -> str:
         if any(c in v for c in "[]:*?/\\"):
-            raise ValueError("Blattname darf keines der Zeichen [ ] : * ? / \\ enthalten")
+            raise ValueError("The sheet name must not contain any of [ ] : * ? / \\")
         return v
 
     @model_validator(mode="after")
     def valid_columns(self) -> Self:
         used = [c.upper() for c in (self.source_col, self.target_col, self.comment_col, self.location_col) if c]
         if any(column_index_from_string(c) > MAX_EXCEL_COLUMN for c in used):
-            raise ValueError("Spalte liegt außerhalb des Excel-Bereichs (A–XFD)")
+            raise ValueError("Column is outside the Excel range (A–XFD)")
         if len(set(used)) != len(used):
-            raise ValueError("Jede Spalte darf nur einmal verwendet werden")
+            raise ValueError("Each column may only be used once")
         return self
 
 

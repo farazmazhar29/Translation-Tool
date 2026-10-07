@@ -277,9 +277,9 @@ def test_excel_import_creates_updates_and_reports_what_it_skipped(client: TestCl
     result = import_xlsx(client, reviewer, rows)
     assert (result["created"], result["updated"], result["skipped"]) == (3, 0, 3)
     assert {(r["row"], r["reason"].split(":")[0]) for r in result["skipped_rows"]} == {
-        (4, "Dublette"),
-        (5, "Begriff oder Übersetzung fehlt"),
-        (6, "Begriff oder Übersetzung fehlt"),
+        (4, "Duplicate"),
+        (5, "Term or translation missing"),
+        (6, "Term or translation missing"),
     }
     # the codes let the interface word the reasons in its own language; a duplicate names its term
     assert {(r["row"], r["code"], r["term"] != "") for r in result["skipped_rows"]} == {
@@ -316,17 +316,17 @@ def test_excel_import_understands_column_aliases(client: TestClient, reviewer: H
 
 
 @pytest.mark.parametrize(
-    ("payload", "message"),
+    ("payload", "code"),
     [
-        (b"this is not a spreadsheet", "gelesen"),
-        (sheet_bytes([]), "Kopfzeile"),
-        (sheet_bytes([["foo", "bar"], ["1", "2"]]), "Kopfzeile"),
+        (b"this is not a spreadsheet", "excel_unreadable"),
+        (sheet_bytes([]), "excel_columns_missing"),
+        (sheet_bytes([["foo", "bar"], ["1", "2"]]), "excel_columns_missing"),
     ],
 )
-def test_bad_excel_files_are_rejected(client: TestClient, reviewer: Headers, payload: bytes, message: str) -> None:
+def test_bad_excel_files_are_rejected(client: TestClient, reviewer: Headers, payload: bytes, code: str) -> None:
     r = client.post("/api/glossary/import/xlsx", headers=reviewer, files={"file": ("g.xlsx", payload)})
     assert r.status_code == 400
-    assert message in r.json()["detail"]
+    assert r.json()["code"] == code
 
 
 def test_only_reviewers_import(client: TestClient, translator: Headers) -> None:

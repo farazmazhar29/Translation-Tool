@@ -51,6 +51,8 @@ class ProjectOut(ORM):
     job_state: JobState
     job_progress: int
     job_error: str
+    job_error_code: str = Field("", description="Translated by the interface; job_error is its English text")
+    job_error_params: dict[str, str] = Field(default_factory=dict)
     structure: dict[str, Any]
     created_by: str
     created_at: datetime
@@ -87,4 +89,6 @@ class JobStatus(ORM):
     job_state: JobState
     job_progress: int
     job_error: str
+    job_error_code: str = Field("", description="Translated by the interface; job_error is its English text")
+    job_error_params: dict[str, str] = Field(default_factory=dict)
     status: ProjectStatus

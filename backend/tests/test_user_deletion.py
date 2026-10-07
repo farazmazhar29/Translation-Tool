@@ -43,7 +43,7 @@ def test_the_name_of_a_deleted_user_is_never_given_again(client: TestClient, adm
         json={"username": name, "full_name": "", "password": PASSWORD, "role": "translator"},
     )
     assert again.status_code == 409
-    assert "gelöschten Konto" in again.json()["detail"]
+    assert again.json()["code"] == "username_retired"
     registered = client.post(
         "/api/auth/register", json={"username": name.upper(), "full_name": "", "password": PASSWORD}
     )  # also in other letter case
@@ -57,7 +57,11 @@ def test_creating_a_user_compares_names_without_case(client: TestClient, admin: 
         headers=admin,
         json={"username": name.upper(), "full_name": "", "password": PASSWORD, "role": "translator"},
     )
-    assert (twin.status_code, twin.json()["detail"]) == (409, "Benutzername existiert bereits")
+    assert (twin.status_code, twin.json()["code"], twin.json()["detail"]) == (
+        409,
+        "username_taken",
+        "Username already exists",
+    )
 
 
 def test_admins_cannot_delete_themselves_and_others_cannot_delete_at_all(

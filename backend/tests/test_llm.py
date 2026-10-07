@@ -120,7 +120,7 @@ def test_unusable_answers_are_retried_and_then_reported(
     monkeypatch: pytest.MonkeyPatch, clock: FakeTime, garbage: str
 ) -> None:
     api = FakeApi(*[ok(garbage)] * 6)
-    with pytest.raises(LLMError, match="ungültige Antwort"):
+    with pytest.raises(LLMError, match="invalid answer"):
         provider(api, monkeypatch).translate_batch("de", "en", SEGMENTS)
     assert api.models == ["m1", "m1", "m2", "m2", "m3", "m3"]
 
@@ -140,8 +140,9 @@ def test_all_models_failing_raises_with_the_last_reason(monkeypatch: pytest.Monk
 
 def test_client_errors_fail_fast_without_trying_other_models(monkeypatch: pytest.MonkeyPatch, clock: FakeTime) -> None:
     api = FakeApi(httpx.Response(400, text="API key not valid"))
-    with pytest.raises(LLMError, match=r"Gemini-Fehler 400: API key not valid"):
+    with pytest.raises(LLMError, match=r"Gemini error 400: API key not valid") as e:
         provider(api, monkeypatch).translate_batch("de", "en", SEGMENTS)
+    assert (e.value.code, e.value.params) == ("gemini_error", {"status": 400, "text": "API key not valid"})
     assert len(api.requests) == 1
 
 

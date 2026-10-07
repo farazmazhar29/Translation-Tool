@@ -1,15 +1,30 @@
 import axios, { AxiosError, type AxiosResponse } from 'axios'
+import i18n from 'i18next'
+import { de as commonTexts } from '../i18n/common'
 import { Configuration } from './generated'
 import { getToken, session } from './session'
 
-/** An error answer of the API, with the server's own message ("Benutzername ist bereits vergeben"). */
+/** The API's error codes, each with a text in `common:errors` ("username_taken" → "Benutzername existiert bereits."). */
+type ErrorCode = keyof typeof commonTexts.errors
+const isErrorCode = (code: unknown): code is ErrorCode => typeof code === 'string' && code in commonTexts.errors
+
+/**
+ * The message of an error code in the interface's language, else the server's own (English) text. Also for codes
+ * the API stores, like the error of a failed translation job.
+ */
+export const errorText = (code: unknown, params: Record<string, unknown>, fallback: string): string =>
+  isErrorCode(code) ? i18n.t(`common:errors.${code}`, params) : fallback
+
+/** An error answer of the API; the message is the text for its `code` in the interface's language. */
 export class ApiError extends Error {
   readonly status: number
   readonly detail: unknown
-  constructor(status: number, message: string, detail: unknown) {
+  readonly code: string
+  constructor(status: number, message: string, detail: unknown, code = '') {
     super(message)
     this.status = status
     this.detail = detail
+    this.code = code
   }
 }
 
@@ -37,11 +52,20 @@ const readText = (blob: Blob): Promise<string> =>
     reader.readAsText(blob)
   })
 
-const detailOf = async (data: unknown): Promise<unknown> => {
+interface ErrorBody {
+  detail?: unknown
+  code?: unknown
+  params?: unknown
+}
+
+const bodyOf = async (data: unknown): Promise<ErrorBody> => {
   // a failed download arrives as a file, since the request asked for one
   const body: unknown = isFile(data) ? JSON.parse(await readText(data)) : data
-  return typeof body === 'object' && body && 'detail' in body ? body.detail : undefined
+  return typeof body === 'object' && body ? body : {}
 }
+
+const paramsOf = (params: unknown): Record<string, unknown> =>
+  typeof params === 'object' && params ? { ...params } : {}
 
 // Every generated API uses the default axios instance, so these two interceptors apply to all backend calls.
 axios.interceptors.request.use((config) => {
@@ -54,8 +78,9 @@ axios.interceptors.response.use(undefined, async (error: unknown) => {
   const response: AxiosResponse<unknown> = error.response
   const { status, statusText, data } = response
   if (status === 401 && !error.config?.url?.endsWith('/auth/login')) session.expire() // a wrong password is no 401 of the session
-  const detail = await detailOf(data).catch(() => undefined)
-  throw new ApiError(status, messageOf(detail, statusText), detail)
+  const { detail, code, params } = await bodyOf(data).catch((): ErrorBody => ({}))
+  const message = errorText(code, paramsOf(params), messageOf(detail, statusText))
+  throw new ApiError(status, message, detail, typeof code === 'string' ? code : '')
 })
 
 /** Passed to every generated factory, like `ProjectsApiFactory(API_CONFIG)`. The paths already start with /api. */

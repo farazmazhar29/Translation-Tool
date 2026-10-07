@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
 import { useAuth } from '@/features/auth'
+import { errorText } from '@/shared/api/config'
 import { can } from '@/shared/api/session'
 import type { ProjectDetail } from '@/shared/api/generated'
 import { Card, ErrorText, StatusBadge } from '@/shared/components/ui'
@@ -116,7 +117,7 @@ export const ProjectHeader = ({
       )}
       {p.job_state === 'error' && (
         <div className="mt-4">
-          <ErrorText error={new Error(p.job_error)} />
+          <ErrorText error={new Error(errorText(p.job_error_code, p.job_error_params, p.job_error))} />
         </div>
       )}
       <ErrorText error={error} />

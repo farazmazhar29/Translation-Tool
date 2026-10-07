@@ -56,6 +56,8 @@ export const project = (over: Partial<ProjectOut> = {}): ProjectOut => ({
   job_state: 'done',
   job_progress: 100,
   job_error: '',
+  job_error_code: '',
+  job_error_params: {},
   structure: {},
   created_by: 'translator',
   created_at: '2026-10-01T10:00:00',

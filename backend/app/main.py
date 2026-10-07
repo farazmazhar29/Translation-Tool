@@ -3,7 +3,7 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.routing import APIRoute
@@ -16,6 +16,7 @@ from app.core import middleware
 from app.core.config import settings
 from app.core.db import DB, SessionLocal
 from app.core.enums import JobState
+from app.core.errors import AppError, ErrorCode, app_error_handler
 from app.core.logging_setup import setup_logging
 from app.core.migrate import upgrade_to_head
 from app.dashboard import router as dashboard
@@ -48,7 +49,9 @@ def recover_interrupted_jobs() -> None:
             .where(Project.job_state == JobState.RUNNING)
             .values(
                 job_state=JobState.ERROR,
-                job_error="Der Server wurde neu gestartet – bitte die Übersetzung neu starten.",
+                job_error="The server was restarted. Please start the translation again.",
+                job_error_code=ErrorCode.SERVER_RESTARTED,
+                job_error_params={},
             )
         )
         db.commit()
@@ -74,7 +77,7 @@ def operation_id(route: APIRoute) -> str:
 
 
 app = FastAPI(
-    title="Rotpunkt Übersetzungstool",
+    title="Rotpunkt Translation Tool",
     version="0.1.0",
     description=DESCRIPTION,
     lifespan=lifespan,
@@ -83,6 +86,7 @@ app = FastAPI(
     redoc_url="/redoc" if settings.docs_enabled else None,
     openapi_url="/openapi.json" if settings.docs_enabled else None,
 )
+app.add_exception_handler(AppError, app_error_handler)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins.split(","),
@@ -115,7 +119,7 @@ def ready(db: DB) -> dict[str, str]:
     try:
         db.execute(text("SELECT 1"))
     except SQLAlchemyError:
-        raise HTTPException(503, "Datenbank nicht erreichbar") from None
+        raise AppError(503, ErrorCode.DATABASE_UNREACHABLE, "Database not reachable") from None
     return {"status": "ready"}
 
 

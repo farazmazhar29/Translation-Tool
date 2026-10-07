@@ -11,6 +11,7 @@ from openpyxl import Workbook, load_workbook
 from app.accounts.security import Admin, Me, Reviewer, Translator
 from app.core.db import DB
 from app.core.enums import EntryCategory, GlossaryAction, GlossaryStatus, ImportSkip, Lang, Role
+from app.core.errors import AppError, ErrorCode
 from app.glossary.models import GlossaryEntry, GlossaryVersion
 from app.glossary.schemas import (
     DuplicateGroup,
@@ -79,19 +80,20 @@ def snapshot(db: DB, e: GlossaryEntry, action: GlossaryAction, user: str) -> Non
 def clean(body: GlossaryIn) -> tuple[dict[str, str], dict[str, list[str]]]:
     terms = {k: v.strip() for k, v in body.terms.items() if k in list(Lang) and v.strip()}
     if not terms or (not body.do_not_translate and len(terms) < 2):
-        raise HTTPException(400, "Begriff und Übersetzung angeben (oder „Nicht übersetzen“ aktivieren).")
+        raise AppError(400, ErrorCode.TERM_REQUIRED, 'Enter the term and its translation (or tick "do not translate")')
     return terms, {k: [s.strip() for s in v if s.strip()] for k, v in body.synonyms.items() if k in list(Lang)}
 
 
 def conflict(dups: list[GlossaryEntry]) -> HTTPException:
     found = [GlossaryOut.model_validate(d).model_dump(mode="json") for d in dups]
-    return HTTPException(409, {"message": "Dublette gefunden", "duplicates": found})
+    message = "Duplicate found"
+    return AppError(409, ErrorCode.DUPLICATE, message, detail={"message": message, "duplicates": found})
 
 
 def find(db: DB, eid: int) -> GlossaryEntry:
     e = db.get(GlossaryEntry, eid)
     if e is None:
-        raise HTTPException(404, "Eintrag nicht gefunden")
+        raise AppError(404, ErrorCode.ENTRY_NOT_FOUND, "Entry not found")
     return e
 
 
@@ -220,10 +222,10 @@ def import_glossary(
     try:
         rows = list(load_workbook(file.file, read_only=True, data_only=True).worksheets[0].iter_rows(values_only=True))
     except Exception:
-        raise HTTPException(400, "Excel-Datei konnte nicht gelesen werden.") from None
+        raise AppError(400, ErrorCode.EXCEL_UNREADABLE, "The Excel file could not be read") from None
     header = [ALIASES.get(str(h or "").strip().lower(), str(h or "").strip().lower()) for h in rows[0]] if rows else []
     if "de" not in header and "en" not in header:
-        raise HTTPException(400, "Spalten „de“ und/oder „en“ fehlen in der Kopfzeile.")
+        raise AppError(400, ErrorCode.EXCEL_COLUMNS_MISSING, 'Columns "de" and/or "en" are missing from the header')
     res = ImportResult(created=0, updated=0, skipped=0, skipped_rows=[])
     for n, row in enumerate(rows[1:], start=2):
         r = {h: str(v).strip() for h, v in zip(header, row, strict=False) if v is not None}
@@ -235,10 +237,10 @@ def import_glossary(
         }
         dups = duplicates(db, terms) if terms else []
         if not terms or (not dnt and len(terms) < 2):
-            skip = SkippedRow(row=n, code=ImportSkip.MISSING_TERM, reason="Begriff oder Übersetzung fehlt")
+            skip = SkippedRow(row=n, code=ImportSkip.MISSING_TERM, reason="Term or translation missing")
         elif dups and not update_existing:
             term = next(iter(terms.values()))
-            skip = SkippedRow(row=n, code=ImportSkip.DUPLICATE, term=term, reason=f"Dublette: {term}")
+            skip = SkippedRow(row=n, code=ImportSkip.DUPLICATE, term=term, reason=f"Duplicate: {term}")
         else:
             skip = None
         if skip:

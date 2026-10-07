@@ -138,7 +138,7 @@ def test_undetectable_language_asks_the_user_to_choose(client: TestClient, trans
     assert project["target_langs"] == []  # no target while the source is unknown
     r = client.post(f"/api/projects/{project['id']}/translate", headers=translator)
     assert r.status_code == 400
-    assert "Ausgangssprache" in r.json()["detail"]
+    assert r.json()["code"] == "source_unknown"
     # choosing the language manually fixes it, and the other language becomes the target
     r = client.post(f"/api/projects/{project['id']}/translate", headers=translator, json={"source_lang": "de"})
     assert (r.status_code, r.json()["target_langs"]) == (200, ["en"])
@@ -153,6 +153,7 @@ def test_provider_errors_are_shown_to_the_user(
     status = wait_for_job(client, translator, translated_project)
     assert status["job_state"] == "error"
     assert "GEMINI_API_KEY" in str(status["job_error"])
+    assert status["job_error_code"] == "gemini_key_missing"  # the interface words it in its language
 
 
 def test_a_second_translation_cannot_start_while_one_is_running(
@@ -183,4 +184,7 @@ def test_a_restart_marks_interrupted_jobs_as_failed(
     recover_interrupted_jobs()
     status = client.get(f"/api/projects/{translated_project}/status", headers=translator).json()
     assert status["job_state"] == "error"
-    assert "neu gestartet" in status["job_error"]
+    assert (status["job_error_code"], status["job_error"]) == (
+        "server_restarted",
+        "The server was restarted. Please start the translation again.",
+    )

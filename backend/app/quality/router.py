@@ -1,10 +1,11 @@
 """Quality check of a project, and the findings the reviewer accepted."""
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 
 from app.accounts.security import Me, Translator
 from app.core.db import DB
 from app.core.enums import Severity
+from app.core.errors import AppError, ErrorCode
 from app.glossary.service import current_version
 from app.projects.queries import editable, get_project
 from app.quality import service as quality
@@ -30,7 +31,10 @@ def accept_findings(db: DB, _: Translator, pid: int, body: AcceptedIn) -> list[s
     p = editable(get_project(db, pid))
     acceptable = {w.key for w in quality.check_project(p, db=db) if w.severity != Severity.ERROR}
     if unknown := set(body.keys) - acceptable:
-        raise HTTPException(400, f"Diese Hinweise können nicht akzeptiert werden: {sorted(unknown)[:5]}")
+        keys = ", ".join(sorted(unknown)[:5])
+        raise AppError(
+            400, ErrorCode.FINDINGS_NOT_ACCEPTABLE, f"These findings cannot be accepted: {keys}", {"keys": keys}
+        )
     p.accepted_findings = sorted(set(body.keys))
     db.commit()
     return p.accepted_findings

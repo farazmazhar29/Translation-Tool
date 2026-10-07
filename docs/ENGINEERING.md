@@ -402,6 +402,18 @@ Tests: the mock as a server mode winning over the chosen model, Gemini with the 
 
 Tests: replace in one segment only, undo a typo, repair a term an older edit had left behind, 0 for a missing text, 404 for a segment of another project, the alternative swap. In the frontend: whole-word marks in the translation and exact ones in the source, the dialog starting from the text as it stands, both scopes, and the "not found" message.
 
+**D-62 - Messages in the code are English; the interface words them from a code (2026-10-07).** The backend's messages were German sentences ("Benutzername existiert bereits"), so the code was hard to read for anyone without German, and the English interface showed German errors. Simply translating them would have shown English to German users. Now:
+* Every error the user can see is an `AppError` (`app/core/errors.py`) with an `ErrorCode`, an English message and its parameters. The answer is `{"detail": "Username already exists", "code": "username_taken", "params": {}}`, so `detail` stays a readable sentence for logs, Swagger and other clients.
+* Errors raised away from HTTP (parsing a file, the AI provider, a background job) are a `CodedError`; `LLMError` is one. A failed translation job stores its code and parameters next to the English text (`job_error_code`, `job_error_params`, migration 0008), so that error is translated as well.
+* The frontend has the texts in both languages under `common:errors`. The API layer (`errorText` in `shared/api/config.ts`) turns a known code into the text of the current language and falls back to the server's English text for a code it does not know, so a new backend error is never blank.
+* A backend test checks that every code has a German and an English text, and that there are no texts without a code.
+* The quality check's own messages and the glossary import's skip reasons are English too; the interface already worded both from their codes (D-45, D-50).
+* Still German on purpose, because they are content and not code text: the sample glossary (`seed.py`), the mock's word list, the German stop words of the language detection, the export labels per language (`export/texts.py`) and the default Excel sheet name.
+
+Found on the way: `npx playwright test` serves the last build in `frontend/dist`, so a run without a new build tests an older interface. `npm run e2e` builds first (as CI does) and is the command to use.
+
+Tests: the code, parameters and English text in the backend tests (instead of German sentences), the code of a failed job, every code having both texts; in the frontend the text for a code with parameters, the fallback for an unknown code, and a failed job's error in German.
+
 ## 6. Problems found and how they were fixed
 
 | Problem | Cause | Fix |
@@ -506,6 +518,7 @@ TanStack Query lint, Knip, `prettier --check` + `npm audit` in CI, Husky + lint-
 * **2026-10-07** - The AI model is chosen from a list, not typed: the settings send `model_choices` (the configured Gemini model and its fallbacks), saving accepts only those (400 otherwise, naming the choices), and the page shows a dropdown. A typo can no longer break every translation.
 * **2026-10-07** - The offline mock is no longer offered in the settings; only `LLM_PROVIDER=mock` turns it on, and the page says so (D-60).
 * **2026-10-07** - Replacing a term in one segment updates the stored term; highlights cover whole words in the translation; typos can be undone in the term dialog (D-61).
+* **2026-10-07** - Messages in the code are English with an error code; the interface words them in German or English; migration 0008 (D-62).
 * **2026-10-07** - README rewritten as a short guide: tools, Docker steps, development commands, AI and architecture in brief; requirement table and links to this log removed.
 
 ## 9. Sources (research, 2026-10-01 and 2026-10-03)

@@ -1,7 +1,7 @@
 {
  "openapi": "3.1.0",
  "info": {
-  "title": "Rotpunkt \u00dcbersetzungstool",
+  "title": "Rotpunkt Translation Tool",
   "description": "\nBrowser-based AI translation tool for kitchen-industry documents (glossary-aware, human-in-the-loop).\n\n**Workflow:** upload \u2192 preview \u2192 highlight terms \u2192 edit \u2192 quality check \u2192 approve \u2192 export \u2192 archive.\n\nLog in via **Authorize** (demo users: `admin/admin123`, `reviewer/reviewer123`, `translator/translator123`).\n",
   "version": "0.1.0"
  },
@@ -1932,7 +1932,7 @@
     "tags": [
      "Review"
     ],
-    "summary": "'\u00dcbersetzung freigeben'",
+    "summary": "Approve the translation (the '\u00dcbersetzung freigeben' button)",
     "description": "Stores the final translation as a release (history). Export is only possible afterwards.",
     "operationId": "approve_project",
     "security": [
@@ -3196,6 +3196,19 @@
       "type": "string",
       "title": "Job Error"
      },
+     "job_error_code": {
+      "type": "string",
+      "title": "Job Error Code",
+      "description": "Translated by the interface; job_error is its English text",
+      "default": ""
+     },
+     "job_error_params": {
+      "additionalProperties": {
+       "type": "string"
+      },
+      "type": "object",
+      "title": "Job Error Params"
+     },
      "status": {
       "$ref": "#/components/schemas/ProjectStatus"
      }
@@ -3205,6 +3218,8 @@
      "job_state",
      "job_progress",
      "job_error",
+     "job_error_code",
+     "job_error_params",
      "status"
     ],
     "title": "JobStatus"
@@ -3296,6 +3311,19 @@
       "type": "string",
       "title": "Job Error"
      },
+     "job_error_code": {
+      "type": "string",
+      "title": "Job Error Code",
+      "description": "Translated by the interface; job_error is its English text",
+      "default": ""
+     },
+     "job_error_params": {
+      "additionalProperties": {
+       "type": "string"
+      },
+      "type": "object",
+      "title": "Job Error Params"
+     },
      "structure": {
       "additionalProperties": true,
       "type": "object",
@@ -3338,6 +3366,8 @@
      "job_state",
      "job_progress",
      "job_error",
+     "job_error_code",
+     "job_error_params",
      "structure",
      "created_by",
      "created_at",
@@ -3401,6 +3431,19 @@
       "type": "string",
       "title": "Job Error"
      },
+     "job_error_code": {
+      "type": "string",
+      "title": "Job Error Code",
+      "description": "Translated by the interface; job_error is its English text",
+      "default": ""
+     },
+     "job_error_params": {
+      "additionalProperties": {
+       "type": "string"
+      },
+      "type": "object",
+      "title": "Job Error Params"
+     },
      "structure": {
       "additionalProperties": true,
       "type": "object",
@@ -3436,6 +3479,8 @@
      "job_state",
      "job_progress",
      "job_error",
+     "job_error_code",
+     "job_error_params",
      "structure",
      "created_by",
      "created_at",

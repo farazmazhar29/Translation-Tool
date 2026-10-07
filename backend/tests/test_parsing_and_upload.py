@@ -13,6 +13,7 @@ from reportlab.pdfgen import canvas
 from app.core.config import settings
 from app.core.db import SessionLocal
 from app.core.enums import FileFormat
+from app.core.errors import CodedError
 from app.projects import parsing
 from app.projects.models import Project
 
@@ -92,7 +93,7 @@ def test_pdf_parse_returns_text_blocks_with_page_numbers(tmp_path: Path) -> None
 def test_pdf_without_text_is_reported_as_scanned(tmp_path: Path) -> None:
     empty = io.BytesIO()
     canvas.Canvas(empty).save()
-    with pytest.raises(ValueError, match="OCR"):
+    with pytest.raises(CodedError, match="OCR"):
         parsing.parse_pdf(write(tmp_path, "scan.pdf", empty.getvalue()))
 
 
@@ -105,19 +106,19 @@ def test_file_type_is_detected_case_insensitively(name: str, expected: str) -> N
 
 @pytest.mark.parametrize(
     ("name", "message"),
-    [("a.indd", "InDesign"), ("a.imdd", "InDesign"), ("a.txt", ".txt"), ("noext", "nicht unterstützt")],
+    [("a.indd", "InDesign"), ("a.imdd", "InDesign"), ("a.txt", ".txt"), ("noext", "not supported")],
 )
 def test_unsupported_file_types_are_explained(name: str, message: str) -> None:
-    with pytest.raises(ValueError, match=message):
+    with pytest.raises(CodedError, match=message):
         parsing.file_type(name)
 
 
 def test_signature_check_catches_disguised_files(tmp_path: Path) -> None:
     parsing.check_signature(write(tmp_path, "ok.docx", docx_bytes("x")), FileFormat.DOCX)
     parsing.check_signature(write(tmp_path, "ok.pdf", pdf_bytes("x")), FileFormat.PDF)
-    with pytest.raises(ValueError, match="keine gültige DOCX"):
+    with pytest.raises(CodedError, match="not a valid DOCX"):
         parsing.check_signature(write(tmp_path, "fake.docx", b"MZ\x90\x00 an executable"), FileFormat.DOCX)
-    with pytest.raises(ValueError, match="keine gültige PDF"):
+    with pytest.raises(CodedError, match="not a valid PDF"):
         parsing.check_signature(write(tmp_path, "empty.pdf", b""), FileFormat.PDF)
 
 
@@ -170,15 +171,15 @@ def test_the_table_view_gets_every_cell_with_its_number_format(
 @pytest.mark.parametrize(
     ("name", "data", "message"),
     [
-        pytest.param("fake.docx", b"this is not a zip", "keine gültige DOCX", id="not-a-zip"),
-        pytest.param("empty.pdf", b"", "keine gültige PDF", id="empty-pdf"),
-        ("broken.docx", b"PK\x03\x04 but then garbage", "nicht gelesen"),
-        pytest.param("noletters.docx", docx_bytes("12345", "6789"), "kein übersetzbarer Text", id="no-letters"),
+        pytest.param("fake.docx", b"this is not a zip", "not a valid DOCX", id="not-a-zip"),
+        pytest.param("empty.pdf", b"", "not a valid PDF", id="empty-pdf"),
+        ("broken.docx", b"PK\x03\x04 but then garbage", "could not be read"),
+        pytest.param("noletters.docx", docx_bytes("12345", "6789"), "No translatable text", id="no-letters"),
         pytest.param(
-            "onlyformulas.xlsx", xlsx_bytes({"A1": "=1+1", "B1": 5}), "kein übersetzbarer Text", id="only-formulas"
+            "onlyformulas.xlsx", xlsx_bytes({"A1": "=1+1", "B1": 5}), "No translatable text", id="only-formulas"
         ),
         pytest.param("design.indd", b"x", "InDesign", id="indesign"),
-        pytest.param("notes.txt", b"hello", "nicht unterstützt", id="text-file"),
+        pytest.param("notes.txt", b"hello", "not supported", id="text-file"),
     ],
 )
 def test_bad_uploads_are_rejected_with_a_helpful_message(
@@ -196,7 +197,7 @@ def test_oversized_upload_is_refused_with_413_and_leaves_no_file_behind(
     before = set((settings.data_dir / "uploads").iterdir())
     status, detail = post_file(client, translator, "big.docx", docx_bytes("Hallo Welt"))
     assert status == 413
-    assert "zu groß" in detail
+    assert "too large" in detail
     assert set((settings.data_dir / "uploads").iterdir()) == before
 
 

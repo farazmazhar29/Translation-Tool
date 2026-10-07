@@ -2,7 +2,7 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import func
 
@@ -12,6 +12,7 @@ from app.accounts.security import DUMMY_HASH, Admin, Me, create_token, hash_pass
 from app.core.config import settings
 from app.core.db import DB
 from app.core.enums import Role
+from app.core.errors import AppError, ErrorCode
 from app.core.ratelimit import FailureLimiter, RateLimited
 
 router = APIRouter(prefix="/api")
@@ -19,14 +20,21 @@ router = APIRouter(prefix="/api")
 login_limiter = FailureLimiter(settings.login_max_failures, settings.login_window_minutes * 60)
 
 
+def minutes(e: RateLimited) -> int:
+    """The wait in whole minutes, rounded up, for the message."""
+    return e.retry_after // 60 + 1
+
+
 def check_username_free(db: DB, username: str) -> None:
     """Case-insensitive ("Admin" next to "admin" would be a look-alike account), and never the name of a deleted
     user, which the history still shows."""
     name = username.lower()
     if db.query(User).filter(func.lower(User.username) == name).first():
-        raise HTTPException(409, "Benutzername existiert bereits")
+        raise AppError(409, ErrorCode.USERNAME_TAKEN, "Username already exists")
     if db.get(RetiredUsername, name):
-        raise HTTPException(409, "Dieser Benutzername gehörte einem gelöschten Konto und wird nicht neu vergeben")
+        raise AppError(
+            409, ErrorCode.USERNAME_RETIRED, "This username belonged to a deleted account and is not given again"
+        )
 
 
 @router.post("/auth/login", tags=["Auth"], summary="Log in (rate limited per IP and username)")
@@ -35,16 +43,18 @@ def login(db: DB, request: Request, form: Annotated[OAuth2PasswordRequestForm, D
     try:
         login_limiter.check(key)
     except RateLimited as e:
-        raise HTTPException(
+        raise AppError(
             429,
-            f"Zu viele Fehlversuche. Bitte in {e.retry_after // 60 + 1} Minute(n) erneut versuchen.",
+            ErrorCode.TOO_MANY_ATTEMPTS,
+            f"Too many failed attempts. Please try again in {minutes(e)} minute(s).",
+            {"minutes": minutes(e)},
             headers={"Retry-After": str(e.retry_after)},
         ) from None
     u = db.query(User).filter(User.username == form.username, User.active).first()
     # Always verify a hash, so unknown users cost the same time as wrong passwords.
     if not verify_password(form.password, u.password_hash if u else DUMMY_HASH) or u is None:
         login_limiter.fail(key)
-        raise HTTPException(401, "Benutzername oder Passwort falsch")
+        raise AppError(401, ErrorCode.WRONG_CREDENTIALS, "Wrong username or password")
     login_limiter.reset(key)
     if needs_rehash(u.password_hash):  # transparently upgrade legacy PBKDF2 / outdated Argon2 parameters
         u.password_hash = hash_password(form.password)
@@ -68,14 +78,16 @@ def auth_options() -> AuthOptions:
 )
 def register(db: DB, request: Request, body: RegisterIn) -> UserOut:
     if not settings.allow_registration:
-        raise HTTPException(403, "Die Registrierung ist deaktiviert.")
+        raise AppError(403, ErrorCode.REGISTRATION_DISABLED, "Registration is disabled")
     key = request.client.host if request.client else "-"
     try:
         register_limiter.check(key)
     except RateLimited as e:
-        raise HTTPException(
+        raise AppError(
             429,
-            f"Zu viele Registrierungen. Bitte in {e.retry_after // 60 + 1} Minute(n) erneut versuchen.",
+            ErrorCode.TOO_MANY_REGISTRATIONS,
+            f"Too many registrations. Please try again in {minutes(e)} minute(s).",
+            {"minutes": minutes(e)},
             headers={"Retry-After": str(e.retry_after)},
         ) from None
     check_username_free(db, body.username)
@@ -116,7 +128,12 @@ def user_names(db: DB, _: Me) -> list[str]:
 @router.post("/users", response_model=UserOut, tags=["Users"])
 def create_user(db: DB, _: Admin, body: UserIn) -> User:
     if len(body.password) < MIN_PASSWORD_LENGTH:
-        raise HTTPException(400, f"Passwort muss mindestens {MIN_PASSWORD_LENGTH} Zeichen haben")
+        raise AppError(
+            400,
+            ErrorCode.PASSWORD_TOO_SHORT,
+            f"The password must have at least {MIN_PASSWORD_LENGTH} characters",
+            {"min": MIN_PASSWORD_LENGTH},
+        )
     check_username_free(db, body.username)
     u = User(
         username=body.username,
@@ -134,13 +151,18 @@ def create_user(db: DB, _: Admin, body: UserIn) -> User:
 def update_user(db: DB, admin: Admin, uid: int, body: UserIn) -> User:
     u = db.get(User, uid)
     if u is None:
-        raise HTTPException(404, "Benutzer nicht gefunden")
+        raise AppError(404, ErrorCode.USER_NOT_FOUND, "User not found")
     if u.id == admin.id and (body.role != Role.ADMIN or not body.active):
-        raise HTTPException(400, "Die eigene Admin-Rolle kann nicht entfernt werden")
+        raise AppError(400, ErrorCode.OWN_ADMIN_ROLE, "You cannot remove your own admin role")
     u.full_name, u.role, u.active = body.full_name, body.role, body.active
     if body.password:
         if len(body.password) < MIN_PASSWORD_LENGTH:
-            raise HTTPException(400, f"Passwort muss mindestens {MIN_PASSWORD_LENGTH} Zeichen haben")
+            raise AppError(
+                400,
+                ErrorCode.PASSWORD_TOO_SHORT,
+                f"The password must have at least {MIN_PASSWORD_LENGTH} characters",
+                {"min": MIN_PASSWORD_LENGTH},
+            )
         u.password_hash = hash_password(body.password)
     db.commit()
     return u
@@ -157,9 +179,9 @@ def delete_user(db: DB, admin: Admin, uid: int) -> dict[str, bool]:
     deleting never leaves the application without one."""
     u = db.get(User, uid)
     if u is None:
-        raise HTTPException(404, "Benutzer nicht gefunden")
+        raise AppError(404, ErrorCode.USER_NOT_FOUND, "User not found")
     if u.id == admin.id:
-        raise HTTPException(400, "Das eigene Konto kann nicht gelöscht werden")
+        raise AppError(400, ErrorCode.OWN_ACCOUNT, "You cannot delete your own account")
     db.add(RetiredUsername(username=u.username.lower(), retired_by=admin.username))
     db.delete(u)
     db.commit()

@@ -73,7 +73,8 @@ def test_approval_needs_a_translation_for_every_segment(
     client.put(f"/api/segments/{sid}/en", headers=translator, json={"text": "   "})  # a reviewer sees an empty segment
     r = client.post(f"/api/projects/{pid}/approve", headers=reviewer)
     assert r.status_code == 400
-    assert "keine Übersetzung" in r.json()["detail"]
+    assert (r.json()["code"], r.json()["params"]) == ("segments_untranslated", {"segments": "1"})
+    assert r.json()["detail"] == "Segment(s) 1 have no translation"
 
 
 # Editing rules

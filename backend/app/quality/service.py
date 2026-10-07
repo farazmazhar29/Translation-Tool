@@ -108,7 +108,7 @@ def check_project(p: Project, lang: str | None = None, db: Session | None = None
             tr = seg.translation(tgt)
             idx, sid = seg.idx, seg.id
             if tr is None or not tr.text.strip():
-                warn(idx, sid, QualityCode.NO_TRANSLATION, Severity.ERROR, "Keine Übersetzung vorhanden.")
+                warn(idx, sid, QualityCode.NO_TRANSLATION, Severity.ERROR, "No translation available.")
                 continue
             terms = [Term.model_validate(t) for t in tr.terms]
             if (
@@ -118,7 +118,7 @@ def check_project(p: Project, lang: str | None = None, db: Session | None = None
                     terms and all(t.category == TermCategory.PROTECTED for t in terms)
                 )  # only codes: may stay as is
             ):
-                msg = "Text ist identisch mit dem Original (nicht übersetzt?)."
+                msg = "The text is identical to the original (not translated?)."
                 warn(idx, sid, QualityCode.IDENTICAL_TEXT, Severity.WARNING, msg)
             for t in terms:
                 names = {"source": t.source, "target": t.target}
@@ -126,18 +126,18 @@ def check_project(p: Project, lang: str | None = None, db: Session | None = None
                 listed = glossary.translations(t.source) if t.category != TermCategory.GLOSSARY else None
                 follows = listed is not None and any(pattern(x).search(tr.text) for x in listed)
                 if t.category == TermCategory.UNKNOWN:
-                    msg = f"Unbekannter/fehlerhafter Begriff: „{t.source}“."
+                    msg = f'Unknown or faulty term: "{t.source}".'
                     warn(idx, sid, QualityCode.UNKNOWN_TERM, Severity.WARNING, msg, names)
                 elif listed is not None and t.category in (TermCategory.TECHNICAL, TermCategory.AMBIGUOUS):
                     if not follows:
                         glossary_target = {"source": t.source, "target": listed[0] if listed else t.source}
-                        msg = f"„{glossary_target['target']}“ (für „{t.source}“) fehlt in der Übersetzung."
+                        msg = f'"{glossary_target["target"]}" (for "{t.source}") is missing from the translation.'
                         warn(idx, sid, QualityCode.GLOSSARY_VIOLATION, Severity.ERROR, msg, glossary_target)
                 elif t.category == TermCategory.AMBIGUOUS:
-                    msg = f"Mehrdeutiger Begriff „{t.source}“ → „{t.target}“ prüfen."
+                    msg = f'Ambiguous term "{t.source}" → "{t.target}": please check.'
                     warn(idx, sid, QualityCode.AMBIGUOUS_TERM, Severity.INFO, msg, names)
                 elif t.category in (TermCategory.GLOSSARY, TermCategory.PROTECTED) and not t.ok:
-                    msg = f"„{t.target}“ (für „{t.source}“) fehlt in der Übersetzung."
+                    msg = f'"{t.target}" (for "{t.source}") is missing from the translation.'
                     warn(idx, sid, QualityCode.GLOSSARY_VIOLATION, Severity.ERROR, msg, names)
                 elif t.category == TermCategory.TECHNICAL:
                     key = t.source.lower()
@@ -145,31 +145,31 @@ def check_project(p: Project, lang: str | None = None, db: Session | None = None
                     variants[key].setdefault(_same_word(t.target, tgt), (t.target, seg.idx))
                     unlisted[key] += 1
             if _numbers(seg.source_text) != _numbers(tr.text):
-                msg = "Zahlen in Original und Übersetzung unterscheiden sich."
+                msg = "The numbers in original and translation differ."
                 warn(idx, sid, QualityCode.NUMBERS_DIFFER, Severity.WARNING, msg)
             if seg.source_text.count("\n") != tr.text.count("\n"):
-                msg = "Anzahl der Zeilenumbrüche unterscheidet sich."
+                msg = "The number of line breaks differs."
                 warn(idx, sid, QualityCode.LINE_BREAKS_DIFFER, Severity.INFO, msg)
             if len(tr.text) > 2.5 * len(seg.source_text) + 20:
-                msg = "Übersetzung ist deutlich länger als das Original (Layout prüfen)."
+                msg = "The translation is much longer than the original (check the layout)."
                 warn(idx, sid, QualityCode.TOO_LONG, Severity.INFO, msg)
         for key, vs in variants.items():
             term, written = spelling[key], [v for v, _ in vs.values()]
             if len(vs) > 1:
-                joined = " / ".join(f"„{v}“" for v in written)
+                joined = " / ".join(f'"{v}"' for v in written)
                 warn(
                     min(i for _, i in vs.values()),
                     None,
                     QualityCode.CONTRADICTION,
                     Severity.WARNING,
-                    f"Widersprüchliche Übersetzungen für „{term}“: {joined}",
+                    f'Contradictory translations for "{term}": {joined}',
                     # `options`: the translations to choose from when the interface unifies them
                     {"term": term, "variants": joined, "options": OPTION_SEP.join(written)},
                 )
         for key, n in unlisted.items():
             if n >= 2:
                 term = spelling[key]
-                msg = f"Fachbegriff „{term}“ kommt {n}× vor, fehlt aber im Glossar."
+                msg = f'Technical term "{term}" occurs {n}× but is missing from the glossary.'
                 # `target`: the translation used first, offered when the interface adds the term to the glossary
                 target = _as_entry(next(iter(variants[key].values()))[0], tgt)
                 params = {"term": term, "count": str(n), "target": target}

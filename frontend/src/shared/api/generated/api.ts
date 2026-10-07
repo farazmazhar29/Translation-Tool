@@ -1,7 +1,7 @@
 /* tslint:disable */
 /* eslint-disable */
 /**
- * Rotpunkt Übersetzungstool
+ * Rotpunkt Translation Tool
  *  Browser-based AI translation tool for kitchen-industry documents (glossary-aware, human-in-the-loop).  **Workflow:** upload → preview → highlight terms → edit → quality check → approve → export → archive.  Log in via **Authorize** (demo users: `admin/admin123`, `reviewer/reviewer123`, `translator/translator123`). 
  *
  * The version of the OpenAPI document: 0.1.0
@@ -273,6 +273,11 @@ export interface JobStatus {
     'job_state': JobState;
     'job_progress': number;
     'job_error': string;
+    /**
+     * Translated by the interface; job_error is its English text
+     */
+    'job_error_code': string;
+    'job_error_params': { [key: string]: string; };
     'status': ProjectStatus;
 }
 
@@ -313,6 +318,11 @@ export interface ProjectDetail {
     'job_state': JobState;
     'job_progress': number;
     'job_error': string;
+    /**
+     * Translated by the interface; job_error is its English text
+     */
+    'job_error_code': string;
+    'job_error_params': { [key: string]: string; };
     'structure': { [key: string]: any; };
     'created_by': string;
     'created_at': string;
@@ -338,6 +348,11 @@ export interface ProjectOut {
     'job_state': JobState;
     'job_progress': number;
     'job_error': string;
+    /**
+     * Translated by the interface; job_error is its English text
+     */
+    'job_error_code': string;
+    'job_error_params': { [key: string]: string; };
     'structure': { [key: string]: any; };
     'created_by': string;
     'created_at': string;
@@ -3810,7 +3825,7 @@ export const ReviewApiAxiosParamCreator = function (configuration?: Configuratio
     return {
         /**
          * Stores the final translation as a release (history). Export is only possible afterwards.
-         * @summary \'Übersetzung freigeben\'
+         * @summary Approve the translation (the \'Übersetzung freigeben\' button)
          * @param {number} pid 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -3971,7 +3986,7 @@ export const ReviewApiFp = function(configuration?: Configuration) {
     return {
         /**
          * Stores the final translation as a release (history). Export is only possible afterwards.
-         * @summary \'Übersetzung freigeben\'
+         * @summary Approve the translation (the \'Übersetzung freigeben\' button)
          * @param {number} pid 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -4032,7 +4047,7 @@ export const ReviewApiFactory = function (configuration?: Configuration, basePat
     return {
         /**
          * Stores the final translation as a release (history). Export is only possible afterwards.
-         * @summary \'Übersetzung freigeben\'
+         * @summary Approve the translation (the \'Übersetzung freigeben\' button)
          * @param {ReviewApiApproveProjectRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -4107,7 +4122,7 @@ export interface ReviewApiReopenProjectRequest {
 export class ReviewApi extends BaseAPI {
     /**
      * Stores the final translation as a release (history). Export is only possible afterwards.
-     * @summary \'Übersetzung freigeben\'
+     * @summary Approve the translation (the \'Übersetzung freigeben\' button)
      * @param {ReviewApiApproveProjectRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}

@@ -64,7 +64,12 @@ def test_unhandled_errors_return_json_with_the_request_id_and_no_internals() -> 
     finally:
         app.router.routes.remove(route)
     assert r.status_code == 500
-    assert r.json() == {"detail": "Interner Fehler. Bitte später erneut versuchen.", "request_id": "trace-abcdefgh"}
+    assert r.json() == {
+        "detail": "Internal error. Please try again later.",
+        "code": "internal_error",
+        "params": {},
+        "request_id": "trace-abcdefgh",
+    }
     assert "secret internal detail" not in r.text
 
 

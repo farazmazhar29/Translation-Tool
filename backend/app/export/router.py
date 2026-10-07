@@ -2,12 +2,13 @@
 
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from fastapi.responses import FileResponse
 
 from app.accounts.security import Me, Reviewer, Translator
 from app.core.db import DB
 from app.core.enums import FINISHED_STATUSES
+from app.core.errors import AppError, ErrorCode
 from app.export import service as exporter
 from app.export.models import ExportFile, ExportTemplate
 from app.export.schemas import ExcelLayout, ExportFileOut, ExportIn, TemplateIn, TemplateOut
@@ -22,7 +23,7 @@ router = APIRouter(prefix="/api", tags=["Export"])
 def export_project(db: DB, user: Translator, pid: int, body: ExportIn) -> ExportFile:
     p = get_project(db, pid)
     if p.status not in FINISHED_STATUSES:
-        raise HTTPException(409, "Export ist erst nach der Freigabe möglich.")
+        raise AppError(409, ErrorCode.EXPORT_BEFORE_APPROVAL, "Export is only possible after approval")
     template = db.get(ExportTemplate, body.template_id) if body.template_id else None
     layout = ExcelLayout.model_validate(template.config) if template else body.config
     config = layout.model_dump() if layout else None
@@ -52,7 +53,7 @@ def export_project(db: DB, user: Translator, pid: int, body: ExportIn) -> Export
 def download_export(db: DB, _: Me, eid: int) -> FileResponse:
     ef = db.get(ExportFile, eid)
     if ef is None or not Path(ef.path).exists():
-        raise HTTPException(404, "Exportdatei nicht gefunden")
+        raise AppError(404, ErrorCode.EXPORT_NOT_FOUND, "Export file not found")
     return FileResponse(ef.path, filename=ef.filename)
 
 

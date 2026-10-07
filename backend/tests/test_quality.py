@@ -88,7 +88,7 @@ def test_line_breaks_and_extreme_length_are_noted() -> None:
     warnings = check_project(project(("Zeile eins\nZeile zwei", "Line one Line two", [])))
     assert [(w.type, w.severity) for w in warnings] == [("formatting", "info")]
     long = "x" * 200
-    assert any("länger" in w.message for w in check_project(project(("Kurz", long, []))))
+    assert any("much longer" in w.message for w in check_project(project(("Kurz", long, []))))
 
 
 def test_contradicting_translations_of_the_same_term_are_found() -> None:
@@ -97,7 +97,7 @@ def test_contradicting_translations_of_the_same_term_are_found() -> None:
         ("Der Auszug fehlt", "The drawer is missing", [term("Auszug", "drawer")]),
     )
     (w,) = (w for w in check_project(p) if w.type == "contradiction")
-    assert "„Auszug“" in w.message  # as written in the text
+    assert '"Auszug"' in w.message  # as written in the text
     assert "pull-out" in w.message
     assert "drawer" in w.message
     assert w.segment_id is None
@@ -191,7 +191,7 @@ def test_contradictions_and_missing_glossary_terms_name_their_values() -> None:
     )
     found = {str(w.code): w for w in check_project(p)}
     assert found["contradiction"].params["term"] == "Korpus"
-    assert "„body“" in found["contradiction"].params["variants"]
+    assert '"body"' in found["contradiction"].params["variants"]
     assert found["contradiction"].params["options"] == "body|carcass"  # what the interface offers to unify on
     # the translation used first is offered when the term is added to the glossary
     assert found["missing_glossary"].params == {"term": "Korpus", "count": "2", "target": "body"}

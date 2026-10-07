@@ -39,7 +39,7 @@ def test_login_and_permissions(client: TestClient, translator: Headers) -> None:
 def test_upload_rejects_unsupported(client: TestClient, translator: Headers) -> None:
     r = client.post("/api/projects", headers=translator, files={"file": ("a.imdd", b"x")})
     assert r.status_code == 400
-    assert "InDesign" in r.json()["detail"]
+    assert (r.json()["code"], r.json()["detail"]) == ("indesign_later", "InDesign files are only supported in phase 2")
     assert client.post("/api/projects", headers=translator, files={"file": ("a.docx", b"broken")}).status_code == 400
 
 
@@ -155,8 +155,8 @@ def test_glossary(client: TestClient, admin: Headers, translator: Headers) -> No
     res = client.post("/api/glossary/import/xlsx", headers=admin, files={"file": ("g.xlsx", buf.getvalue())}).json()
     reasons = [r["reason"] for r in res["skipped_rows"]]  # re-imported export rows are duplicates too
     assert res["created"] == 1
-    assert "Begriff oder Übersetzung fehlt" in reasons
-    assert "Dublette: Wangenblende" in reasons
+    assert "Term or translation missing" in reasons
+    assert "Duplicate: Wangenblende" in reasons
     assert client.delete(f"/api/glossary/{eid}", headers=translator).status_code == 403
     assert client.delete(f"/api/glossary/{eid}", headers=admin).status_code == 200
 

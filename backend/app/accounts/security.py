@@ -7,13 +7,14 @@ from typing import Annotated
 import jwt
 from argon2 import PasswordHasher
 from argon2.exceptions import InvalidHashError, VerificationError
-from fastapi import Depends, HTTPException
+from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 
 from app.accounts.models import User
 from app.core.config import settings
 from app.core.db import DB
 from app.core.enums import Role
+from app.core.errors import AppError, ErrorCode
 
 oauth2 = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
@@ -62,17 +63,17 @@ def current_user(token: Annotated[str, Depends(oauth2)], db: DB) -> User:
     try:
         claims = jwt.decode(token, settings.secret_key, algorithms=["HS256"], options={"require": ["exp", "sub"]})
     except jwt.PyJWTError:
-        raise HTTPException(401, "Nicht angemeldet") from None
+        raise AppError(401, ErrorCode.NOT_LOGGED_IN, "Not logged in") from None
     user = db.query(User).filter(User.username == str(claims["sub"]), User.active).first()
     if user is None:
-        raise HTTPException(401, "Nicht angemeldet")
+        raise AppError(401, ErrorCode.NOT_LOGGED_IN, "Not logged in")
     return user
 
 
 def require_role(minimum: Role) -> Callable[[User], User]:
     def dep(user: Annotated[User, Depends(current_user)]) -> User:
         if user.role.rank < minimum.rank:
-            raise HTTPException(403, "Keine Berechtigung")
+            raise AppError(403, ErrorCode.NO_PERMISSION, "No permission")
         return user
 
     return dep

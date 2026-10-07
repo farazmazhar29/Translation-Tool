@@ -13,6 +13,7 @@ from pydantic import BaseModel, TypeAdapter, ValidationError
 
 from app.core.config import settings
 from app.core.enums import Lang, Provider, TermCategory
+from app.core.errors import CodedError, ErrorCode
 
 log = logging.getLogger(__name__)
 LANG_NAMES: dict[str, str] = {Lang.DE: "German", Lang.EN: "English"}  # as written in the prompt
@@ -88,8 +89,8 @@ class LLMResult(BaseModel):
     terms: list[LLMTerm] = []
 
 
-class LLMError(RuntimeError):
-    pass
+class LLMError(CodedError):
+    """The AI provider failed; the code tells the interface which message to show."""
 
 
 class LLMProvider:
@@ -103,7 +104,7 @@ class Gemini(LLMProvider):
 
     def __init__(self, api_key: str, model: str) -> None:
         if not api_key:
-            raise LLMError("GEMINI_API_KEY ist nicht gesetzt (siehe .env.example).")
+            raise LLMError(ErrorCode.GEMINI_KEY_MISSING, "GEMINI_API_KEY is not set (see .env.example)")
         self.key = api_key
         self.models = [model, *(m for m in settings.gemini_fallback_models if m != model)]
 
@@ -142,16 +143,22 @@ class Gemini(LLMProvider):
                             text: str = r.json()["candidates"][0]["content"]["parts"][0]["text"]
                             return TypeAdapter(list[LLMResult]).validate_json(text)
                         except (KeyError, IndexError, ValidationError) as e:
-                            error = f"{model}: ungültige Antwort ({e})"
+                            error = f"{model}: invalid answer ({e})"
                     elif status in (404, 429, 500, 503):
                         error = f"{model}: HTTP {status}"
                     else:
-                        raise LLMError(f"Gemini-Fehler {status}: {r.text[:300]}")
+                        raise LLMError(
+                            ErrorCode.GEMINI_ERROR,
+                            f"Gemini error {status}: {r.text[:300]}",
+                            {"status": status, "text": r.text[:300]},
+                        )
                 log.warning("Gemini attempt failed (%s)", error)
                 if status == 404:  # model retired for this key -> next model right away
                     break
                 time.sleep(5 * (attempt + 1))
-        raise LLMError(f"Gemini nicht erreichbar oder Limit überschritten ({error})")
+        raise LLMError(
+            ErrorCode.GEMINI_UNREACHABLE, f"Gemini not reachable or limit exceeded ({error})", {"error": error}
+        )
 
 
 DICT_DE_EN = {

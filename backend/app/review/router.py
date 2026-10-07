@@ -1,10 +1,11 @@
 """Review workflow: approve, reopen; release history."""
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 
 from app.accounts.security import Me, Reviewer, Translator
 from app.core.db import DB
 from app.core.enums import ProjectStatus
+from app.core.errors import AppError, ErrorCode
 from app.export.models import ExportFile
 from app.glossary.service import current_version
 from app.projects.models import Project
@@ -17,17 +18,27 @@ from app.review.schemas import HistoryOut, ReleaseDetail
 router = APIRouter(prefix="/api", tags=["Review"])
 
 
-@router.post("/projects/{pid}/approve", response_model=ProjectOut, summary="'Übersetzung freigeben'")
+@router.post(
+    "/projects/{pid}/approve",
+    response_model=ProjectOut,
+    summary="Approve the translation (the 'Übersetzung freigeben' button)",
+)
 def approve_project(db: DB, user: Reviewer, pid: int) -> Project:
     """Stores the final translation as a release (history). Export is only possible afterwards."""
     p = get_project(db, pid)
     if p.status != ProjectStatus.PREVIEW_READY:
-        raise HTTPException(409, "Projekt kann in diesem Status nicht freigegeben werden.")
+        raise AppError(409, ErrorCode.CANNOT_APPROVE, "The project cannot be approved in this status")
     missing = [
         s.idx + 1 for s in p.segments for lang in p.targets if not ((t := s.translation(lang)) and t.text.strip())
     ]
     if missing:
-        raise HTTPException(400, f"Segment(e) {missing[:10]} haben keine Übersetzung.")
+        segments = ", ".join(str(n) for n in missing[:10])
+        raise AppError(
+            400,
+            ErrorCode.SEGMENTS_UNTRANSLATED,
+            f"Segment(s) {segments} have no translation",
+            {"segments": segments},
+        )
     trs = [t for s in p.segments for t in s.translations]
     db.add(
         Release(
@@ -59,7 +70,7 @@ def reopen_project(db: DB, _: Translator, pid: int) -> Project:
 def release_detail(db: DB, _: Me, rid: int) -> ReleaseDetail:
     release = db.get(Release, rid)
     if release is None:
-        raise HTTPException(404, "Version nicht gefunden")
+        raise AppError(404, ErrorCode.RELEASE_NOT_FOUND, "Version not found")
     return ReleaseDetail.model_validate(release)
 
 

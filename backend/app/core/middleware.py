@@ -10,6 +10,7 @@ from fastapi.responses import JSONResponse
 from starlette.middleware.base import RequestResponseEndpoint
 
 from .config import settings
+from .errors import ErrorCode, error_body
 from .logging_setup import request_id_var
 
 log = logging.getLogger("app.access")
@@ -69,4 +70,5 @@ def install(app: FastAPI) -> None:
             )
         finally:
             request_id_var.reset(token)
-        return JSONResponse({"detail": "Interner Fehler. Bitte später erneut versuchen.", "request_id": rid}, 500)
+        body = error_body(ErrorCode.INTERNAL_ERROR, "Internal error. Please try again later.")
+        return JSONResponse({**body, "request_id": rid}, 500)

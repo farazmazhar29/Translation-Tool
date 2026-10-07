@@ -15,6 +15,7 @@ from docx.text.paragraph import Paragraph
 from openpyxl import load_workbook
 
 from app.core.enums import FileFormat
+from app.core.errors import CodedError, ErrorCode
 
 FILE_TYPES = {".docx": FileFormat.DOCX, ".xlsx": FileFormat.XLSX, ".pdf": FileFormat.PDF}
 LETTER = re.compile(r"[A-Za-zÄÖÜäöüß]")
@@ -28,9 +29,13 @@ class Part(NamedTuple):
 def file_type(filename: str) -> FileFormat:
     ext = Path(filename).suffix.lower()
     if ext in (".imdd", ".indd"):
-        raise ValueError("InDesign-Dateien werden erst in Phase 2 unterstützt.")
+        raise CodedError(ErrorCode.INDESIGN_LATER, "InDesign files are only supported in phase 2")
     if ext not in FILE_TYPES:
-        raise ValueError(f"Dateityp „{ext}“ nicht unterstützt (erlaubt: docx, xlsx, pdf).")
+        raise CodedError(
+            ErrorCode.FILE_TYPE_UNSUPPORTED,
+            f'File type "{ext}" is not supported (allowed: docx, xlsx, pdf)',
+            {"ext": ext},
+        )
     return FILE_TYPES[ext]
 
 
@@ -46,7 +51,11 @@ def check_signature(path: Path, ftype: FileFormat) -> None:
     with path.open("rb") as f:
         head = f.read(8)
     if not head.startswith(SIGNATURES[ftype]):
-        raise ValueError(f"Die Datei ist keine gültige {ftype.upper()}-Datei (Inhalt passt nicht zur Endung).")
+        raise CodedError(
+            ErrorCode.FILE_CONTENT_MISMATCH,
+            f"The file is not a valid {ftype.upper()} file (its content does not match the extension)",
+            {"type": ftype.upper()},
+        )
 
 
 def _translatable(text: str) -> bool:
@@ -146,7 +155,7 @@ def parse_pdf(path: Path) -> tuple[list[Part], dict[str, Any]]:
                     parts.append(Part({"type": FileFormat.PDF, "page": n, "bbox": [x0, y0, x1, y1]}, text))
         pages = len(pdf)
     if not parts:
-        raise ValueError("Im PDF wurde kein Text erkannt (gescannte PDFs: OCR folgt in Phase 2).")
+        raise CodedError(ErrorCode.PDF_NO_TEXT, "No text was found in the PDF (scanned PDFs: OCR follows in phase 2)")
     return parts, {"type": FileFormat.PDF, "pages": pages, "blocks": len(parts)}
 
 

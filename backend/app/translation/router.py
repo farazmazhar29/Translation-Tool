@@ -3,11 +3,12 @@
 import re
 from typing import Any
 
-from fastapi import APIRouter, BackgroundTasks, HTTPException
+from fastapi import APIRouter, BackgroundTasks
 
 from app.accounts.security import Me, Translator
 from app.core.db import DB
 from app.core.enums import JobState, TermCategory
+from app.core.errors import AppError, ErrorCode
 from app.projects.language import target_languages
 from app.projects.models import Project, Segment, Translation
 from app.projects.queries import editable, get_project, get_segment
@@ -24,12 +25,14 @@ def start_translation(db: DB, _: Translator, pid: int, bg: BackgroundTasks, body
     """Only creates a preview. The final translation is produced on approval."""
     p = editable(get_project(db, pid))
     if p.job_state == JobState.RUNNING:
-        raise HTTPException(409, "Übersetzung läuft bereits.")
+        raise AppError(409, ErrorCode.TRANSLATION_RUNNING, "A translation is already running")
     if body and body.source_lang:
         p.source_lang = body.source_lang
     p.target_langs = target_languages(p.source)
     if not p.target_langs:
-        raise HTTPException(400, "Die Ausgangssprache wurde nicht erkannt. Bitte Deutsch oder Englisch wählen.")
+        raise AppError(
+            400, ErrorCode.SOURCE_UNKNOWN, "The source language was not detected. Please choose German or English."
+        )
     p.job_state, p.job_progress, p.job_error = JobState.RUNNING, 0, ""
     db.commit()
     bg.add_task(run_project_translation, pid)
@@ -68,7 +71,7 @@ def retranslate_segment(db: DB, _: Translator, sid: int, lang: str) -> Segment:
     try:
         translate_segments(db, [seg], seg.project.source, lang, chosen_provider(db))
     except LLMError as e:
-        raise HTTPException(502, str(e)) from None
+        raise e.http(502) from None
     return seg
 
 
@@ -90,7 +93,7 @@ def replace_term(db: DB, user: Translator, pid: int, body: TermReplace) -> dict[
     p = editable(get_project(db, pid))
     segments = [s for s in p.segments if body.segment_id in (None, s.id)]
     if body.segment_id is not None and not segments:
-        raise HTTPException(404, "Segment nicht in diesem Projekt")
+        raise AppError(404, ErrorCode.SEGMENT_NOT_FOUND, "Segment not in this project")
     pat = re.compile(rf"(?<!\w){re.escape(body.old)}(?!\w)", re.I)
 
     def keep_case(m: re.Match[str]) -> str:  # "Wall units" at the start of a sentence -> "Wall cabinets"

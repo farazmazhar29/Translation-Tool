@@ -1,7 +1,7 @@
 import { HttpResponse, http } from 'msw'
 import { describe, expect, it, vi } from 'vitest'
 import { server } from '@/testing/server'
-import { API_CONFIG, ApiError, AS_FILE, saveFile } from '../api/config'
+import { API_CONFIG, ApiError, AS_FILE, errorText, saveFile } from '../api/config'
 import { AuthApiFactory, ProjectsApiFactory, UsersApiFactory } from '../api/generated'
 import { can, getToken, session, setToken } from '../api/session'
 
@@ -56,6 +56,31 @@ describe('API configuration (every generated factory)', () => {
     const err = await users.userNames().catch((e: unknown) => e)
     expect(err).toBeInstanceOf(ApiError)
     expect(err).toMatchObject({ status: 403, message: 'Nicht erlaubt' })
+  })
+
+  it('words an error code in the interface language, with its params', async () => {
+    const body = { detail: 'Too many failed attempts.', code: 'too_many_attempts', params: { minutes: 3 } }
+    server.use(http.get('*/api/users/names', () => HttpResponse.json(body, { status: 429 })))
+    const err = await users.userNames().catch((e: unknown) => e)
+    expect(err).toMatchObject({
+      status: 429,
+      code: 'too_many_attempts',
+      message: 'Zu viele Fehlversuche. Bitte in 3 Minute(n) erneut versuchen.',
+    })
+  })
+
+  it("keeps the server's text for a code the interface does not know", async () => {
+    const body = { detail: 'Something new', code: 'brand_new_code', params: {} }
+    server.use(http.get('*/api/users/names', () => HttpResponse.json(body, { status: 400 })))
+    const err = await users.userNames().catch((e: unknown) => e)
+    expect(err).toMatchObject({ status: 400, code: 'brand_new_code', message: 'Something new' })
+  })
+
+  it('words a stored error code, like the error of a failed translation job', () => {
+    expect(errorText('server_restarted', {}, 'The server was restarted.')).toBe(
+      'Der Server wurde neu gestartet. Bitte die Übersetzung neu starten.',
+    )
+    expect(errorText('', {}, 'old German text')).toBe('old German text')
   })
 
   it('reads the message of a structured detail and keeps the raw detail', async () => {

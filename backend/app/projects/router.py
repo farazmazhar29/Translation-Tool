@@ -14,6 +14,7 @@ from app.accounts.security import Admin, Me, Translator
 from app.core.config import settings
 from app.core.db import DB
 from app.core.enums import AUTO, ArchiveFilter, FileFormat, Lang, ProjectStatus
+from app.core.errors import AppError, CodedError, ErrorCode
 from app.export.models import ExportFile
 from app.projects import parsing
 from app.projects.language import detect_language, target_languages
@@ -33,7 +34,12 @@ def save_upload(file: UploadFile, dest: Path) -> None:
         while chunk := file.file.read(1024 * 1024):
             written += len(chunk)
             if written > limit:
-                raise HTTPException(413, f"Die Datei ist zu groß (maximal {settings.max_upload_mb} MB).")
+                raise AppError(
+                    413,
+                    ErrorCode.FILE_TOO_LARGE,
+                    f"The file is too large (at most {settings.max_upload_mb} MB)",
+                    {"max_mb": settings.max_upload_mb},
+                )
             out.write(chunk)
 
 
@@ -96,7 +102,7 @@ def create_project(
 ) -> Project:
     filename = Path(file.filename or "upload").name[:255]  # display name only; the stored file gets a random name
     if source_lang != AUTO and source_lang not in list(Lang):
-        raise HTTPException(400, "Ungültige Ausgangssprache.")
+        raise AppError(400, ErrorCode.INVALID_SOURCE_LANG, "Invalid source language")
     stored = settings.data_dir / "uploads" / f"{uuid.uuid4().hex}{Path(filename).suffix.lower()}"
     try:
         ftype = parsing.file_type(filename)
@@ -106,15 +112,17 @@ def create_project(
     except HTTPException:
         stored.unlink(missing_ok=True)
         raise
-    except ValueError as e:
+    except CodedError as e:
         stored.unlink(missing_ok=True)
-        raise HTTPException(400, str(e)) from None
+        raise e.http(400) from None
     except Exception:
         stored.unlink(missing_ok=True)
-        raise HTTPException(400, "Datei konnte nicht gelesen werden (beschädigt oder passwortgeschützt?).") from None
+        raise AppError(
+            400, ErrorCode.FILE_UNREADABLE, "The file could not be read (damaged or password protected?)"
+        ) from None
     if not parts:
         stored.unlink(missing_ok=True)
-        raise HTTPException(400, "In der Datei wurde kein übersetzbarer Text gefunden.")
+        raise AppError(400, ErrorCode.NO_TEXT, "No translatable text was found in the file")
     detected = detect_language([p.text for p in parts])
     project = Project(
         name=(name.strip() or Path(filename).stem)[:200],
@@ -227,5 +235,5 @@ def download_original(db: DB, _: Me, pid: int) -> FileResponse:
 def get_sheet_cells(db: DB, _: Me, pid: int) -> list[SheetOut]:
     p = get_project(db, pid)
     if p.file_type != FileFormat.XLSX:
-        raise HTTPException(400, "Nur Excel-Projekte haben Tabellenblätter.")
+        raise AppError(400, ErrorCode.NOT_A_SHEET, "Only Excel projects have sheets")
     return [SheetOut.model_validate(sheet) for sheet in parsing.read_cells(Path(p.file_path))]

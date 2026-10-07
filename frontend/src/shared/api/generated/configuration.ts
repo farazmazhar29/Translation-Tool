@@ -1,6 +1,6 @@
 /* tslint:disable */
 /**
- * Rotpunkt Übersetzungstool
+ * Rotpunkt Translation Tool
  *  Browser-based AI translation tool for kitchen-industry documents (glossary-aware, human-in-the-loop).  **Workflow:** upload → preview → highlight terms → edit → quality check → approve → export → archive.  Log in via **Authorize** (demo users: `admin/admin123`, `reviewer/reviewer123`, `translator/translator123`). 
  *
  * The version of the OpenAPI document: 0.1.0

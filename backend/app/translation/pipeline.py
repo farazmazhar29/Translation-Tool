@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.db import SessionLocal
 from app.core.enums import JobState, ProjectStatus, TermCategory
+from app.core.errors import CodedError, ErrorCode
 from app.glossary import service as gl
 from app.glossary.schemas import Term
 from app.preferences.models import AppSetting
@@ -60,7 +61,6 @@ def translate_segments(
                     category=TermCategory.PROTECTED,
                     dnt=True,
                     ok=c in text,
-                    description="Artikelnummer / Produktcode – nicht übersetzen",
                 )
                 for c in gl.find_protected(s.source_text)
                 if not any(c.lower() in m for m in covered)
@@ -90,10 +90,14 @@ def run_project_translation(project_id: int) -> None:
             return
         try:
             p.job_state, p.job_progress, p.job_error = JobState.RUNNING, 0, ""
+            p.job_error_code, p.job_error_params = "", {}
             db.commit()
             provider = chosen_provider(db)
             if not p.source:
-                raise LLMError("Ausgangssprache konnte nicht erkannt werden – bitte manuell wählen.")
+                raise LLMError(
+                    ErrorCode.SOURCE_UNKNOWN,
+                    "The source language was not detected. Please choose German or English.",
+                )
             targets = p.targets
             total = max(1, len(p.segments) * len(targets))
             for n, tgt in enumerate(targets):
@@ -107,5 +111,8 @@ def run_project_translation(project_id: int) -> None:
         except Exception as e:  # shown in the UI
             log.exception("translation failed")
             db.rollback()
+            coded = e if isinstance(e, CodedError) else None
             p.job_state, p.job_error = JobState.ERROR, str(e)[:500]
+            p.job_error_code = coded.code if coded else ErrorCode.TRANSLATION_FAILED
+            p.job_error_params = {k: str(v) for k, v in coded.params.items()} if coded else {"error": str(e)[:300]}
         db.commit()

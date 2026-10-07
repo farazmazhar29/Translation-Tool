@@ -33,6 +33,8 @@ class Project(Base):
     job_state: Mapped[JobState] = mapped_column(Choice(JobState), default=JobState.IDLE)
     job_progress: Mapped[int] = mapped_column(default=0)
     job_error: Mapped[str] = mapped_column(Text, default="")
+    job_error_code: Mapped[str] = mapped_column(default="")  # the interface translates it
+    job_error_params: Mapped[dict[str, Any]] = mapped_column(default=dict)
     structure: Mapped[dict[str, Any]] = mapped_column(default=dict)
     # quality findings the reviewer looked at and accepted as they are (`QualityWarning.key`)
     accepted_findings: Mapped[list[str]] = mapped_column(default=list)
