@@ -474,6 +474,10 @@ export interface SettingsOut {
     'default_export_mode': string;
     'colors': { [key: string]: string; };
     'gemini_key_configured': boolean;
+    /**
+     * The models to choose from per provider (read-only; none for the mock)
+     */
+    'model_choices': { [key: string]: Array<string>; };
 }
 
 export const Severity = {

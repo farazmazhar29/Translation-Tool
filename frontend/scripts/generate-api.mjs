@@ -8,7 +8,9 @@ import { readFileSync, rmSync, writeFileSync } from 'node:fs'
 const IMAGE = 'openapitools/openapi-generator-cli:v7.26.0'
 const OUTPUT = 'src/shared/api/generated'
 
-rmSync(OUTPUT, { recursive: true, force: true }) // removed endpoints must not linger
+// retries: on Windows, Docker's file sharing can hold a just-written file for a moment
+const REMOVE = { recursive: true, force: true, maxRetries: 10, retryDelay: 200 }
+rmSync(OUTPUT, REMOVE) // removed endpoints must not linger
 execFileSync(
   'docker',
   [
@@ -28,7 +30,7 @@ execFileSync(
   ],
   { stdio: 'inherit' },
 )
-rmSync(`${OUTPUT}/.openapi-generator`, { recursive: true, force: true }) // the generator's own bookkeeping
+rmSync(`${OUTPUT}/.openapi-generator`, REMOVE) // the generator's own bookkeeping
 
 // The project compiles with `erasableSyntaxOnly` (only syntax that type stripping can remove). Two generated
 // constructors use parameter properties, which that forbids; they become plain fields. A different generator

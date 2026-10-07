@@ -3867,6 +3867,17 @@
       "type": "boolean",
       "title": "Gemini Key Configured",
       "default": false
+     },
+     "model_choices": {
+      "additionalProperties": {
+       "items": {
+        "type": "string"
+       },
+       "type": "array"
+      },
+      "type": "object",
+      "title": "Model Choices",
+      "description": "The models to choose from per provider (read-only; none for the mock)"
      }
     },
     "type": "object",
@@ -3877,7 +3888,8 @@
      "default_export_format",
      "default_export_mode",
      "colors",
-     "gemini_key_configured"
+     "gemini_key_configured",
+     "model_choices"
     ],
     "title": "SettingsOut"
    },

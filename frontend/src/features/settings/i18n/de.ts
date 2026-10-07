@@ -6,6 +6,7 @@ export const de = {
   provider: 'Provider',
   providers: { gemini: 'Google Gemini (API)', mock: 'Mock (offline, nur Test)' },
   model: 'Modell',
+  noModel: 'Der Offline-Modus braucht kein Modell.',
   apiKey:
     'API-Schlüssel: {{status}}. Weitere Schnittstellen (z. B. DeepL) lassen sich über die Provider-Schicht ergänzen.',
   keyConfigured: '✔ Gemini-Key ist serverseitig konfiguriert',

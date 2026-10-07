@@ -216,6 +216,13 @@ class Mock(LLMProvider):
         return out
 
 
+def model_choices() -> dict[str, list[str]]:
+    """The models an admin may choose, per provider: the configured Gemini model and its fallbacks (the ones the app
+    knows to work), nothing for the offline mock. A free-text model name only invites typos."""
+    gemini = list(dict.fromkeys([settings.gemini_model, *settings.gemini_fallback_models]))
+    return {Provider.GEMINI: gemini, Provider.MOCK: []}
+
+
 def get_provider(name: str | None = None, model: str | None = None) -> LLMProvider:
     try:
         provider = Provider((name or settings.llm_provider).lower())

@@ -3,7 +3,7 @@ import { can } from '@/shared/api/session'
 import type { SettingsOut } from '@/shared/api/generated'
 import { EXPORT_FORMATS, EXPORT_MODES, TERM_CATEGORIES } from '@/shared/constants'
 import { useAuth } from '@/features/auth'
-import { SelectField, TextField } from '@/shared/components/form'
+import { SelectField } from '@/shared/components/form'
 import { Loading, PageHeader } from '@/shared/components/layout'
 import { Btn, Card, ErrorText } from '@/shared/components/ui'
 import { SettingsService } from '@/shared/api/services/SettingsService'
@@ -17,6 +17,10 @@ const SettingsForm = ({ initial }: { initial: SettingsOut }) => {
   const { values: s, set } = useFields(initial)
   const save = SettingsService.useUpdateSettings()
   const disabled = !can(user, 'admin')
+  const modelsOf = (provider: string): string[] => s.model_choices[provider] ?? []
+  const models = modelsOf(s.llm_provider)
+  // a stored model the list no longer has stays visible (and fails on saving), instead of being silently swapped
+  const modelOptions = models.includes(s.llm_model) ? models : [s.llm_model, ...models]
   return (
     <div className="mx-auto max-w-2xl space-y-4">
       <PageHeader title={t('title')} />
@@ -26,10 +30,24 @@ const SettingsForm = ({ initial }: { initial: SettingsOut }) => {
           label={t('provider')}
           disabled={disabled}
           value={s.llm_provider}
-          onChange={set('llm_provider')}
+          onChange={(provider) => {
+            set('llm_provider')(provider)
+            const next = modelsOf(provider)
+            if (next[0] && !next.includes(s.llm_model)) set('llm_model')(next[0])
+          }}
           options={optionsOf(PROVIDERS, (p) => t(`providers.${p}`))}
         />
-        <TextField label={t('model')} disabled={disabled} value={s.llm_model} onChange={set('llm_model')} />
+        {models.length > 0 ? (
+          <SelectField
+            label={t('model')}
+            disabled={disabled}
+            value={s.llm_model}
+            onChange={set('llm_model')}
+            options={optionsOf(modelOptions, (m) => m)}
+          />
+        ) : (
+          <p className="text-sm text-stone-600">{t('noModel')}</p>
+        )}
         <p className="rounded-xl bg-stone-100 px-4 py-3 text-xs text-stone-600">
           {t('apiKey', { status: s.gemini_key_configured ? t('keyConfigured') : t('keyMissing') })}
         </p>

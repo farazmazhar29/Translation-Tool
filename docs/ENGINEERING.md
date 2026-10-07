@@ -486,6 +486,7 @@ TanStack Query lint, Knip, `prettier --check` + `npm audit` in CI, Husky + lint-
 * **2026-10-07** - Generated API client (openapi-generator, axios) and one service per feature (D-58).
 * **2026-10-07** - "Active" is only offered when editing a user: a new account is always active; deactivating removes access while the history keeps the name (there is no delete).
 * **2026-10-07** - Users can be deleted; the name stays in the history and is retired; migration 0007 (D-59).
+* **2026-10-07** - The AI model is chosen from a list, not typed: the settings send `model_choices` (the configured Gemini model and its fallbacks), saving accepts only those (400 otherwise, naming the choices), and the page shows a dropdown. A typo can no longer break every translation.
 * **2026-10-07** - README rewritten as a short guide: tools, Docker steps, development commands, AI and architecture in brief; requirement table and links to this log removed.
 
 ## 9. Sources (research, 2026-10-01 and 2026-10-03)
