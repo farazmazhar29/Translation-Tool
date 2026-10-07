@@ -107,3 +107,7 @@ All settings are environment variables, kept in `.env` (see [`.env.example`](.en
 | Backend tests | `cd backend` → `.venv\Scripts\python -m pytest` |
 | Frontend checks and tests | `cd frontend` → `npm run check` |
 | End-to-end (browser) | `cd frontend` → `npx playwright install chromium` (once) → `npm run e2e` |
+
+## License
+
+Copyright (c) 2026 Faraz Mazhar. All rights reserved; see [LICENSE](LICENSE).
