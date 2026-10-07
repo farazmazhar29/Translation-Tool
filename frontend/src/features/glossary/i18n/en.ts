@@ -64,6 +64,7 @@ export const en: Texts<typeof de> = {
     newTranslation: 'New translation',
     replaceInSegment: 'Replace in this segment only',
     replaceInProject: 'Replace in the whole project',
+    notFound: '“{{term}}” is not a whole word in the translation. Please edit it in the list.',
     addToGlossary: 'Add to glossary',
   },
 }

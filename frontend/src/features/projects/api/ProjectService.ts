@@ -132,9 +132,22 @@ export const ProjectService = {
   editSegment: (sid: number, lang: string, edit: SegmentEdit) =>
     unwrap(translation.editSegment({ sid, lang, segmentEdit: edit })),
   retranslateSegment: (sid: number, lang: string) => unwrap(translation.retranslateSegment({ sid, lang })),
-  /** Replaces a translated term in every segment; a capital at a sentence start is kept. */
-  replaceTerm: (pid: number, lang: string, old: string, value: string) =>
-    unwrap(translation.replaceTerm({ pid, termReplace: { lang, old, new: value } })),
+  /**
+   * Replaces a translated term (whole words) in every segment, or only in `segmentId`; a capital at a sentence start
+   * is kept. The stored terms follow, also the one for `source` when an earlier edit had changed its text.
+   * Resolves to the number of segments changed.
+   */
+  replaceTerm: async (
+    pid: number,
+    lang: string,
+    old: string,
+    value: string,
+    { segmentId, source }: { segmentId?: number; source?: string } = {},
+  ) => {
+    const termReplace = { lang, old, new: value, segment_id: segmentId, source }
+    const result = await unwrap(translation.replaceTerm({ pid, termReplace }))
+    return result['replaced_in_segments'] ?? 0
+  },
   approve: (pid: number) => unwrap(review.approveProject({ pid })),
   reopen: (pid: number) => unwrap(review.reopenProject({ pid })),
 

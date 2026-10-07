@@ -580,8 +580,19 @@ export type TermCategory = typeof TermCategory[keyof typeof TermCategory];
 
 export interface TermReplace {
     'lang': string;
+    /**
+     * The text as it stands in the translation (whole words)
+     */
     'old': string;
     'new': string;
+    /**
+     * Only this segment; none = the whole project
+     */
+    'segment_id'?: number | null;
+    /**
+     * The source term this translates: its stored translation follows, even when it no longer was `old`
+     */
+    'source'?: string | null;
 }
 export interface TopTerm {
     'id': number;
@@ -4410,8 +4421,8 @@ export const TranslationApiAxiosParamCreator = function (configuration?: Configu
             };
         },
         /**
-         * 
-         * @summary Replace a translated term in the whole project
+         * Text and stored term change together; otherwise the highlight and the term dialog keep the old translation.
+         * @summary Replace a translated term in one segment or the whole project
          * @param {number} pid 
          * @param {TermReplace} termReplace 
          * @param {*} [options] Override http request option.
@@ -4573,8 +4584,8 @@ export const TranslationApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * 
-         * @summary Replace a translated term in the whole project
+         * Text and stored term change together; otherwise the highlight and the term dialog keep the old translation.
+         * @summary Replace a translated term in one segment or the whole project
          * @param {number} pid 
          * @param {TermReplace} termReplace 
          * @param {*} [options] Override http request option.
@@ -4644,8 +4655,8 @@ export const TranslationApiFactory = function (configuration?: Configuration, ba
             return localVarFp.getJobStatus(requestParameters.pid, options).then((request) => request(axios, basePath));
         },
         /**
-         * 
-         * @summary Replace a translated term in the whole project
+         * Text and stored term change together; otherwise the highlight and the term dialog keep the old translation.
+         * @summary Replace a translated term in one segment or the whole project
          * @param {TranslationApiReplaceTermRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -4748,8 +4759,8 @@ export class TranslationApi extends BaseAPI {
     }
 
     /**
-     * 
-     * @summary Replace a translated term in the whole project
+     * Text and stored term change together; otherwise the highlight and the term dialog keep the old translation.
+     * @summary Replace a translated term in one segment or the whole project
      * @param {TranslationApiReplaceTermRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}

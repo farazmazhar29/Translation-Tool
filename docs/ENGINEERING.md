@@ -393,6 +393,15 @@ Tests: deletion with the history intact, the dead token and the refused sign-in,
 
 Tests: the mock as a server mode winning over the chosen model, Gemini with the chosen model, the refused `"mock"`, the stored legacy value, `offline_mock`. The two tests that check a missing Gemini key now switch the server mode instead of the settings. In the frontend: only Gemini in the list, the offline note, a retired model stays visible.
 
+**D-61 - Replacing a term in one segment changes the stored term too (2026-10-07).** Found by the user: in the term dialog, "Nickel-plated steel" became "Nickel-plated steell" with "Replace in this segment only", but the dialog still showed "Nickel-plated steel". A second try made it "steelll", and the mistake could not be undone there. The cause: the segment-only replace (and choosing an alternative) only rewrote the text in the browser and saved it; the stored term kept its old translation. The highlight then marked "Nickel-plated steel" inside "steell", the dialog started from the stale value, and "replace" was disabled for the original because it equalled that value. "Replace in the whole project" did not have the bug, because the backend changes text and term together.
+* All three actions (alternative, this segment, whole project) now use `replace-term`. It takes an optional `segment_id` (only that segment) and `source` (which term it is), so the stored term follows even when an earlier edit had already changed its text. Text and term change in one place, matching whole words, keeping a capital at a sentence start.
+* Choosing an alternative swaps it with the old translation, so the choice can be switched back.
+* The dialog starts from the translation as it stands in the text (whole words), not from the stored value, so a typo is visible and can be corrected there.
+* In the translation, a highlight covers whole words: "Hinge" marks all of "Hinges", and a typo after a term is part of the mark instead of hanging after it. The source keeps exact matches, so a German compound like "Korpusbreite" is not marked as "Korpus".
+* When the text is not there as a whole word, the dialog says so and stays open (before, it closed and nothing happened). The browser-side `replaceFirst` helper is gone.
+
+Tests: replace in one segment only, undo a typo, repair a term an older edit had left behind, 0 for a missing text, 404 for a segment of another project, the alternative swap. In the frontend: whole-word marks in the translation and exact ones in the source, the dialog starting from the text as it stands, both scopes, and the "not found" message.
+
 ## 6. Problems found and how they were fixed
 
 | Problem | Cause | Fix |
@@ -496,6 +505,7 @@ TanStack Query lint, Knip, `prettier --check` + `npm audit` in CI, Husky + lint-
 * **2026-10-07** - Users can be deleted; the name stays in the history and is retired; migration 0007 (D-59).
 * **2026-10-07** - The AI model is chosen from a list, not typed: the settings send `model_choices` (the configured Gemini model and its fallbacks), saving accepts only those (400 otherwise, naming the choices), and the page shows a dropdown. A typo can no longer break every translation.
 * **2026-10-07** - The offline mock is no longer offered in the settings; only `LLM_PROVIDER=mock` turns it on, and the page says so (D-60).
+* **2026-10-07** - Replacing a term in one segment updates the stored term; highlights cover whole words in the translation; typos can be undone in the term dialog (D-61).
 * **2026-10-07** - README rewritten as a short guide: tools, Docker steps, development commands, AI and architecture in brief; requirement table and links to this log removed.
 
 ## 9. Sources (research, 2026-10-01 and 2026-10-03)

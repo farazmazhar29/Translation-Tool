@@ -12,5 +12,10 @@ class TranslateIn(Schema):
 
 class TermReplace(Schema):
     lang: str
-    old: str
+    old: str = Field(description="The text as it stands in the translation (whole words)")
     new: str
+    segment_id: int | None = Field(default=None, description="Only this segment; none = the whole project")
+    source: str | None = Field(
+        default=None,
+        description="The source term this translates: its stored translation follows, even when it no longer was `old`",
+    )

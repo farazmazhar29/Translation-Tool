@@ -1,6 +1,7 @@
 """Start a translation, edit segments, replace terms."""
 
 import re
+from typing import Any
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException
 
@@ -71,23 +72,36 @@ def retranslate_segment(db: DB, _: Translator, sid: int, lang: str) -> Segment:
     return seg
 
 
-@router.post("/projects/{pid}/replace-term", summary="Replace a translated term in the whole project")
+def replaced_term(t: dict[str, Any], body: TermReplace) -> dict[str, Any]:
+    """A stored term after its translation was replaced. A chosen alternative swaps places with the old translation,
+    so it can be switched back."""
+    hit = t["target"].lower() == body.old.lower() or (body.source is not None and t["source"] == body.source)
+    if not hit:
+        return t
+    alternatives = t.get("alternatives", [])
+    if body.new in alternatives:
+        alternatives = [t["target"], *(a for a in alternatives if a != body.new)]
+    return {**t, "target": body.new, "alternatives": alternatives, "ok": True}
+
+
+@router.post("/projects/{pid}/replace-term", summary="Replace a translated term in one segment or the whole project")
 def replace_term(db: DB, user: Translator, pid: int, body: TermReplace) -> dict[str, int]:
+    """Text and stored term change together; otherwise the highlight and the term dialog keep the old translation."""
     p = editable(get_project(db, pid))
+    segments = [s for s in p.segments if body.segment_id in (None, s.id)]
+    if body.segment_id is not None and not segments:
+        raise HTTPException(404, "Segment nicht in diesem Projekt")
     pat = re.compile(rf"(?<!\w){re.escape(body.old)}(?!\w)", re.I)
 
     def keep_case(m: re.Match[str]) -> str:  # "Wall units" at the start of a sentence -> "Wall cabinets"
         return body.new[:1].upper() + body.new[1:] if m.group(0)[:1].isupper() else body.new
 
     changed = 0
-    for seg in p.segments:
+    for seg in segments:
         tr = seg.translation(body.lang)
         if tr and pat.search(tr.text):
             tr.text, tr.edited, tr.edited_by = pat.sub(keep_case, tr.text), True, user.username
-            tr.terms = [
-                {**t, "target": body.new, "ok": True} if t["target"].lower() == body.old.lower() else t
-                for t in tr.terms
-            ]
+            tr.terms = [replaced_term(t, body) for t in tr.terms]
             changed += 1
     db.commit()
     return {"replaced_in_segments": changed}

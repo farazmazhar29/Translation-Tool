@@ -62,6 +62,7 @@ export const de = {
     newTranslation: 'Neue Übersetzung',
     replaceInSegment: 'Nur in diesem Segment ersetzen',
     replaceInProject: 'Im ganzen Projekt ersetzen',
+    notFound: '„{{term}}“ steht nicht als ganzes Wort in der Übersetzung. Bitte in der Liste bearbeiten.',
     addToGlossary: 'Ins Glossar übernehmen',
   },
 }

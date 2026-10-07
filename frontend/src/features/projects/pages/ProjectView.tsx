@@ -159,10 +159,12 @@ const ProjectView = () => {
           onClose={() => {
             setModal(null)
           }}
-          onSegmentText={(text) => {
-            save(modal.seg, { text })
-          }}
-          onReplaceEverywhere={(old, value) => ProjectService.replaceTerm(id, lang, old, value)}
+          onReplace={(old, value, segmentOnly) =>
+            ProjectService.replaceTerm(id, lang, old, value, {
+              segmentId: segmentOnly ? modal.seg.id : undefined,
+              source: modal.term.source,
+            })
+          }
           onChanged={() => {
             void refresh()
           }}

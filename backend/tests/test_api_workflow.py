@@ -8,6 +8,8 @@ from fastapi.testclient import TestClient
 
 from app.core.config import settings
 from app.core.enums import Provider
+from app.translation.router import replaced_term
+from app.translation.schemas import TermReplace
 
 BODY = "Der Korpus und die Frontblende sind weiß. Preis 49,90 EUR, Artikel UK-4711."
 
@@ -189,6 +191,45 @@ def test_replacing_keeps_a_capital_letter_at_the_start_of_a_sentence(
     )
     text = segments(client, translator, translated_project)[1]["translations"]["en"]["text"]
     assert text == "Wall cabinets hang. Two wall cabinets."
+
+
+def test_a_term_can_be_replaced_in_one_segment_and_its_stored_translation_follows(
+    client: TestClient, translator: Headers, translated_project: int
+) -> None:
+    first, second = segments(client, translator, translated_project)[:2]
+    client.put(f"/api/segments/{first['id']}/en", headers=translator, json={"text": "The carcass first."})
+    url = f"/api/projects/{translated_project}/replace-term"
+
+    def replace(old: str, new: str, sid: int = second["id"]) -> int:
+        body = {"lang": "en", "old": old, "new": new, "segment_id": sid, "source": "Korpus"}
+        r = client.post(url, headers=translator, json=body)
+        return r.json()["replaced_in_segments"] if r.status_code == 200 else r.status_code
+
+    def state() -> tuple[str, str]:
+        tr = segments(client, translator, translated_project)[1]["translations"]["en"]
+        return tr["text"], {t["source"]: t["target"] for t in tr["terms"]}["Korpus"]
+
+    assert replace("carcass", "carcasss") == 1  # a typo, in this segment only
+    assert state()[0].startswith("The carcasss and")
+    assert state()[1] == "carcasss"
+    assert segments(client, translator, translated_project)[0]["translations"]["en"]["text"] == "The carcass first."
+    assert replace("carcasss", "carcass") == 1  # ... and it can be undone, because the term followed
+    assert state()[1] == "carcass"
+    # an older edit left the term behind ("carcass" stored, "carcassll" in the text): the source still finds it
+    text = state()[0].replace("carcass", "carcassll")
+    client.put(f"/api/segments/{second['id']}/en", headers=translator, json={"text": text})
+    assert replace("carcassll", "carcass") == 1
+    assert state()[0].startswith("The carcass and")
+    assert replace("nothing-here", "x") == 0
+    assert replace("carcass", "x", sid=999_999) == 404
+
+
+def test_choosing_an_alternative_keeps_the_old_translation_as_one() -> None:
+    term = {"source": "Korpus", "target": "carcass", "alternatives": ["cabinet body", "shell"], "ok": True}
+    body = TermReplace(lang="en", old="carcass", new="cabinet body")
+    assert replaced_term(term, body)["alternatives"] == ["carcass", "shell"]
+    other = {**term, "source": "Front", "target": "front"}
+    assert replaced_term(other, body) is other
 
 
 # Quality, approval and history

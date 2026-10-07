@@ -6,7 +6,7 @@ import { GlossaryService, NO_FILTERS } from '../api/GlossaryService'
 import { isEntryStatus } from '../constants'
 import { EMPTY } from '../lib/entry'
 import { EntryForm } from './EntryForm'
-import { replaceFirst } from '../lib/text'
+import { shownTarget } from '../lib/chunkify'
 import { useMutation } from '@/shared/api/base'
 import { TextField } from '@/shared/components/form'
 import { Btn, ErrorText, Modal } from '@/shared/components/ui'
@@ -16,38 +16,37 @@ interface Props {
   seg: SegmentOut
   lang: string
   src: string
-  /** Replaces the term's translation in every segment of the project (the project page knows how). */
-  onReplaceEverywhere: (old: string, value: string) => Promise<unknown>
+  /**
+   * Replaces `old` (whole words) by `value` in this segment or the whole project, together with the term's stored
+   * translation (the project page knows how). Resolves to the number of segments changed.
+   */
+  onReplace: (old: string, value: string, segmentOnly: boolean) => Promise<number>
   editable: boolean
   onClose: () => void
-  onSegmentText: (text: string) => void
   onChanged: () => void
 }
 
-export const TermDialog = ({
-  term,
-  seg,
-  lang,
-  src,
-  editable,
-  onClose,
-  onSegmentText,
-  onReplaceEverywhere,
-  onChanged,
-}: Props) => {
+export const TermDialog = ({ term, seg, lang, src, editable, onClose, onReplace, onChanged }: Props) => {
   const { t } = useTranslation(['glossary', 'common'])
-  const text = seg.translations[lang]?.text ?? ''
-  const [value, setValue] = useState(term.target)
+  // what the translation really says, which an earlier edit may have changed ("steelll" for "steel")
+  const shown = shownTarget(seg.translations[lang]?.text ?? '', term.target)
+  const [value, setValue] = useState(shown)
   const [adding, setAdding] = useState(false)
+  const [notFound, setNotFound] = useState(false)
   const { data: entries = [] } = GlossaryService.useFetchEntries(NO_FILTERS, term.glossary_id === null)
   const entry = entries.find((e) => e.id === term.glossary_id)
-  const everywhere = useMutation(() => onReplaceEverywhere(term.target, value), {
-    onSuccess: () => {
-      onChanged()
-      onClose()
+  const replace = useMutation(
+    ({ next, segmentOnly }: { next: string; segmentOnly: boolean }) => onReplace(shown, next, segmentOnly),
+    {
+      onSuccess: (count) => {
+        setNotFound(count === 0)
+        if (count === 0) return
+        onChanged()
+        onClose()
+      },
     },
-  })
-  const changed = value.trim() !== '' && value !== term.target
+  )
+  const changed = value.trim() !== '' && value !== shown
   const canAdd = editable && term.category !== 'glossary' && term.category !== 'protected'
   const initial = { ...EMPTY, [src]: term.source, [lang]: term.target }
 
@@ -65,9 +64,7 @@ export const TermDialog = ({
           <dt className="text-xs uppercase text-stone-600">
             {t('term.usedTranslation', { lang: t(`common:lang.${lang as Lang}`) })}
           </dt>
-          <dd className="font-medium">
-            {term.dnt ? t('term.doNotTranslate', { target: term.target }) : term.target || '—'}
-          </dd>
+          <dd className="font-medium">{term.dnt ? t('term.doNotTranslate', { target: shown }) : shown || '—'}</dd>
         </div>
         {term.description && (
           <div>
@@ -82,10 +79,9 @@ export const TermDialog = ({
               {term.alternatives.map((a) => (
                 <Btn
                   key={a}
-                  disabled={!editable}
+                  disabled={!editable || replace.isPending}
                   onClick={() => {
-                    onSegmentText(replaceFirst(text, term.target, a))
-                    onClose()
+                    replace.mutate({ next: a, segmentOnly: true })
                   }}
                 >
                   {a}
@@ -113,18 +109,17 @@ export const TermDialog = ({
           <TextField hideLabel label={t('term.newTranslation')} value={value} onChange={setValue} />
           <div className="flex flex-wrap gap-2">
             <Btn
-              disabled={!changed}
+              disabled={!changed || replace.isPending}
               onClick={() => {
-                onSegmentText(replaceFirst(text, term.target, value))
-                onClose()
+                replace.mutate({ next: value, segmentOnly: true })
               }}
             >
               {t('term.replaceInSegment')}
             </Btn>
             <Btn
-              disabled={!changed || everywhere.isPending}
+              disabled={!changed || replace.isPending}
               onClick={() => {
-                everywhere.mutate()
+                replace.mutate({ next: value, segmentOnly: false })
               }}
             >
               {t('term.replaceInProject')}
@@ -140,7 +135,8 @@ export const TermDialog = ({
               </Btn>
             )}
           </div>
-          <ErrorText error={everywhere.error} />
+          <ErrorText error={replace.error} />
+          {notFound && <p className="text-sm text-red-700">{t('term.notFound', { term: shown })}</p>}
         </div>
       )}
       {adding && (

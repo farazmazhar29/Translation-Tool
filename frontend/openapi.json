@@ -1745,7 +1745,8 @@
     "tags": [
      "Translation"
     ],
-    "summary": "Replace a translated term in the whole project",
+    "summary": "Replace a translated term in one segment or the whole project",
+    "description": "Text and stored term change together; otherwise the highlight and the term dialog keep the old translation.",
     "operationId": "replace_term",
     "security": [
      {
@@ -4144,11 +4145,36 @@
      },
      "old": {
       "type": "string",
-      "title": "Old"
+      "title": "Old",
+      "description": "The text as it stands in the translation (whole words)"
      },
      "new": {
       "type": "string",
       "title": "New"
+     },
+     "segment_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Segment Id",
+      "description": "Only this segment; none = the whole project"
+     },
+     "source": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Source",
+      "description": "The source term this translates: its stored translation follows, even when it no longer was `old`"
      }
     },
     "type": "object",
