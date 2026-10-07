@@ -24,23 +24,45 @@ export const TextField = ({
   label,
   hideLabel,
   className = '',
+  prefix,
   value,
   onChange,
   ...rest
 }: Base &
-  Native<InputHTMLAttributes<HTMLInputElement>> & { value: string | number; onChange: (value: string) => void }) => (
-  <Field label={label} hideLabel={hideLabel}>
+  Native<InputHTMLAttributes<HTMLInputElement>> & {
+    value: string | number
+    onChange: (value: string) => void
+    prefix?: string // a short word inside the field, before the value
+  }) => {
+  const field = (
     <input
       {...rest}
       aria-label={hideLabel ? label : undefined}
-      className={`${input} ${className}`}
+      className={`${input} ${prefix ? 'pl-12' : ''} ${className}`}
       value={value}
       onChange={(e) => {
         onChange(e.target.value)
       }}
     />
-  </Field>
-)
+  )
+  return (
+    <Field label={label} hideLabel={hideLabel}>
+      {prefix ? (
+        <div className="relative">
+          <span
+            className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-xs font-semibold text-stone-600"
+            aria-hidden="true"
+          >
+            {prefix}
+          </span>
+          {field}
+        </div>
+      ) : (
+        field
+      )}
+    </Field>
+  )
+}
 
 export const TextArea = ({
   label,

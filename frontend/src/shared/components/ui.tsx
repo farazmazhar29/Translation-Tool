@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, type ButtonHTMLAttributes, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import { AlertCircle, X } from 'lucide-react'
+import { AlertCircle, X, type LucideIcon } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { STATUS_STYLE, isStatus } from '../constants'
 import { btnClass, errMsg, type Variant } from '../lib/ui'
@@ -11,6 +11,29 @@ export const Btn = ({
   ...p
 }: { variant?: Variant } & ButtonHTMLAttributes<HTMLButtonElement>) => (
   <button type="button" {...p} className={btnClass(variant, className)} />
+)
+
+/** A round icon button for row actions; the label is its accessible name and its tooltip. */
+export const IconAction = ({
+  label,
+  icon: Icon,
+  destructive,
+  onClick,
+}: {
+  label: string
+  icon: LucideIcon
+  destructive?: boolean
+  onClick: () => void
+}) => (
+  <button
+    type="button"
+    aria-label={label}
+    title={label}
+    onClick={onClick}
+    className={`inline-grid size-9 place-items-center rounded-full text-stone-600 transition ${destructive ? 'hover:bg-red-50 hover:text-red-700' : 'hover:bg-stone-100 hover:text-ink'}`}
+  >
+    <Icon className="size-[18px]" aria-hidden="true" />
+  </button>
 )
 
 /** A link that looks like a button. */
@@ -50,13 +73,17 @@ export const Card = ({
   title,
   children,
   className = '',
+  flush,
 }: {
   title?: string
   children: ReactNode
   className?: string
+  flush?: boolean // no inner padding: for tables and lists that reach the edges
 }) => {
   return (
-    <section className={`rounded-2xl border border-line bg-white p-6 shadow-card ${className}`}>
+    <section
+      className={`min-w-0 rounded-2xl border border-line bg-white shadow-card ${flush ? '' : 'p-6'} ${className}`}
+    >
       {title && <h2 className="mb-4 text-base font-bold">{title}</h2>}
       {children}
     </section>

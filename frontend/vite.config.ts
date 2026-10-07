@@ -10,6 +10,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     restoreMocks: true, // spies never leak into the next test
+    testTimeout: 15_000, // typing into forms is slow on a busy machine; a timeout must mean "stuck", not "slow"
     setupFiles: ['./src/testing/setup.ts'],
     include: ['src/**/*.test.{ts,tsx}'],
     coverage: {

@@ -75,20 +75,24 @@ export const Table = ({
   emptyText,
   children,
 }: {
-  headers: readonly string[]
+  /** A plain label, or a label with classes such as `hidden lg:table-cell` for columns that small screens hide. */
+  headers: readonly (string | { label: string; className: string })[]
   rowCount?: number
   emptyText?: string
   children: ReactNode
 }) => (
-  <Card className="overflow-x-auto p-0">
+  <Card flush className="overflow-x-auto">
     <table className="w-full text-left text-sm">
       <thead className="border-b border-line bg-stone-50 text-[11px] uppercase tracking-wider text-stone-600">
         <tr>
-          {headers.map((header) => (
-            <th key={header} scope="col" className="px-4 py-3 font-semibold">
-              {header}
-            </th>
-          ))}
+          {headers.map((header, i) => {
+            const { label, className = '' } = typeof header === 'string' ? { label: header } : header
+            return (
+              <th key={i} scope="col" className={`px-4 py-3 font-semibold ${className}`}>
+                {label}
+              </th>
+            )
+          })}
         </tr>
       </thead>
       <tbody className="divide-y divide-line [&>tr:hover]:bg-stone-50/80">

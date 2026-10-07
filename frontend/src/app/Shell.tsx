@@ -138,7 +138,7 @@ export const Shell = () => {
           </button>
         </div>
       </aside>
-      <main className="mx-auto w-full max-w-6xl px-4 py-8 md:px-10 md:py-10">
+      <main className="mx-auto w-full min-w-0 max-w-[100rem] px-4 py-8 md:px-10 md:py-10">
         <Suspense fallback={<Loading />}>
           <Outlet />
         </Suspense>
