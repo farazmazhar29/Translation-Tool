@@ -1,7 +1,12 @@
-"""Quality check: pure logic, tested on in-memory objects (no database needed)."""
+"""Quality check: pure logic, tested on in-memory objects (a throw-away database only for the glossary)."""
 
 from typing import Any
 
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session
+
+from app.core.db import Base
+from app.glossary.models import GlossaryEntry
 from app.glossary.schemas import Term
 from app.projects.models import Project, Segment, Translation
 from app.quality.schemas import QualityWarning
@@ -14,7 +19,7 @@ def term(source: str, target: str, category: str = "technical", **over: Any) -> 
 
 def project(*rows: tuple[str, str | None, list[dict[str, Any]]], langs: tuple[str, ...] = ("en",)) -> Project:
     """Each row is (source text, translation or None for 'not translated', terms)."""
-    p = Project(name="p", target_langs=list(langs), segments=[])
+    p = Project(name="p", source_lang="de", target_langs=list(langs), segments=[])
     for i, (source, translated, terms) in enumerate(rows):
         seg = Segment(id=i + 1, idx=i, locator={}, source_text=source)
         if translated is not None:
@@ -92,7 +97,7 @@ def test_contradicting_translations_of_the_same_term_are_found() -> None:
         ("Der Auszug fehlt", "The drawer is missing", [term("Auszug", "drawer")]),
     )
     (w,) = (w for w in check_project(p) if w.type == "contradiction")
-    assert "„auszug“" in w.message
+    assert "„Auszug“" in w.message  # as written in the text
     assert "pull-out" in w.message
     assert "drawer" in w.message
     assert w.segment_id is None
@@ -104,6 +109,25 @@ def test_a_term_used_consistently_is_not_a_contradiction() -> None:
         ("Der Auszug fehlt", "The pull-out is missing", [term("Auszug", "pull-out")]),
     )
     assert "contradiction" not in kinds(check_project(p))
+
+
+def test_singular_and_plural_are_the_same_translation() -> None:
+    """German "Schrankaufhänger" is singular and plural; English needs both forms, which is no contradiction."""
+    p = project(
+        ("Schrankaufhänger, verstellbar", "Cabinet hanger, adjustable", [term("Schrankaufhänger", "cabinet hanger")]),
+        ("Schrankaufhänger paarweise", "Cabinet hangers in pairs", [term("Schrankaufhänger", "cabinet hangers")]),
+    )
+    assert "contradiction" not in kinds(check_project(p))
+
+
+def test_a_suggested_glossary_entry_drops_the_capital_of_a_sentence_start() -> None:
+    def suggestion(target: str) -> str:
+        row = ("Stahl vernickelt", f"{target} steel", [term("vernickelt", target)])
+        (w,) = check_project(project(row, row))
+        return w.params["target"]
+
+    assert suggestion("Nickel-plated") == "nickel-plated"
+    assert suggestion("LED lighting") == "LED lighting"  # an abbreviation keeps its capitals
 
 
 def test_frequent_terms_missing_from_the_glossary_are_suggested() -> None:
@@ -132,7 +156,7 @@ def test_checking_a_single_language_ignores_the_others() -> None:
     p = project(("Hallo Welt", "Hello world", []), langs=("en", "de"))
     assert check_project(p, "en") == []
     assert kinds(check_project(p, "de")) == ["untranslated"]
-    assert kinds(check_project(p)) == ["untranslated"]  # all target languages by default
+    assert check_project(p) == []  # by default the real targets: German is the source here, not a target
 
 
 # Codes and values: the interface writes each sentence in the language of the user
@@ -166,9 +190,11 @@ def test_contradictions_and_missing_glossary_terms_name_their_values() -> None:
         ("Ein Korpus", "A carcass", [term("Korpus", "carcass")]),
     )
     found = {str(w.code): w for w in check_project(p)}
-    assert found["contradiction"].params["term"] == "korpus"
+    assert found["contradiction"].params["term"] == "Korpus"
     assert "„body“" in found["contradiction"].params["variants"]
-    assert found["missing_glossary"].params == {"term": "korpus", "count": "2"}
+    assert found["contradiction"].params["options"] == "body|carcass"  # what the interface offers to unify on
+    # the translation used first is offered when the term is added to the glossary
+    assert found["missing_glossary"].params == {"term": "Korpus", "count": "2", "target": "body"}
 
 
 def test_findings_that_were_stored_without_a_code_still_load() -> None:
@@ -176,3 +202,40 @@ def test_findings_that_were_stored_without_a_code_still_load() -> None:
     w = QualityWarning.model_validate(old)
     assert w.code is None
     assert w.params == {}
+
+
+# The current glossary counts, not only the term categories stored at translation time
+def glossary(*entries: tuple[str, str]) -> Session:
+    engine = create_engine("sqlite://")
+    Base.metadata.create_all(engine)
+    db = Session(engine)
+    db.add_all(GlossaryEntry(terms={"de": de, "en": en}) for de, en in entries)
+    db.commit()
+    return db
+
+
+def test_a_term_added_to_the_glossary_after_the_translation_is_no_longer_missing() -> None:
+    row = ("Aus Kunststoff", "Made of plastic", [term("Kunststoff", "plastic")])
+    assert codes(check_project(project(row, row))) == ["missing_glossary"]  # without the glossary
+    assert check_project(project(row, row), db=glossary(("Kunststoff", "plastic"))) == []
+
+
+def test_the_glossary_confirms_an_ambiguous_translation() -> None:
+    row = ("Stand: Oktober", "Status: October", [term("Stand", "Status", "ambiguous")])
+    assert codes(check_project(project(row))) == ["ambiguous_term"]
+    assert check_project(project(row), db=glossary(("Stand", "status"))) == []  # the glossary says it is right
+
+
+def test_a_translation_that_the_glossary_contradicts_is_an_error() -> None:
+    row = ("Aus Kunststoff", "Made of plastic", [term("Kunststoff", "plastic")])
+    (w,) = check_project(project(row), db=glossary(("Kunststoff", "synthetic material")))
+    assert (w.code, w.severity, w.params["target"]) == ("glossary_violation", "error", "synthetic material")
+
+
+def test_accepted_findings_are_marked_and_listed_last_but_errors_cannot_be_accepted() -> None:
+    p = project(("Kurz", "x" * 80, []), ("Hallo Welt", None, []))
+    too_long, missing = sorted(check_project(p), key=lambda w: w.severity != "info")
+    p.accepted_findings = [too_long.key, missing.key]
+    first, last = check_project(p)
+    assert (first.code, first.accepted) == ("no_translation", False)  # an error stays open
+    assert (last.code, last.accepted) == ("too_long", True)

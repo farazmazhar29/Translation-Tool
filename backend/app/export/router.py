@@ -27,7 +27,8 @@ def export_project(db: DB, user: Translator, pid: int, body: ExportIn) -> Export
     layout = ExcelLayout.model_validate(template.config) if template else body.config
     config = layout.model_dump() if layout else None
     opts = {"include_report": body.include_report, "include_comments": body.include_comments}
-    warnings = quality.check_project(p, body.lang) if body.include_report else []
+    # the report lists what is still open; accepted findings were looked at and judged fine
+    warnings = [w for w in quality.check_project(p, body.lang, db) if not w.accepted] if body.include_report else []
     path = exporter.EXPORTERS[body.format](p, body.lang, body.mode, opts, warnings, config)
     last = db.query(Release).filter(Release.project_id == pid).order_by(Release.id.desc()).first()
     ef = ExportFile(

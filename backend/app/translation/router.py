@@ -79,11 +79,14 @@ def replace_term(db: DB, user: Translator, pid: int, body: TermReplace) -> dict[
     p = editable(get_project(db, pid))
     pat = re.compile(rf"(?<!\w){re.escape(body.old)}(?!\w)", re.I)
 
+    def keep_case(m: re.Match[str]) -> str:  # "Wall units" at the start of a sentence -> "Wall cabinets"
+        return body.new[:1].upper() + body.new[1:] if m.group(0)[:1].isupper() else body.new
+
     changed = 0
     for seg in p.segments:
         tr = seg.translation(body.lang)
         if tr and pat.search(tr.text):
-            tr.text, tr.edited, tr.edited_by = pat.sub(body.new, tr.text), True, user.username
+            tr.text, tr.edited, tr.edited_by = pat.sub(keep_case, tr.text), True, user.username
             tr.terms = [
                 {**t, "target": body.new, "ok": True} if t["target"].lower() == body.old.lower() else t
                 for t in tr.terms

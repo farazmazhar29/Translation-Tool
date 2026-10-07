@@ -34,6 +34,8 @@ class Project(Base):
     job_progress: Mapped[int] = mapped_column(default=0)
     job_error: Mapped[str] = mapped_column(Text, default="")
     structure: Mapped[dict[str, Any]] = mapped_column(default=dict)
+    # quality findings the reviewer looked at and accepted as they are (`QualityWarning.key`)
+    accepted_findings: Mapped[list[str]] = mapped_column(default=list)
     created_by: Mapped[str] = mapped_column(default="")
     created_at: Mapped[datetime] = mapped_column(default=now)
     updated_at: Mapped[datetime] = mapped_column(default=now, onupdate=now)

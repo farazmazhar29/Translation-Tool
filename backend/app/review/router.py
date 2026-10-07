@@ -38,7 +38,7 @@ def approve(db: DB, user: Reviewer, pid: int) -> Project:
             change_count=sum(t.edited for t in trs),
             preview={str(s.id): {t.lang: t.original_text for t in s.translations} for s in p.segments},
             final={str(s.id): {t.lang: t.text for t in s.translations} for s in p.segments},
-            warnings=[w.model_dump() for w in quality.check_project(p)],
+            warnings=[w.model_dump() for w in quality.check_project(p, db=db)],
         )
     )
     p.status = ProjectStatus.APPROVED

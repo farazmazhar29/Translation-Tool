@@ -157,6 +157,40 @@ def test_replacing_a_term_changes_every_segment_and_marks_them_edited(
     assert again.json() == {"replaced_in_segments": 0}
 
 
+def test_a_judgment_call_can_be_accepted_and_reopened_but_an_error_cannot(
+    client: TestClient, translator: Headers, translated_project: int
+) -> None:
+    first, second = segments(client, translator, translated_project)[:2]
+    client.put(f"/api/segments/{first['id']}/en", headers=translator, json={"text": "Assembly\ninstructions"})
+    client.put(f"/api/segments/{second['id']}/en", headers=translator, json={"text": "   "})
+    url = f"/api/projects/{translated_project}/quality"
+
+    def finding(code: str) -> dict[str, Any]:
+        return next(w for w in client.get(url, headers=translator).json()["warnings"] if w["code"] == code)
+
+    breaks, missing = finding("line_breaks_differ"), finding("no_translation")
+    accepted = client.put(f"{url}/accepted", headers=translator, json={"keys": [breaks["key"]]})
+    assert accepted.json() == [breaks["key"]]
+    assert finding("line_breaks_differ")["accepted"] is True  # remembered on the next check
+    assert client.put(f"{url}/accepted", headers=translator, json={"keys": [missing["key"]]}).status_code == 400
+    client.put(f"{url}/accepted", headers=translator, json={"keys": []})  # reopen all
+    assert finding("line_breaks_differ")["accepted"] is False
+
+
+def test_replacing_keeps_a_capital_letter_at_the_start_of_a_sentence(
+    client: TestClient, translator: Headers, translated_project: int
+) -> None:
+    sid = segments(client, translator, translated_project)[1]["id"]
+    client.put(f"/api/segments/{sid}/en", headers=translator, json={"text": "Wall units hang. Two wall units."})
+    client.post(
+        f"/api/projects/{translated_project}/replace-term",
+        headers=translator,
+        json={"lang": "en", "old": "wall units", "new": "wall cabinets"},
+    )
+    text = segments(client, translator, translated_project)[1]["translations"]["en"]["text"]
+    assert text == "Wall cabinets hang. Two wall cabinets."
+
+
 # Quality, approval and history
 def test_quality_endpoint_reports_the_glossary_version(
     client: TestClient, translator: Headers, translated_project: int
