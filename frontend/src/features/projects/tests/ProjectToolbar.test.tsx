@@ -20,12 +20,11 @@ const setup = async (
       HttpResponse.json({ id: 1, username: 'u', full_name: '', role, active: true }),
     ),
   )
-  const props = { run: vi.fn(), onLang: vi.fn(), onPanel: vi.fn(), onExport: vi.fn() }
+  const props = { run: vi.fn(), onPanel: vi.fn(), onExport: vi.fn() }
   renderApp(
     <AuthProvider>
       <ProjectToolbar
         project={projectDetail({ status })}
-        lang="en"
         panel={null}
         editable={status !== 'approved'}
         {...props}

@@ -14,7 +14,6 @@ export const en: Texts<typeof de> = {
   defaultsCard: 'Defaults',
   defaultExport: 'Default export',
   exportContent: 'Export content',
-  defaultTargetLang: 'Default target language',
   colorsCard: 'Highlight colours',
   saved: 'Saved ✔',
 }

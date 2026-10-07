@@ -1,6 +1,6 @@
 import i18n from 'i18next'
 import { describe, expect, it } from 'vitest'
-import { btnClass, errMsg, fmtDate, optionsOf, toggle } from '../lib/ui'
+import { btnClass, errMsg, fmtDate, optionsOf } from '../lib/ui'
 
 describe('optionsOf', () => {
   it('turns values into [value, label] pairs using the label function', () => {
@@ -15,19 +15,6 @@ describe('optionsOf', () => {
       ['', 'alle'],
       ['de', 'de'],
     ])
-  })
-})
-
-describe('toggle', () => {
-  it('adds an item that is missing and removes one that is present', () => {
-    expect(toggle(['a'], 'b')).toEqual(['a', 'b'])
-    expect(toggle(['a', 'b'], 'a')).toEqual(['b'])
-  })
-
-  it('does not change the original list', () => {
-    const list = ['a'] as const
-    toggle(list, 'b')
-    expect(list).toEqual(['a'])
   })
 })
 

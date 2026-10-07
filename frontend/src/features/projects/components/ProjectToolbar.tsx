@@ -11,23 +11,19 @@ import type { Panel, Run } from '../types'
 const icon = 'size-4'
 const SHOWN_FINDINGS = 5
 
-/** Language tabs and the buttons of the review workflow (quality, history, approve, export ...). */
+/** The buttons of the review workflow (quality, history, approve, export ...). */
 export const ProjectToolbar = ({
   project: p,
-  lang,
   panel,
   editable,
   run,
-  onLang,
   onPanel,
   onExport,
 }: {
   project: S['ProjectDetail']
-  lang: string
   panel: Panel
   editable: boolean
   run: Run
-  onLang: (lang: string) => void
   onPanel: (panel: Panel) => void
   onExport: () => void
 }) => {
@@ -90,23 +86,6 @@ export const ProjectToolbar = ({
   return (
     <>
       <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-line bg-white p-3 shadow-card">
-        {p.target_langs.length > 1 && (
-          <div className="flex rounded-full bg-stone-100 p-1">
-            {p.target_langs.map((l) => (
-              <button
-                key={l}
-                type="button"
-                aria-pressed={l === lang}
-                onClick={() => {
-                  onLang(l)
-                }}
-                className={`rounded-full px-4 py-1.5 text-sm font-bold transition ${l === lang ? 'bg-white text-ink shadow-sm' : 'text-stone-600 hover:text-ink'}`}
-              >
-                {l.toUpperCase()}
-              </button>
-            ))}
-          </div>
-        )}
         <Btn
           aria-pressed={panel === 'quality'}
           onClick={() => {

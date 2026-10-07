@@ -1,14 +1,14 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { post, type Lang, type S } from '@/shared/api/client'
-import { LangCheckboxes, SelectField } from '@/shared/components/form'
+import { post, type S } from '@/shared/api/client'
+import { SelectField, TargetLanguage } from '@/shared/components/form'
 import { useConfirm } from '@/shared/components/confirm'
 import { Btn } from '@/shared/components/ui'
 import { LANGS } from '@/shared/constants'
 import { optionsOf } from '@/shared/lib/ui'
 import type { Run } from '../types'
 
-/** Source language, target languages and the button that starts (or restarts) the translation. */
+/** Source language, the resulting target language and the button that starts (or restarts) the translation. */
 export const TranslationSetup = ({
   project: p,
   hasTranslation,
@@ -21,9 +21,8 @@ export const TranslationSetup = ({
   const { t } = useTranslation(['projects', 'common'])
   const { confirm, dialog } = useConfirm()
   const [srcPick, setSrcPick] = useState<string | null>(null)
-  const [targetsPick, setTargetsPick] = useState<Lang[] | null>(null)
   const src = srcPick ?? p.source_lang
-  const targets = targetsPick ?? (p.target_langs as Lang[])
+  const source = src === 'auto' ? p.detected_lang : src // '' while detection could not tell
   return (
     <div className="mt-6 flex flex-wrap items-end gap-6 border-t border-line pt-6">
       <SelectField
@@ -36,10 +35,10 @@ export const TranslationSetup = ({
           p.detected_lang ? t('view.autoDetected', { lang: p.detected_lang.toUpperCase() }) : t('view.auto'),
         ])}
       />
-      <LangCheckboxes label={t('view.targetLangs')} value={targets} onChange={setTargetsPick} />
+      <TargetLanguage label={t('view.targetLang')} source={source} unknown={t('view.chooseSource')} />
       <Btn
         variant="primary"
-        disabled={p.job_state === 'running' || targets.length === 0}
+        disabled={p.job_state === 'running' || !source}
         onClick={() => {
           void (async () => {
             const ok =
@@ -50,7 +49,7 @@ export const TranslationSetup = ({
                 confirmLabel: t('view.retranslate'),
                 destructive: true,
               }))
-            if (ok) run(() => post(`/projects/${p.id}/translate`, { source_lang: src, target_langs: targets }))
+            if (ok) run(() => post(`/projects/${p.id}/translate`, { source_lang: src }))
           })()
         }}
       >

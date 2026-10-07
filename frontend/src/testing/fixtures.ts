@@ -4,7 +4,6 @@ export const settings = (): S['SettingsOut'] => ({
   llm_provider: 'mock',
   llm_model: 'test',
   default_source_lang: 'auto',
-  default_target_langs: ['en'],
   default_export_format: 'docx',
   default_export_mode: 'translation',
   colors: { technical: '#3b82f6', glossary: '#22c55e', ambiguous: '#f59e0b', unknown: '#ef4444', protected: '#a855f7' },

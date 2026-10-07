@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from 'react'
 import type { Lang } from '../api/client'
 import { LANGS } from '../constants'
-import { input, toggle, type Option } from '../lib/ui'
+import { input, type Option } from '../lib/ui'
 import { Label } from './ui'
 
 /**
@@ -146,32 +146,19 @@ export const Checkbox = ({
   </label>
 )
 
-/** One checkbox per supported language (German, English). */
-export const LangCheckboxes = ({
-  label,
-  value,
-  onChange,
-}: {
-  label: string
-  value: readonly Lang[]
-  onChange: (value: Lang[]) => void
-}) => {
+/**
+ * The target language is not chosen: with two languages it is always the other one. Shown as a fixed value next
+ * to the source language; `unknown` is shown while the source is not known yet.
+ */
+export const TargetLanguage = ({ label, source, unknown }: { label: string; source: string; unknown: string }) => {
   const { t } = useTranslation()
+  const target = LANGS.includes(source as Lang) ? LANGS.find((code) => code !== source) : undefined
   return (
-    <fieldset>
-      <legend className="mb-1.5 block text-sm font-semibold text-stone-700">{label}</legend>
-      <div className="flex gap-5 py-2.5">
-        {LANGS.map((code) => (
-          <Checkbox
-            key={code}
-            label={t(`lang.${code}`)}
-            checked={value.includes(code)}
-            onChange={() => {
-              onChange(toggle(value, code))
-            }}
-          />
-        ))}
-      </div>
-    </fieldset>
+    <div>
+      <p className="mb-1.5 block text-sm font-semibold text-stone-700">{label}</p>
+      <p className="rounded-xl bg-stone-100 px-3.5 py-2.5 text-sm text-stone-700" aria-live="polite">
+        {target ? t(`lang.${target}`) : unknown}
+      </p>
+    </div>
   )
 }

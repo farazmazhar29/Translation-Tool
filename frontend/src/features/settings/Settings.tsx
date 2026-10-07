@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { can, put, type S } from '@/shared/api/client'
-import { EXPORT_FORMATS, EXPORT_MODES, LANGS, TERM_CATEGORIES } from '@/shared/constants'
+import { EXPORT_FORMATS, EXPORT_MODES, TERM_CATEGORIES } from '@/shared/constants'
 import { useAuth } from '@/features/auth'
 import { SelectField, TextField } from '@/shared/components/form'
 import { Loading, PageHeader } from '@/shared/components/layout'
@@ -47,15 +47,6 @@ const SettingsForm = ({ initial }: { initial: S['SettingsOut'] }) => {
             value={s.default_export_mode}
             onChange={set('default_export_mode')}
             options={optionsOf(EXPORT_MODES, (m) => t(`common:exportMode.${m}`))}
-          />
-          <SelectField
-            label={t('defaultTargetLang')}
-            disabled={disabled}
-            value={s.default_target_langs[0] ?? 'en'}
-            onChange={(lang) => {
-              set('default_target_langs')([lang])
-            }}
-            options={optionsOf(LANGS, (l) => t(`common:lang.${l}`))}
           />
         </div>
       </Card>

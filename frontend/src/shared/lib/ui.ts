@@ -26,11 +26,6 @@ export const optionsOf = <T extends string>(
   label: (value: T) => string,
   ...leading: Option[]
 ): Option[] => [...leading, ...values.map((value): Option => [value, label(value)])]
-
-/** Adds the item to the list, or removes it when it is already in. */
-export const toggle = <T>(list: readonly T[], item: T): T[] =>
-  list.includes(item) ? list.filter((x) => x !== item) : [...list, item]
-
 export const errMsg = (e: unknown): string => (e instanceof Error ? e.message : i18n.t('common:unknownError'))
 
 export const fmtDate = (iso: string): string =>

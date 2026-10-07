@@ -27,7 +27,6 @@ const ProjectView = () => {
   const { t } = useTranslation(['projects', 'common'])
   const id = Number(useParams()['id'])
   const { user } = useAuth()
-  const [picked, setLang] = useState('')
   const [panel, setPanel] = useState<Panel>(null)
   const [view, setView] = useState<'page' | 'list'>('page')
   const [modal, setModal] = useState<{ kind: 'term'; seg: Segment; term: S['Term'] } | { kind: 'export' } | null>(null)
@@ -57,7 +56,7 @@ const ProjectView = () => {
   if (error) return <ErrorText error={error} />
   if (!p) return <Loading />
 
-  const lang = p.target_langs.includes(picked) ? picked : (p.target_langs[0] ?? '')
+  const lang = p.target_langs[0] ?? '' // always the other language (none while the source is unknown)
   const editable = EDITABLE.includes(p.status)
   const canEdit = editable && can(user, 'translator')
   const running = p.job_state === 'running'
@@ -81,11 +80,9 @@ const ProjectView = () => {
         <>
           <ProjectToolbar
             project={p}
-            lang={lang}
             panel={panel}
             editable={editable}
             run={run}
-            onLang={setLang}
             onPanel={setPanel}
             onExport={() => {
               setModal({ kind: 'export' })

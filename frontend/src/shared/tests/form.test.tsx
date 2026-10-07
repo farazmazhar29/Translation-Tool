@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
-import { Checkbox, LangCheckboxes, SelectField, TextArea, TextField } from '../components/form'
+import { Checkbox, SelectField, TargetLanguage, TextArea, TextField } from '../components/form'
 
 describe('TextField', () => {
   it('is labelled and reports the typed value (not the DOM event)', async () => {
@@ -79,25 +79,16 @@ describe('Checkbox', () => {
   })
 })
 
-describe('LangCheckboxes', () => {
-  it('is a labelled group with one checkbox per language and reflects the selection', () => {
-    render(<LangCheckboxes label="Zielsprachen" value={['en']} onChange={vi.fn()} />)
-    expect(screen.getByRole('group', { name: 'Zielsprachen' })).toBeInTheDocument()
-    expect(screen.getByLabelText('Englisch')).toBeChecked()
-    expect(screen.getByLabelText('Deutsch')).not.toBeChecked()
+describe('TargetLanguage', () => {
+  it('shows the other language as the target', () => {
+    const { rerender } = render(<TargetLanguage label="Zielsprache" source="de" unknown="?" />)
+    expect(screen.getByText('Englisch')).toBeInTheDocument()
+    rerender(<TargetLanguage label="Zielsprache" source="en" unknown="?" />)
+    expect(screen.getByText('Deutsch')).toBeInTheDocument()
   })
 
-  it('adds a language that is not selected yet', async () => {
-    const onChange = vi.fn()
-    render(<LangCheckboxes label="Zielsprachen" value={['en']} onChange={onChange} />)
-    await userEvent.click(screen.getByLabelText('Deutsch'))
-    expect(onChange).toHaveBeenCalledWith(['en', 'de'])
-  })
-
-  it('removes a language that is selected', async () => {
-    const onChange = vi.fn()
-    render(<LangCheckboxes label="Zielsprachen" value={['en', 'de']} onChange={onChange} />)
-    await userEvent.click(screen.getByLabelText('Englisch'))
-    expect(onChange).toHaveBeenCalledWith(['de'])
+  it('says so while the source language is not known', () => {
+    render(<TargetLanguage label="Zielsprache" source="auto" unknown="Erst die Ausgangssprache wählen" />)
+    expect(screen.getByText('Erst die Ausgangssprache wählen')).toBeInTheDocument()
   })
 })

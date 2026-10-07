@@ -13,7 +13,6 @@ export const de = {
   defaultsCard: 'Standardwerte',
   defaultExport: 'Standard-Export',
   exportContent: 'Export-Inhalt',
-  defaultTargetLang: 'Standard-Zielsprache',
   colorsCard: 'Farben der Hervorhebung',
   saved: 'Gespeichert ✔',
 }

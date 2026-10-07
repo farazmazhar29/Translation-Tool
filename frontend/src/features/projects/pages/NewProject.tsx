@@ -2,25 +2,19 @@ import { useState } from 'react'
 import { FileText, UploadCloud } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import { post, type Lang, type S } from '@/shared/api/client'
+import { post, type S } from '@/shared/api/client'
 import { LANGS } from '@/shared/constants'
-import { LangCheckboxes, SelectField, TextField } from '@/shared/components/form'
+import { SelectField, TargetLanguage, TextField } from '@/shared/components/form'
 import { BackLink, Form, PageHeader } from '@/shared/components/layout'
 import { Card, LinkBtn } from '@/shared/components/ui'
 import { useAction, useFields } from '@/shared/lib/hooks'
-import { optionsOf, useSettings } from '@/shared/lib/ui'
+import { optionsOf } from '@/shared/lib/ui'
 
 const NewProject = () => {
   const { t } = useTranslation(['projects', 'common'])
   const navigate = useNavigate()
-  const settings = useSettings()
   const [file, setFile] = useState<File | null>(null)
-  const { values: f, set } = useFields<{ name: string; customer: string; source: string; targets: Lang[] }>({
-    name: '',
-    customer: '',
-    source: 'auto',
-    targets: [],
-  })
+  const { values: f, set } = useFields({ name: '', customer: '', source: 'auto' })
   const create = useAction(
     () => {
       const fd = new FormData()
@@ -28,13 +22,10 @@ const NewProject = () => {
       fd.append('name', f.name)
       fd.append('customer', f.customer)
       fd.append('source_lang', f.source)
-      fd.append('target_langs', f.targets.join(','))
       return post<S['ProjectOut']>('/projects', fd)
     },
     { onSuccess: (p) => void navigate(`/projects/${p.id}`) },
   )
-  // until the user chooses, the default of the settings is shown as selected (and used by the server)
-  const chosen = f.targets.length ? f.targets : ((settings?.default_target_langs ?? []) as Lang[])
 
   return (
     <Form
@@ -88,7 +79,7 @@ const NewProject = () => {
           onChange={set('source')}
           options={optionsOf(LANGS, (l) => t(`common:lang.${l}`), ['auto', t('new.autoDetect')])}
         />
-        <LangCheckboxes label={t('new.targetLangs')} value={chosen} onChange={set('targets')} />
+        <TargetLanguage label={t('new.targetLang')} source={f.source} unknown={t('new.targetAuto')} />
       </Card>
     </Form>
   )

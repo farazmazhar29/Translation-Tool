@@ -28,7 +28,6 @@ export const ExportDialog = ({
   const { values: o, set } = useFields({
     format: settings?.default_export_format ?? 'docx',
     mode: settings?.default_export_mode ?? 'translation',
-    lang,
     report: false,
     comments: false,
     archive: true,
@@ -46,7 +45,7 @@ export const ExportDialog = ({
   const run = useAction(
     async () => {
       const file = await post<S['ExportFileOut']>(`/projects/${project.id}/export`, {
-        lang: o.lang,
+        lang, // the project's target language: the only one there is
         format: o.format,
         mode: o.mode,
         include_report: o.report,
@@ -85,7 +84,7 @@ export const ExportDialog = ({
 
   return (
     <Modal title={t('export.title')} onClose={onClose} wide>
-      <div className="grid gap-3 md:grid-cols-3">
+      <div className="grid gap-3 md:grid-cols-2">
         <SelectField
           label={t('export.format')}
           value={o.format}
@@ -97,12 +96,6 @@ export const ExportDialog = ({
           value={o.mode}
           onChange={set('mode')}
           options={optionsOf(EXPORT_MODES, (m) => t(`common:exportMode.${m}`))}
-        />
-        <SelectField
-          label={t('export.language')}
-          value={o.lang}
-          onChange={set('lang')}
-          options={project.target_langs.map((code): Option => [code, code.toUpperCase()])}
         />
       </div>
       <div className="mt-3 flex flex-wrap gap-4">
