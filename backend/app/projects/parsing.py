@@ -97,6 +97,36 @@ def parse_xlsx(path: Path) -> tuple[list[Part], dict[str, Any]]:
     return parts, {"type": FileFormat.XLSX, "sheets": sheets}
 
 
+MAX_SHOWN_CELLS = 5000  # per sheet: the table view is for reading, not for huge data sheets
+
+
+def read_cells(path: Path) -> list[dict[str, Any]]:
+    """Every non-empty cell per sheet, numbers included, so the table view can show the sheet as it is.
+
+    Formulas show their last calculated value (none if the file was never opened in Excel); a number keeps the
+    decimals of its cell format, e.g. 2 for prices, and bold cells mark titles and column heads.
+    """
+    sheets: list[dict[str, Any]] = []
+    for ws in load_workbook(path, data_only=True).worksheets:
+        cells: list[dict[str, Any]] = []
+        for row in ws.iter_rows():
+            for c in row:
+                if c.value is None or c.value == "" or len(cells) >= MAX_SHOWN_CELLS:
+                    continue
+                number = isinstance(c.value, int | float) and not isinstance(c.value, bool)
+                decimals = len(m.group(1)) if number and (m := re.search(r"\.(0+)", c.number_format)) else 0
+                cells.append(
+                    {
+                        "ref": c.coordinate,
+                        "value": c.value if number else str(c.value),
+                        "decimals": decimals,
+                        "bold": getattr(c.font, "b", None) is True,  # openpyxl's style objects are untyped
+                    }
+                )
+        sheets.append({"name": ws.title, "cells": cells})
+    return sheets
+
+
 def write_xlsx(src: Path, dst: Path, repl: dict[tuple[str, str], str]) -> None:
     wb = load_workbook(src)
     for (sheet, cell), text in repl.items():

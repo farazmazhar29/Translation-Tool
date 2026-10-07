@@ -7,6 +7,7 @@ from conftest import Headers, docx_bytes, upload
 from docx import Document
 from fastapi.testclient import TestClient
 from openpyxl import Workbook, load_workbook
+from openpyxl.styles import Font
 from reportlab.pdfgen import canvas
 
 from app.core.config import settings
@@ -137,6 +138,33 @@ def test_xlsx_upload_creates_cell_segments(client: TestClient, translator: Heade
     project = upload(client, translator, "preise.xlsx", xlsx_bytes({"A1": "Der Griff ist weiß", "A2": 3}))
     detail = client.get(f"/api/projects/{project['id']}", headers=translator).json()
     assert [s["source_text"] for s in detail["segments"]] == ["Der Griff ist weiß"]
+
+
+def test_the_table_view_gets_every_cell_with_its_number_format(
+    client: TestClient, translator: Headers, tmp_path: Path
+) -> None:
+    wb = Workbook()
+    ws = wb.active
+    assert ws is not None
+    ws["A1"], ws["B1"], ws["C1"] = "Scharnier", 12.9, 2
+    ws["B1"].number_format = "#,##0.00"
+    ws["A1"].font = Font(bold=True)
+    path = tmp_path / "parts.xlsx"
+    wb.save(path)
+    project = upload(client, translator, "parts.xlsx", path.read_bytes())
+    sheets = client.get(f"/api/projects/{project['id']}/cells", headers=translator).json()
+    assert sheets == [
+        {
+            "name": "Sheet",
+            "cells": [
+                {"ref": "A1", "value": "Scharnier", "decimals": 0, "bold": True},
+                {"ref": "B1", "value": 12.9, "decimals": 2, "bold": False},
+                {"ref": "C1", "value": 2, "decimals": 0, "bold": False},
+            ],
+        }
+    ]
+    word = upload(client, translator, "w.docx", docx_bytes("Der Griff ist weiß und aus Metall."))
+    assert client.get(f"/api/projects/{word['id']}/cells", headers=translator).status_code == 400
 
 
 @pytest.mark.parametrize(

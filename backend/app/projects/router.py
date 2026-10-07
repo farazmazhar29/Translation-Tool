@@ -13,13 +13,13 @@ from sqlalchemy import or_
 from app.accounts.security import Admin, Me, Translator
 from app.core.config import settings
 from app.core.db import DB
-from app.core.enums import AUTO, ArchiveFilter, Lang, ProjectStatus
+from app.core.enums import AUTO, ArchiveFilter, FileFormat, Lang, ProjectStatus
 from app.export.models import ExportFile
 from app.projects import parsing
 from app.projects.language import detect_language, target_languages
 from app.projects.models import Project, Segment, Translation
 from app.projects.queries import get_project
-from app.projects.schemas import ProjectDetail, ProjectOut, ProjectPatch
+from app.projects.schemas import ProjectDetail, ProjectOut, ProjectPatch, SheetOut
 from app.review.models import Release
 
 router = APIRouter(prefix="/api/projects", tags=["Projects"])
@@ -221,3 +221,11 @@ def delete_project(db: DB, _: Admin, pid: int) -> dict[str, bool]:
 def download_original(db: DB, _: Me, pid: int) -> FileResponse:
     p = get_project(db, pid)
     return FileResponse(p.file_path, filename=p.filename)
+
+
+@router.get("/{pid}/cells", summary="All non-empty cells of an Excel project, for the table view")
+def sheet_cells(db: DB, _: Me, pid: int) -> list[SheetOut]:
+    p = get_project(db, pid)
+    if p.file_type != FileFormat.XLSX:
+        raise HTTPException(400, "Nur Excel-Projekte haben Tabellenblätter.")
+    return [SheetOut.model_validate(sheet) for sheet in parsing.read_cells(Path(p.file_path))]

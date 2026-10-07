@@ -70,6 +70,18 @@ class ProjectPatch(BaseModel):
     source_lang: SourceLang | None = None
 
 
+class CellOut(BaseModel):
+    ref: str = Field(description='Cell coordinate, e.g. "B5"; text cells match a segment locator "cell"')
+    value: str | float
+    decimals: int = Field(default=0, description="Decimals of the cell's number format")
+    bold: bool = False
+
+
+class SheetOut(BaseModel):
+    name: str
+    cells: list[CellOut]
+
+
 class JobStatus(ORM):
     job_state: JobState
     job_progress: int
