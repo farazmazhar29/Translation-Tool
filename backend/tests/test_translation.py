@@ -134,19 +134,15 @@ def wait_for_job(client: TestClient, headers: Headers, pid: int) -> dict[str, ob
 
 
 def test_undetectable_language_asks_the_user_to_choose(client: TestClient, translator: Headers) -> None:
-    pid = upload(client, translator, "n.docx", docx_bytes("Korpus Frontblende Scharnier Sockelblende"))["id"]
-    assert client.post(f"/api/projects/{pid}/translate", headers=translator).status_code == 200
-    status = wait_for_job(client, translator, pid)
-    assert status["job_state"] == "error"
-    assert "Ausgangssprache" in str(status["job_error"])
-    # choosing the language manually fixes it
-    assert (
-        client.post(
-            f"/api/projects/{pid}/translate", headers=translator, json={"source_lang": "de", "target_langs": ["en"]}
-        ).status_code
-        == 200
-    )
-    assert wait_for_job(client, translator, pid)["job_state"] == "done"
+    project = upload(client, translator, "n.docx", docx_bytes("Korpus Frontblende Scharnier Sockelblende"))
+    assert project["target_langs"] == []  # no target while the source is unknown
+    r = client.post(f"/api/projects/{project['id']}/translate", headers=translator)
+    assert r.status_code == 400
+    assert "Ausgangssprache" in r.json()["detail"]
+    # choosing the language manually fixes it, and the other language becomes the target
+    r = client.post(f"/api/projects/{project['id']}/translate", headers=translator, json={"source_lang": "de"})
+    assert (r.status_code, r.json()["target_langs"]) == (200, ["en"])
+    assert wait_for_job(client, translator, project["id"])["job_state"] == "done"
 
 
 def test_provider_errors_are_shown_to_the_user(
@@ -170,11 +166,14 @@ def test_a_second_translation_cannot_start_while_one_is_running(
     assert client.post(f"/api/projects/{translated_project}/translate", headers=translator).status_code == 409
 
 
-def test_translating_without_target_languages_is_rejected(
-    client: TestClient, translator: Headers, translated_project: int
-) -> None:
-    r = client.post(f"/api/projects/{translated_project}/translate", headers=translator, json={"target_langs": []})
-    assert r.status_code == 400
+def test_the_target_is_always_the_other_language(client: TestClient, translator: Headers) -> None:
+    german = upload(client, translator, "de.docx", docx_bytes("Der Korpus ist aus Eiche und die Front ist weiß."))
+    assert (german["detected_lang"], german["target_langs"]) == ("de", ["en"])
+    english = upload(client, translator, "en.docx", docx_bytes("The carcass is made of oak and the front is white."))
+    assert (english["detected_lang"], english["target_langs"]) == ("en", ["de"])
+    # a target list sent by an older client is ignored
+    r = client.post(f"/api/projects/{german['id']}/translate", headers=translator, json={"target_langs": ["de", "en"]})
+    assert r.json()["target_langs"] == ["en"]
 
 
 def test_a_restart_marks_interrupted_jobs_as_failed(

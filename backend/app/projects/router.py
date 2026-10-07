@@ -16,7 +16,7 @@ from app.core.db import DB
 from app.core.enums import AUTO, ArchiveFilter, Lang, ProjectStatus
 from app.export.models import ExportFile
 from app.projects import parsing
-from app.projects.language import detect_language
+from app.projects.language import detect_language, target_languages
 from app.projects.models import Project, Segment, Translation
 from app.projects.queries import get_project
 from app.projects.schemas import ProjectDetail, ProjectOut, ProjectPatch
@@ -92,8 +92,7 @@ def create_project(
     file: Annotated[UploadFile, File()],
     name: Annotated[str, Form()] = "",
     customer: Annotated[str, Form()] = "",
-    source_lang: Annotated[str, Form()] = AUTO,
-    target_langs: Annotated[str, Form(description="comma separated, e.g. 'en,de'")] = "",
+    source_lang: Annotated[str, Form(description="'auto', 'de' or 'en'; the target is always the other one")] = AUTO,
 ) -> Project:
     filename = Path(file.filename or "upload").name[:255]  # display name only; the stored file gets a random name
     if source_lang != AUTO and source_lang not in list(Lang):
@@ -117,7 +116,6 @@ def create_project(
         stored.unlink(missing_ok=True)
         raise HTTPException(400, "In der Datei wurde kein übersetzbarer Text gefunden.")
     detected = detect_language([p.text for p in parts])
-    targets = [t for t in target_langs.split(",") if t in list(Lang)] or [next(x for x in Lang if x != detected)]
     project = Project(
         name=(name.strip() or Path(filename).stem)[:200],
         customer=customer.strip()[:200],
@@ -126,7 +124,7 @@ def create_project(
         file_type=ftype,
         source_lang=source_lang,
         detected_lang=detected,
-        target_langs=targets,
+        target_langs=target_languages(detected if source_lang == AUTO else source_lang),
         structure=structure,
         created_by=user.username,
         segments=[Segment(idx=i, locator=p.locator, source_text=p.text) for i, p in enumerate(parts)],
@@ -146,6 +144,7 @@ def patch_project(db: DB, _: Translator, pid: int, body: ProjectPatch) -> Projec
     p = get_project(db, pid)
     for key, value in body.model_dump(exclude_none=True).items():
         setattr(p, key, value)
+    p.target_langs = target_languages(p.source)  # follows a changed source language
     db.commit()
     return p
 

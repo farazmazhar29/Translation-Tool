@@ -94,6 +94,6 @@ def upload(client: TestClient, headers: Headers, filename: str, data: bytes, **f
 def translated_project(client: TestClient, translator: Headers) -> int:
     """A German project that was already translated (preview) to English with the mock provider."""
     text = "Der Korpus und die Frontblende sind weiß. Preis 49,90 EUR, Artikel UK-4711."
-    pid: int = upload(client, translator, "fixture.docx", docx_bytes("Montageanleitung", text), target_langs="en")["id"]
+    pid: int = upload(client, translator, "fixture.docx", docx_bytes("Montageanleitung", text))["id"]
     assert client.post(f"/api/projects/{pid}/translate", headers=translator).status_code == 200
     return pid

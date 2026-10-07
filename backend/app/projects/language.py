@@ -4,6 +4,12 @@ import re
 
 from app.core.enums import Lang
 
+
+def target_languages(source: str) -> list[str]:
+    """With two languages the target is always the other one; none while the source is still unknown."""
+    return [lang for lang in Lang if lang != source] if source in list(Lang) else []
+
+
 STOPWORDS = {
     Lang.DE: set(
         "der die das und ist nicht mit für auf den dem ein eine zu von im auch sich des wird sind bei nach oder".split()

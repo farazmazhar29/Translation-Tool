@@ -25,7 +25,7 @@ def post(client: TestClient, headers: Headers, pid: int, action: str, **kwargs: 
 def test_actions_are_only_allowed_in_the_right_state(
     client: TestClient, translator: Headers, reviewer: Headers
 ) -> None:
-    pid = upload(client, translator, "sm.docx", docx_bytes("Montage", BODY), target_langs="en")["id"]
+    pid = upload(client, translator, "sm.docx", docx_bytes("Montage", BODY))["id"]
     assert status_of(client, translator, pid) == "new"
     assert post(client, reviewer, pid, "approve") == 409  # nothing to review yet
     assert post(client, translator, pid, "export", json={"lang": "en", "format": "docx"}) == 409
@@ -57,21 +57,10 @@ def test_reviewers_may_approve_straight_from_preview(
     assert post(client, reviewer, translated_project, "approve") == 200
 
 
-def test_a_source_language_target_does_not_block_approval(
-    client: TestClient, translator: Headers, reviewer: Headers
-) -> None:
-    """Ticking German as a target of a German document must not demand a German 'translation'."""
-    pid = upload(client, translator, "both.docx", docx_bytes("Montage", BODY), target_langs="de,en")["id"]
-    post(client, translator, pid, "translate")
-    assert post(client, reviewer, pid, "approve") == 200
-    quality = client.get(f"/api/projects/{pid}/quality", headers=translator).json()
-    assert all(w["lang"] == "en" for w in quality["warnings"])
-
-
 def test_approval_needs_a_translation_for_every_segment(
     client: TestClient, translator: Headers, reviewer: Headers
 ) -> None:
-    pid = upload(client, translator, "u.docx", docx_bytes("Montage", BODY), target_langs="en")["id"]
+    pid = upload(client, translator, "u.docx", docx_bytes("Montage", BODY))["id"]
     client.put(f"/api/projects/{pid}/../{pid}", headers=translator)  # no-op, keeps the project untouched
     assert post(client, reviewer, pid, "approve") == 409  # never translated (status new)
     post(client, translator, pid, "translate")

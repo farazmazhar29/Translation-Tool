@@ -45,7 +45,7 @@ class ProjectOut(ORM):
     file_type: FileFormat
     source_lang: str
     detected_lang: str
-    target_langs: list[str]
+    target_langs: list[str] = Field(description="Always the other language; empty while the source is unknown")
     status: ProjectStatus
     archived: bool
     job_state: JobState
@@ -68,7 +68,6 @@ class ProjectPatch(BaseModel):
     name: str | None = Field(None, min_length=1, max_length=200)
     customer: str | None = Field(None, max_length=200)
     source_lang: SourceLang | None = None
-    target_langs: list[Lang] | None = None
 
 
 class JobStatus(ORM):

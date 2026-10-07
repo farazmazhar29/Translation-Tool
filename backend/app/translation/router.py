@@ -7,6 +7,7 @@ from fastapi import APIRouter, BackgroundTasks, HTTPException
 from app.accounts.security import Me, Translator
 from app.core.db import DB
 from app.core.enums import JobState, TermCategory
+from app.projects.language import target_languages
 from app.projects.models import Project, Segment, Translation
 from app.projects.queries import editable, get_project, get_segment
 from app.projects.schemas import JobStatus, ProjectOut, SegmentEdit, SegmentOut
@@ -25,10 +26,9 @@ def start_translation(db: DB, _: Translator, pid: int, bg: BackgroundTasks, body
         raise HTTPException(409, "Übersetzung läuft bereits.")
     if body and body.source_lang:
         p.source_lang = body.source_lang
-    if body and body.target_langs is not None:
-        p.target_langs = list(body.target_langs)
+    p.target_langs = target_languages(p.source)
     if not p.target_langs:
-        raise HTTPException(400, "Bitte mindestens eine Zielsprache wählen.")
+        raise HTTPException(400, "Die Ausgangssprache wurde nicht erkannt. Bitte Deutsch oder Englisch wählen.")
     p.job_state, p.job_progress, p.job_error = JobState.RUNNING, 0, ""
     db.commit()
     bg.add_task(run_project_translation, pid)
@@ -78,6 +78,7 @@ def retranslate(db: DB, _: Translator, sid: int, lang: str) -> Segment:
 def replace_term(db: DB, user: Translator, pid: int, body: TermReplace) -> dict[str, int]:
     p = editable(get_project(db, pid))
     pat = re.compile(rf"(?<!\w){re.escape(body.old)}(?!\w)", re.I)
+
     changed = 0
     for seg in p.segments:
         tr = seg.translation(body.lang)

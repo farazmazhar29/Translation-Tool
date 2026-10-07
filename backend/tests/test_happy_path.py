@@ -44,7 +44,7 @@ def test_upload_rejects_unsupported(client: TestClient, translator: Headers) -> 
 
 
 def test_full_workflow(client: TestClient, translator: Headers, reviewer: Headers) -> None:
-    p = upload(client, translator, "anleitung.docx", make_docx(), name="Test", customer="ACME", target_langs="en")
+    p = upload(client, translator, "anleitung.docx", make_docx(), name="Test", customer="ACME")
     assert p["detected_lang"] == "de"
     assert p["target_langs"] == ["en"]
     assert p["status"] == "new"
@@ -104,7 +104,7 @@ def test_full_workflow(client: TestClient, translator: Headers, reviewer: Header
 
 
 def test_xlsx_project_and_custom_columns(client: TestClient, translator: Headers, reviewer: Headers) -> None:
-    pid = upload(client, translator, "preise.xlsx", make_xlsx(), target_langs="en")["id"]
+    pid = upload(client, translator, "preise.xlsx", make_xlsx())["id"]
     client.post(f"/api/projects/{pid}/translate", headers=translator)
     client.post(f"/api/projects/{pid}/approve", headers=reviewer)
     cfg = {"source_col": "B", "target_col": "D", "start_row": 3, "sheet_name": "Export"}

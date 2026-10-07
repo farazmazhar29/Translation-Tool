@@ -93,7 +93,6 @@ def test_word_export_keeps_the_original_formatting(client: TestClient, translato
         translator,
         "fmt.docx",
         docx_bytes("Der Korpus ist weiß und die Tür ist neu.", bold_first=True),
-        target_langs="en",
     )["id"]
     client.post(f"/api/projects/{pid}/translate", headers=translator)
     client.post(f"/api/projects/{pid}/approve", headers=reviewer)
@@ -283,7 +282,7 @@ def test_same_filename_in_two_projects_never_overwrites_an_export(
     """Regression: exports used to be stored as <filename>_<lang>_<mode>.<ext>, so equal filenames collided."""
     ids: list[int] = []
     for text in ("Der Korpus ist weiß und gut.", "Die Frontblende ist neu und gut."):
-        pid = upload(client, translator, "plan.docx", docx_bytes(text), target_langs="en")["id"]
+        pid = upload(client, translator, "plan.docx", docx_bytes(text))["id"]
         client.post(f"/api/projects/{pid}/translate", headers=translator)
         client.post(f"/api/projects/{pid}/approve", headers=reviewer)
         ids.append(export(client, translator, pid)["id"])
@@ -307,7 +306,7 @@ def test_same_filename_in_two_projects_never_overwrites_an_export(
 def test_download_names_are_sanitised_user_input(
     client: TestClient, translator: Headers, reviewer: Headers, filename: str, expected: str
 ) -> None:
-    pid = upload(client, translator, filename, docx_bytes("Der Korpus ist weiß und gut."), target_langs="en")["id"]
+    pid = upload(client, translator, filename, docx_bytes("Der Korpus ist weiß und gut."))["id"]
     client.post(f"/api/projects/{pid}/translate", headers=translator)
     client.post(f"/api/projects/{pid}/approve", headers=reviewer)
     assert export(client, translator, pid)["filename"] == expected
@@ -335,7 +334,7 @@ def test_a_german_translation_gets_german_headings_and_a_german_report(
     client: TestClient, translator: Headers, reviewer: Headers
 ) -> None:
     body = "The carcass is white. Price 49.90 EUR."
-    pid: int = upload(client, translator, "en.docx", docx_bytes("Assembly", body), target_langs="de")["id"]
+    pid: int = upload(client, translator, "en.docx", docx_bytes("Assembly", body))["id"]
     client.post(f"/api/projects/{pid}/translate", headers=translator)
     client.post(f"/api/projects/{pid}/approve", headers=reviewer)
     content = download(

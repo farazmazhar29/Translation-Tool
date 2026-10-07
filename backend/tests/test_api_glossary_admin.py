@@ -174,7 +174,7 @@ def test_rejected_entries_are_not_used_by_the_translation(
     term = word()
     created = create(client, reviewer, entry(term, f"{term}-english"))
     client.post(f"/api/glossary/{created['id']}/status", headers=reviewer, params={"status": "rejected"})
-    pid = upload(client, translator, "g.docx", docx_bytes(f"Der {term} ist weiß und gut."), target_langs="en")["id"]
+    pid = upload(client, translator, "g.docx", docx_bytes(f"Der {term} ist weiß und gut."))["id"]
     client.post(f"/api/projects/{pid}/translate", headers=translator)
     terms = client.get(f"/api/projects/{pid}", headers=translator).json()["segments"][0]["translations"]["en"]["terms"]
     assert term not in [t["source"] for t in terms if t["category"] == "glossary"]

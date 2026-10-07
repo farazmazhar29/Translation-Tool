@@ -21,7 +21,6 @@ def token() -> str:
 
 
 def make(client: TestClient, headers: Headers, **form: str) -> dict[str, Any]:
-    form = {"target_langs": "en"} | form
     return upload(client, headers, form.pop("filename", "doc.docx"), docx_bytes("Der Korpus ist weiß und gut."), **form)
 
 
@@ -75,9 +74,7 @@ def test_archived_projects_are_hidden_by_default(client: TestClient, translator:
 
 def test_search_inside_original_and_translated_text(client: TestClient, translator: Headers, reviewer: Headers) -> None:
     t = token()
-    pid = upload(
-        client, translator, "t.docx", docx_bytes(f"Der Korpus {t}marker ist weiß und gut."), name=t, target_langs="en"
-    )["id"]
+    pid = upload(client, translator, "t.docx", docx_bytes(f"Der Korpus {t}marker ist weiß und gut."), name=t)["id"]
     assert [r["id"] for r in listing(client, translator, term=f"{t}marker")] == [pid]  # original text
     client.post(f"/api/projects/{pid}/translate", headers=translator)
     assert [r["id"] for r in listing(client, translator, term="carcass", q=t)] == [pid]  # translated text
@@ -126,21 +123,19 @@ def test_rename_and_change_languages(client: TestClient, translator: Headers) ->
     r = client.patch(
         f"/api/projects/{pid}",
         headers=translator,
-        json={"name": "Neu", "customer": "ACME", "source_lang": "de", "target_langs": ["en", "de"]},
+        json={"name": "Neu", "customer": "ACME", "source_lang": "en", "target_langs": ["en", "de"]},
     )
     assert r.status_code == 200
+    # the target is not chosen: it is always the other language, and follows the source
     assert (r.json()["name"], r.json()["customer"], r.json()["source_lang"], r.json()["target_langs"]) == (
         "Neu",
         "ACME",
-        "de",
-        ["en", "de"],
+        "en",
+        ["de"],
     )
 
 
-@pytest.mark.parametrize(
-    "body",
-    [{"name": ""}, {"name": "x" * 201}, {"source_lang": "fr"}, {"target_langs": ["xx"]}, {"target_langs": "en"}],
-)
+@pytest.mark.parametrize("body", [{"name": ""}, {"name": "x" * 201}, {"source_lang": "fr"}])
 def test_invalid_project_changes_are_rejected(client: TestClient, translator: Headers, body: dict[str, Any]) -> None:
     pid = make(client, translator)["id"]
     assert client.patch(f"/api/projects/{pid}", headers=translator, json=body).status_code == 422
@@ -148,12 +143,6 @@ def test_invalid_project_changes_are_rejected(client: TestClient, translator: He
 
 def test_translating_with_an_unknown_language_is_rejected(client: TestClient, translator: Headers) -> None:
     pid = make(client, translator)["id"]
-    assert (
-        client.post(
-            f"/api/projects/{pid}/translate", headers=translator, json={"target_langs": ["klingon"]}
-        ).status_code
-        == 422
-    )
     assert (
         client.post(f"/api/projects/{pid}/translate", headers=translator, json={"source_lang": "klingon"}).status_code
         == 422
@@ -203,7 +192,7 @@ def test_reopening_an_archived_project(client: TestClient, translator: Headers, 
 
 def test_download_the_original_file(client: TestClient, translator: Headers) -> None:
     data = docx_bytes("Der Korpus ist weiß und gut.")
-    pid = upload(client, translator, "Mein Original.docx", data, target_langs="en")["id"]
+    pid = upload(client, translator, "Mein Original.docx", data)["id"]
     r = client.get(f"/api/projects/{pid}/original", headers=translator)
     assert r.content == data
     assert quote("Mein Original.docx") in r.headers["content-disposition"]

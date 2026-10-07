@@ -29,7 +29,7 @@ def counted_statements() -> Generator[list[str]]:
 
 def test_project_endpoints_use_a_constant_number_of_queries(client: TestClient, translator: Headers) -> None:
     paragraphs = [f"Der Korpus Nummer {i} ist weiß." for i in range(PARAGRAPHS)]
-    pid: int = upload(client, translator, "many.docx", docx_bytes(*paragraphs), target_langs="en")["id"]
+    pid: int = upload(client, translator, "many.docx", docx_bytes(*paragraphs))["id"]
     assert client.post(f"/api/projects/{pid}/translate", headers=translator).status_code == 200
 
     for path in (f"/api/projects/{pid}", f"/api/projects/{pid}/quality"):

@@ -7,7 +7,7 @@ from fastapi import APIRouter
 from app.accounts.security import Admin, Me
 from app.core.config import settings
 from app.core.db import DB
-from app.core.enums import AUTO, ExportMode, FileFormat, Lang, TermCategory
+from app.core.enums import AUTO, ExportMode, FileFormat, TermCategory
 from app.preferences.models import AppSetting
 from app.preferences.schemas import SettingsOut
 
@@ -17,7 +17,6 @@ DEFAULTS: dict[str, Any] = {
     "llm_provider": settings.llm_provider,
     "llm_model": settings.gemini_model,
     "default_source_lang": AUTO,
-    "default_target_langs": [Lang.EN],
     "default_export_format": FileFormat.DOCX,
     "default_export_mode": ExportMode.TRANSLATION,
     "colors": {
