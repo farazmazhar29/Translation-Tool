@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from 'react'
-import type { Lang } from '../api/client'
+import type { Lang } from '@/shared/api/generated'
 import { LANGS } from '../constants'
 import { input, type Option } from '../lib/ui'
 import { Label } from './ui'

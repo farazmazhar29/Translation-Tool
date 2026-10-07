@@ -1,9 +1,9 @@
-import type { Lang, Role, S } from './api/client'
+import type { Lang, Role, Term } from './api/generated'
 
 /** Values the API uses. Their labels are translated: see `shared/i18n` (`lang.*`, `status.*`, ...). */
 export const LANGS: readonly Lang[] = ['de', 'en']
 export const ROLES: readonly Role[] = ['translator', 'reviewer', 'admin']
-export const TERM_CATEGORIES: readonly S['Term']['category'][] = [
+export const TERM_CATEGORIES: readonly Term['category'][] = [
   'technical',
   'glossary',
   'ambiguous',
@@ -12,6 +12,10 @@ export const TERM_CATEGORIES: readonly S['Term']['category'][] = [
 ]
 export const EXPORT_FORMATS = ['docx', 'xlsx', 'pdf'] as const
 export const EXPORT_MODES = ['translation', 'both'] as const
+
+/** Whether a string from a form or a setting is one of the allowed values (and has their type). */
+export const isOneOf = <T extends string>(values: readonly T[], value: string): value is T =>
+  (values as readonly string[]).includes(value)
 
 /** Colours per project status: `chip` for the badge, `dot` for the small circle in it (and the workflow steps). */
 export const STATUS_STYLE = {

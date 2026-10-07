@@ -1,11 +1,12 @@
-import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { download, get, post, type S } from '@/shared/api/client'
-import { EXPORT_FORMATS, EXPORT_MODES } from '@/shared/constants'
+import type { ProjectOut } from '@/shared/api/generated'
+import { EXPORT_FORMATS, EXPORT_MODES, isOneOf } from '@/shared/constants'
+import { ExportService } from '../api/ExportService'
 import { COLUMN, defaultLayout } from '../constants'
-import { useAction, useFields } from '@/shared/lib/hooks'
-import { optionsOf, useSettings, type Option } from '@/shared/lib/ui'
+import { useFields } from '@/shared/lib/hooks'
+import { optionsOf, type Option } from '@/shared/lib/ui'
+import { SettingsService } from '@/shared/api/services/SettingsService'
 import { Checkbox, SelectField, TextField } from '@/shared/components/form'
 import { Btn, ErrorText, Modal } from '@/shared/components/ui'
 
@@ -18,13 +19,13 @@ export const ExportDialog = ({
   onClose,
   onDone,
 }: {
-  project: S['ProjectOut']
+  project: ProjectOut
   lang: string
   onClose: () => void
   onDone: () => void
 }) => {
   const { t } = useTranslation(['projects', 'common'])
-  const settings = useSettings()
+  const { data: settings } = SettingsService.useFetchSettings()
   const { values: o, set } = useFields({
     format: settings?.default_export_format ?? 'docx',
     mode: settings?.default_export_mode ?? 'translation',
@@ -38,34 +39,11 @@ export const ExportDialog = ({
     set: setLayoutField,
   } = useFields<Layout>(defaultLayout(t('export.sheetName')))
   const [templateName, setTemplateName] = useState('')
-  const { data: templates = [] } = useQuery({
-    queryKey: ['templates'],
-    queryFn: () => get<S['TemplateOut'][]>('/export-templates'),
+  const { data: templates = [] } = ExportService.useFetchTemplates()
+  const run = ExportService.useExportProject(onDone)
+  const saveTemplate = ExportService.useCreateTemplate(() => {
+    setTemplateName('')
   })
-  const run = useAction(
-    async () => {
-      const file = await post<S['ExportFileOut']>(`/projects/${project.id}/export`, {
-        lang, // the project's target language: the only one there is
-        format: o.format,
-        mode: o.mode,
-        include_report: o.report,
-        include_comments: o.comments,
-        archive_after: o.archive,
-        config: o.format === 'xlsx' ? { ...layout } : null,
-      })
-      await download(`/exports/${file.id}/download`, file.filename)
-    },
-    { onSuccess: onDone },
-  )
-  const saveTemplate = useAction(
-    () => post('/export-templates', { name: templateName, format: 'xlsx', config: { ...layout } }),
-    {
-      invalidate: ['templates'],
-      onSuccess: () => {
-        setTemplateName('')
-      },
-    },
-  )
   const applyTemplate = (id: string): void => {
     const template = templates.find((tpl) => String(tpl.id) === id)
     if (template) setLayout({ ...defaultLayout(t('export.sheetName')), ...(template.config as Partial<Layout>) })
@@ -156,7 +134,7 @@ export const ExportDialog = ({
               <Btn
                 disabled={!templateName.trim() || saveTemplate.isPending}
                 onClick={() => {
-                  saveTemplate.mutate()
+                  saveTemplate.mutate({ name: templateName, format: 'xlsx', config: { ...layout } })
                 }}
               >
                 {t('export.saveTemplate')}
@@ -171,7 +149,18 @@ export const ExportDialog = ({
           variant="primary"
           disabled={run.isPending}
           onClick={() => {
-            run.mutate()
+            run.mutate({
+              pid: project.id,
+              request: {
+                lang, // the project's target language: the only one there is
+                format: isOneOf(EXPORT_FORMATS, o.format) ? o.format : 'docx',
+                mode: isOneOf(EXPORT_MODES, o.mode) ? o.mode : 'translation',
+                include_report: o.report,
+                include_comments: o.comments,
+                archive_after: o.archive,
+                config: o.format === 'xlsx' ? { ...layout } : null,
+              },
+            })
           }}
         >
           {run.isPending ? t('export.generating') : t('export.run')}

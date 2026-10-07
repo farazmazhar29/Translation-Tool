@@ -1,4 +1,3 @@
-import { useQuery } from '@tanstack/react-query'
 import {
   CheckCircle2,
   ChevronRight,
@@ -12,10 +11,10 @@ import {
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/features/auth'
-import { get, type S } from '@/shared/api/client'
 import { EmptyState, Loading, PageHeader } from '@/shared/components/layout'
 import { Card, LinkBtn, StatusBadge } from '@/shared/components/ui'
 import { fmtDate, fmtDay } from '@/shared/lib/ui'
+import { ProjectService } from '../api/ProjectService'
 
 const Tile = ({ label, value, icon: Icon }: { label: string; value: number; icon: LucideIcon }) => (
   <div className="flex items-center gap-4 rounded-2xl border border-line bg-white p-5 shadow-card">
@@ -33,7 +32,7 @@ const Dashboard = () => {
   const { t } = useTranslation('projects')
   const { user } = useAuth()
   const name = user ? user.full_name || user.username : ''
-  const { data: d } = useQuery({ queryKey: ['dashboard'], queryFn: () => get<S['DashboardOut']>('/dashboard') })
+  const { data: d } = ProjectService.useFetchDashboard()
   if (!d) return <Loading />
   const stats = d.stats
   const days = Object.entries(stats.releases_per_day)

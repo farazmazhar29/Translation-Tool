@@ -1,11 +1,11 @@
 import { createContext, use } from 'react'
-import type { S } from '@/shared/api/client'
+import type { RegisterIn, UserOut } from '@/shared/api/generated'
 
 interface Auth {
-  user: S['UserOut'] | null
+  user: UserOut | null
   loading: boolean
   login: (username: string, password: string) => Promise<void>
-  register: (body: S['RegisterIn']) => Promise<void>
+  register: (body: RegisterIn) => Promise<void>
   logout: () => void
 }
 

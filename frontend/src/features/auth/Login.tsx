@@ -1,12 +1,12 @@
-import { useQuery } from '@tanstack/react-query'
 import { CheckCircle2, UserPlus } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
-import { get, type S } from '@/shared/api/client'
 import { TextField } from '@/shared/components/form'
 import { Form } from '@/shared/components/layout'
 import { LinkBtn } from '@/shared/components/ui'
-import { useAction, useFields } from '@/shared/lib/hooks'
+import { useMutation } from '@/shared/api/base'
+import { useFields } from '@/shared/lib/hooks'
+import { AuthService } from './api/AuthService'
 import { AuthLayout } from './AuthLayout'
 import { useAuth } from './auth-context'
 
@@ -17,11 +17,8 @@ const Login = () => {
   const state: unknown = useLocation().state // set by the registration page
   const justRegistered = typeof state === 'object' && state !== null && 'registered' in state
   const { values, set } = useFields({ username: '', password: '' })
-  const signIn = useAction(() => login(values.username, values.password), { onSuccess: () => void navigate('/') })
-  const { data: options } = useQuery({
-    queryKey: ['auth-options'],
-    queryFn: () => get<S['AuthOptions']>('/auth/options'),
-  })
+  const signIn = useMutation(() => login(values.username, values.password), { onSuccess: () => void navigate('/') })
+  const { data: options } = AuthService.useFetchAuthOptions()
   if (user) return <Navigate to="/" replace />
   return (
     <AuthLayout title={t('title')} subtitle={t('subtitle')}>

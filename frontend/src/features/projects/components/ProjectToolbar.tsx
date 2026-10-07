@@ -1,7 +1,10 @@
 import { Check, Download, History, RotateCcw, ShieldCheck } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@/features/auth'
-import { can, get, post, type S } from '@/shared/api/client'
+import { can } from '@/shared/api/session'
+import type { ProjectDetail } from '@/shared/api/generated'
+import { ProjectService } from '../api/ProjectService'
+import { QualityService } from '../api/QualityService'
 import { useConfirm } from '@/shared/components/confirm'
 import { Btn } from '@/shared/components/ui'
 import { SEV } from '../constants'
@@ -20,7 +23,7 @@ export const ProjectToolbar = ({
   onPanel,
   onExport,
 }: {
-  project: S['ProjectDetail']
+  project: ProjectDetail
   panel: Panel
   editable: boolean
   run: Run
@@ -34,7 +37,7 @@ export const ProjectToolbar = ({
   const isTranslator = can(user, 'translator')
   const isReviewer = can(user, 'reviewer')
   const approve = async (): Promise<void> => {
-    const { warnings } = await get<S['QualityOut']>(`/projects/${id}/quality`)
+    const { warnings } = await QualityService.getQuality(id)
     // Hints (severity "info") are advice and stay in the quality check; only real problems are worth a question,
     // and not the ones the reviewer already looked at and accepted.
     const problems = warnings.filter((w) => w.severity !== 'info' && !w.accepted)
@@ -79,10 +82,7 @@ export const ProjectToolbar = ({
           </div>
         ),
     })
-    if (approved) run(() => post(`/projects/${id}/approve`))
-  }
-  const step = (path: string) => () => {
-    run(() => post(`/projects/${id}/${path}`))
+    if (approved) run(() => ProjectService.approve(id))
   }
   return (
     <>
@@ -124,7 +124,11 @@ export const ProjectToolbar = ({
           </Btn>
         )}
         {isTranslator && p.status === 'approved' && (
-          <Btn onClick={step('reopen')}>
+          <Btn
+            onClick={() => {
+              run(() => ProjectService.reopen(id))
+            }}
+          >
             <RotateCcw className={icon} aria-hidden="true" />
             {t('view.reopen')}
           </Btn>

@@ -2,13 +2,13 @@ import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { HttpResponse, http } from 'msw'
 import { describe, expect, it, vi } from 'vitest'
-import type { S } from '@/shared/api/client'
+import type { GlossaryOut, Term } from '@/shared/api/generated'
 import { segment, term } from '@/testing/fixtures'
 import { renderApp } from '@/testing/render'
 import { server } from '@/testing/server'
 import { TermDialog } from '../components/TermDialog'
 
-const entry: S['GlossaryOut'] = {
+const entry: GlossaryOut = {
   id: 5,
   terms: { de: 'Korpus', en: 'carcass' },
   synonyms: {},
@@ -21,16 +21,16 @@ const entry: S['GlossaryOut'] = {
   updated_at: '2026-10-01T10:00:00',
 }
 
-const setup = (over: { term?: Partial<S['Term']>; editable?: boolean } = {}) => {
+const setup = (over: { term?: Partial<Term>; editable?: boolean } = {}) => {
   const props = {
     term: term({ glossary_id: 5, description: 'Tragender Kasten', alternatives: ['cabinet body'], ...over.term }),
     seg: segment(),
     lang: 'en',
     src: 'de',
-    projectId: 1,
     editable: over.editable ?? true,
     onClose: vi.fn(),
     onSegmentText: vi.fn(),
+    onReplaceEverywhere: vi.fn(() => Promise.resolve()),
     onChanged: vi.fn(),
   }
   server.use(http.get('*/api/glossary', () => HttpResponse.json([entry])))
@@ -55,14 +55,7 @@ describe('TermDialog', () => {
     expect(p.onClose).toHaveBeenCalled()
   })
 
-  it('replaces a term in the whole project through the API', async () => {
-    let body: Record<string, unknown> = {}
-    server.use(
-      http.post('*/api/projects/1/replace-term', async ({ request }) => {
-        body = (await request.json()) as Record<string, unknown>
-        return HttpResponse.json({ replaced_in_segments: 3 })
-      }),
-    )
+  it('replaces a term in the whole project through the function the project page passes', async () => {
     const p = setup()
     const input = screen.getByLabelText('Neue Übersetzung')
     await userEvent.clear(input)
@@ -71,7 +64,7 @@ describe('TermDialog', () => {
     await waitFor(() => {
       expect(p.onChanged).toHaveBeenCalled()
     })
-    expect(body).toEqual({ lang: 'en', old: 'carcass', new: 'body' })
+    expect(p.onReplaceEverywhere).toHaveBeenCalledWith('carcass', 'body')
   })
 
   it('disables replacing until the text actually changed', () => {

@@ -1,19 +1,21 @@
 import { useTranslation } from 'react-i18next'
-import { can, put, type S } from '@/shared/api/client'
+import { can } from '@/shared/api/session'
+import type { SettingsOut } from '@/shared/api/generated'
 import { EXPORT_FORMATS, EXPORT_MODES, TERM_CATEGORIES } from '@/shared/constants'
 import { useAuth } from '@/features/auth'
 import { SelectField, TextField } from '@/shared/components/form'
 import { Loading, PageHeader } from '@/shared/components/layout'
 import { Btn, Card, ErrorText } from '@/shared/components/ui'
-import { useAction, useFields } from '@/shared/lib/hooks'
-import { optionsOf, useSettings } from '@/shared/lib/ui'
+import { SettingsService } from '@/shared/api/services/SettingsService'
+import { useFields } from '@/shared/lib/hooks'
+import { optionsOf } from '@/shared/lib/ui'
 import { PROVIDERS } from './constants'
 
-const SettingsForm = ({ initial }: { initial: S['SettingsOut'] }) => {
+const SettingsForm = ({ initial }: { initial: SettingsOut }) => {
   const { t } = useTranslation(['settings', 'common'])
   const { user } = useAuth()
   const { values: s, set } = useFields(initial)
-  const save = useAction(() => put<S['SettingsOut']>('/settings', { ...s }), { invalidate: ['settings'] })
+  const save = SettingsService.useUpdateSettings()
   const disabled = !can(user, 'admin')
   return (
     <div className="mx-auto max-w-2xl space-y-4">
@@ -74,7 +76,7 @@ const SettingsForm = ({ initial }: { initial: S['SettingsOut'] }) => {
           variant="primary"
           disabled={save.isPending}
           onClick={() => {
-            save.mutate()
+            save.mutate(s)
           }}
         >
           {save.isSuccess ? t('saved') : t('common:save')}
@@ -85,7 +87,7 @@ const SettingsForm = ({ initial }: { initial: S['SettingsOut'] }) => {
 }
 
 const Settings = () => {
-  const settings = useSettings()
+  const { data: settings } = SettingsService.useFetchSettings()
   return settings ? <SettingsForm initial={settings} /> : <Loading />
 }
 

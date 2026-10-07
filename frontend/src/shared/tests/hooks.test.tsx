@@ -1,8 +1,10 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, renderHook, waitFor } from '@testing-library/react'
+import { AxiosHeaders, type AxiosResponse } from 'axios'
 import type { ReactNode } from 'react'
 import { describe, expect, it, vi } from 'vitest'
-import { useAction, useFields, useInvalidate } from '../lib/hooks'
+import { useApiRequest, useMutation, useRefresh } from '@/shared/api/base'
+import { useFields } from '../lib/hooks'
 
 const setup = () => {
   const client = new QueryClient({ defaultOptions: { mutations: { retry: false } } })
@@ -13,10 +15,41 @@ const setup = () => {
   return { invalidate, wrapper }
 }
 
-describe('useInvalidate', () => {
+describe('useApiRequest', () => {
+  const response = <T,>(data: T): Promise<AxiosResponse<T>> =>
+    Promise.resolve({ data, status: 200, statusText: 'OK', headers: {}, config: { headers: new AxiosHeaders() } })
+
+  it('loads the data of the API answer and keeps it as state, post-processed', async () => {
+    const { wrapper } = setup()
+    const { result } = renderHook(
+      () =>
+        useApiRequest<number[], number>({
+          key: ['n'],
+          apiCall: () => response([1, 2, 3]),
+          postProcess: (d) => d.length,
+        }),
+      { wrapper },
+    )
+    expect(result.current.loading).toBe(true)
+    await waitFor(() => {
+      expect(result.current.data).toBe(3)
+    })
+    expect(result.current.loading).toBe(false)
+  })
+
+  it('does not load while preventRequest is set', () => {
+    const { wrapper } = setup()
+    const apiCall = vi.fn(() => response('x'))
+    const { result } = renderHook(() => useApiRequest({ key: ['p'], apiCall, preventRequest: true }), { wrapper })
+    expect(apiCall).not.toHaveBeenCalled()
+    expect(result.current.data).toBeUndefined()
+  })
+})
+
+describe('useRefresh', () => {
   it('refreshes every query that starts with one of the keys', async () => {
     const { invalidate, wrapper } = setup()
-    const { result } = renderHook(() => useInvalidate(['projects', 'users']), { wrapper })
+    const { result } = renderHook(() => useRefresh(['projects', 'users']), { wrapper })
     await act(async () => {
       await result.current()
     })
@@ -25,12 +58,12 @@ describe('useInvalidate', () => {
   })
 })
 
-describe('useAction', () => {
+describe('useMutation', () => {
   it('passes its argument to the function, refreshes the listed queries and then calls onSuccess', async () => {
     const { invalidate, wrapper } = setup()
     const onSuccess = vi.fn()
     const { result } = renderHook(
-      () => useAction((n: number) => Promise.resolve(n * 2), { invalidate: ['a', 'b'], onSuccess }),
+      () => useMutation((n: number) => Promise.resolve(n * 2), { invalidate: ['a', 'b'], onSuccess }),
       { wrapper },
     )
     act(() => {
@@ -47,7 +80,7 @@ describe('useAction', () => {
   it('works without arguments, options or invalidations', async () => {
     const { invalidate, wrapper } = setup()
     const run = vi.fn(() => Promise.resolve('fertig'))
-    const { result } = renderHook(() => useAction(run), { wrapper })
+    const { result } = renderHook(() => useMutation(run), { wrapper })
     act(() => {
       result.current.mutate()
     })
@@ -62,7 +95,7 @@ describe('useAction', () => {
     const { invalidate, wrapper } = setup()
     const onSuccess = vi.fn()
     const { result } = renderHook(
-      () => useAction(() => Promise.reject(new Error('kaputt')), { invalidate: ['x'], onSuccess }),
+      () => useMutation(() => Promise.reject(new Error('kaputt')), { invalidate: ['x'], onSuccess }),
       { wrapper },
     )
     act(() => {

@@ -22,7 +22,7 @@ const files = (dir: string): string[] =>
     entry.isDirectory() ? files(join(dir, entry.name)) : [join(dir, entry.name)],
   )
 
-const SKIPPED = ['/i18n/', '/testing/', '/tests/', 'schema.d.ts'] // texts, tests and generated code do not use keys
+const SKIPPED = ['/i18n/', '/testing/', '/tests/', '/generated/'] // texts, tests and generated code do not use keys
 
 const source = files(join(process.cwd(), 'src'))
   .map((path) => path.replaceAll(sep, '/'))

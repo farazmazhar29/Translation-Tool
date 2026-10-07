@@ -1,25 +1,25 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ApiError, can, post, put, type S } from '@/shared/api/client'
+import { ApiError } from '@/shared/api/config'
+import { can } from '@/shared/api/session'
+import type { GlossaryOut } from '@/shared/api/generated'
 import { useAuth } from '@/features/auth'
 import { ENTRY_CATEGORIES, ENTRY_STATUSES } from '../constants'
 import { toBody, type Form as FormValues } from '../lib/entry'
-import { useAction, useFields } from '@/shared/lib/hooks'
+import { GlossaryService } from '../api/GlossaryService'
+import { useFields } from '@/shared/lib/hooks'
 import { optionsOf } from '@/shared/lib/ui'
 import { Checkbox, SelectField, TextArea, TextField } from '@/shared/components/form'
 import { Form } from '@/shared/components/layout'
 
-type Entry = S['GlossaryOut']
+type Entry = GlossaryOut
 
 export const EntryForm = ({ initial, id, onDone }: { initial: FormValues; id?: number; onDone: () => void }) => {
   const { t } = useTranslation(['glossary', 'common'])
   const { user } = useAuth()
   const { values: f, set } = useFields(initial)
   const [force, setForce] = useState(false)
-  const save = useAction(
-    () => (id ? put(`/glossary/${id}`, { ...toBody(f, force) }) : post('/glossary', { ...toBody(f, force) })),
-    { onSuccess: onDone },
-  )
+  const save = GlossaryService.useCreateOrUpdateEntry(onDone)
   const dups =
     save.error instanceof ApiError && save.error.status === 409
       ? (save.error.detail as { duplicates: Entry[] }).duplicates
@@ -27,7 +27,7 @@ export const EntryForm = ({ initial, id, onDone }: { initial: FormValues; id?: n
   return (
     <Form
       onSubmit={() => {
-        save.mutate()
+        save.mutate({ id, entry: toBody(f, force) })
       }}
       submitLabel={t('common:save')}
       disabled={save.isPending}

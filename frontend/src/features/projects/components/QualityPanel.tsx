@@ -1,15 +1,18 @@
-import { useQuery } from '@tanstack/react-query'
 import { BookPlus, Check, CornerDownRight, EyeOff } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ApiError, get, post, put, type S } from '@/shared/api/client'
+import { GlossaryService } from '@/features/glossary'
+import { ApiError } from '@/shared/api/config'
+import type { QualityWarning } from '@/shared/api/generated'
 import { Checkbox } from '@/shared/components/form'
 import { Btn, Card } from '@/shared/components/ui'
+import { ProjectService } from '../api/ProjectService'
+import { QualityService } from '../api/QualityService'
 import { SEV } from '../constants'
 import { findingText } from '../lib/findings'
 import type { Run } from '../types'
 
-type Finding = S['QualityWarning']
+type Finding = QualityWarning
 
 const OPTION_SEP = '|' // joins the translations of a contradiction in `params.options` (see quality/service.py)
 const action =
@@ -39,20 +42,12 @@ export const QualityPanel = ({
 }) => {
   const { t } = useTranslation('projects')
   const [toGlossary, setToGlossary] = useState(true)
-  const {
-    data: quality,
-    refetch,
-    isFetching,
-  } = useQuery({
-    queryKey: ['quality', projectId, lang],
-    queryFn: () => get<S['QualityOut']>(`/projects/${projectId}/quality?lang=${lang}`),
-    enabled: !!lang,
-  })
+  const { data: quality, refetch, fetching: isFetching } = QualityService.useFetchQuality(projectId, lang)
 
   /** A term that is already in the glossary is fine: the entry is not overwritten from here. */
   const addToGlossary = async (source: string, target: string): Promise<void> => {
     try {
-      await post('/glossary', { terms: { [srcLang]: source, [lang]: target } })
+      await GlossaryService.addEntry({ [srcLang]: source, [lang]: target })
     } catch (e) {
       if (!(e instanceof ApiError && e.status === 409)) throw e
     }
@@ -60,7 +55,7 @@ export const QualityPanel = ({
   const unify = (f: Finding, chosen: string): void => {
     const others = (f.params['options'] ?? '').split(OPTION_SEP).filter((o) => o && o !== chosen)
     run(async () => {
-      for (const old of others) await post(`/projects/${projectId}/replace-term`, { lang, old, new: chosen })
+      for (const old of others) await ProjectService.replaceTerm(projectId, lang, old, chosen)
       if (toGlossary) await addToGlossary(f.params['term'] ?? '', chosen)
     })
   }
@@ -69,7 +64,7 @@ export const QualityPanel = ({
   const accepted = warnings.filter((w) => w.accepted)
   /** The project's accepted findings are sent as a whole: the current ones plus `add`, or none to reopen all. */
   const setAccepted = (keys: string[]): void => {
-    run(() => put(`/projects/${projectId}/quality/accepted`, { keys }))
+    run(() => QualityService.acceptFindings(projectId, keys))
   }
 
   const fixes = (f: Finding) => {

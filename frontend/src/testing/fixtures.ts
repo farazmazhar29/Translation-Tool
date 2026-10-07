@@ -1,6 +1,6 @@
-import type { S } from '@/shared/api/client'
+import type { ProjectDetail, ProjectOut, SegmentOut, SettingsOut, Term } from '@/shared/api/generated'
 
-export const settings = (): S['SettingsOut'] => ({
+export const settings = (): SettingsOut => ({
   llm_provider: 'mock',
   llm_model: 'test',
   default_source_lang: 'auto',
@@ -10,7 +10,7 @@ export const settings = (): S['SettingsOut'] => ({
   gemini_key_configured: false,
 })
 
-export const term = (over: Partial<S['Term']> = {}): S['Term'] => ({
+export const term = (over: Partial<Term> = {}): Term => ({
   source: 'Korpus',
   target: 'carcass',
   category: 'glossary',
@@ -22,7 +22,7 @@ export const term = (over: Partial<S['Term']> = {}): S['Term'] => ({
   ...over,
 })
 
-export const segment = (over: Partial<S['SegmentOut']> = {}): S['SegmentOut'] => ({
+export const segment = (over: Partial<SegmentOut> = {}): SegmentOut => ({
   id: 7,
   idx: 0,
   source_text: 'Der Korpus ist weiß.',
@@ -40,7 +40,7 @@ export const segment = (over: Partial<S['SegmentOut']> = {}): S['SegmentOut'] =>
   ...over,
 })
 
-export const project = (over: Partial<S['ProjectOut']> = {}): S['ProjectOut'] => ({
+export const project = (over: Partial<ProjectOut> = {}): ProjectOut => ({
   id: 1,
   name: 'Testprojekt',
   customer: '',
@@ -61,7 +61,7 @@ export const project = (over: Partial<S['ProjectOut']> = {}): S['ProjectOut'] =>
   ...over,
 })
 
-export const projectDetail = (over: Partial<S['ProjectDetail']> = {}): S['ProjectDetail'] => ({
+export const projectDetail = (over: Partial<ProjectDetail> = {}): ProjectDetail => ({
   ...project(),
   segments: [segment()],
   ...over,

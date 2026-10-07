@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { HttpResponse, http } from 'msw'
 import i18n from 'i18next'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import type { S } from '@/shared/api/client'
+import type { QualityWarning } from '@/shared/api/generated'
 import { renderApp } from '@/testing/render'
 import { server } from '@/testing/server'
 import { QualityPanel } from '../components/QualityPanel'
@@ -13,7 +13,7 @@ afterEach(async () => {
   await i18n.changeLanguage('de')
 })
 
-const finding = (over: Partial<S['QualityWarning']>): S['QualityWarning'] => ({
+const finding = (over: Partial<QualityWarning>): QualityWarning => ({
   segment_id: null,
   idx: -1,
   lang: 'en',
@@ -43,7 +43,7 @@ const contradiction = finding({
 })
 
 /** Serves the findings and records what the panel sends; `run` executes the action like the project page does. */
-const setup = (warnings: S['QualityWarning'][], over: { editable?: boolean; glossaryStatus?: number } = {}) => {
+const setup = (warnings: QualityWarning[], over: { editable?: boolean; glossaryStatus?: number } = {}) => {
   const sent: { path: string; body: unknown }[] = []
   server.use(
     http.get('*/api/projects/1/quality', () =>

@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { post, type S } from '@/shared/api/client'
+import type { ProjectDetail } from '@/shared/api/generated'
 import { SelectField, TargetLanguage } from '@/shared/components/form'
 import { useConfirm } from '@/shared/components/confirm'
 import { Btn } from '@/shared/components/ui'
 import { LANGS } from '@/shared/constants'
 import { optionsOf } from '@/shared/lib/ui'
+import { ProjectService } from '../api/ProjectService'
 import type { Run } from '../types'
 
 /** Source language, the resulting target language and the button that starts (or restarts) the translation. */
@@ -14,7 +15,7 @@ export const TranslationSetup = ({
   hasTranslation,
   run,
 }: {
-  project: S['ProjectDetail']
+  project: ProjectDetail
   hasTranslation: boolean
   run: Run
 }) => {
@@ -49,7 +50,7 @@ export const TranslationSetup = ({
                 confirmLabel: t('view.retranslate'),
                 destructive: true,
               }))
-            if (ok) run(() => post(`/projects/${p.id}/translate`, { source_lang: src }))
+            if (ok) run(() => ProjectService.startTranslation(p.id, src))
           })()
         }}
       >

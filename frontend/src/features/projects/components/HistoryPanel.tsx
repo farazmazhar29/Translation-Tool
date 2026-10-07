@@ -1,16 +1,12 @@
-import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { download, get, type S } from '@/shared/api/client'
+import { ExportService } from '../api/ExportService'
 import { Card } from '@/shared/components/ui'
 import { fmtDate } from '@/shared/lib/ui'
 
 /** Releases (approvals) and exports of a project. */
 export const HistoryPanel = ({ projectId }: { projectId: number }) => {
   const { t } = useTranslation('projects')
-  const { data: history } = useQuery({
-    queryKey: ['history', projectId],
-    queryFn: () => get<S['HistoryOut']>(`/projects/${projectId}/history`),
-  })
+  const { data: history } = ExportService.useFetchHistory(projectId)
   return (
     <Card title={t('historyPanel.title')}>
       {history?.releases.length === 0 && <p className="text-sm text-stone-600">{t('historyPanel.none')}</p>}
@@ -39,7 +35,7 @@ export const HistoryPanel = ({ projectId }: { projectId: number }) => {
               type="button"
               className="text-blue-700 hover:underline"
               onClick={() => {
-                void download(`/exports/${e.id}/download`, e.filename)
+                void ExportService.downloadExport(e.id, e.filename)
               }}
             >
               {e.filename}

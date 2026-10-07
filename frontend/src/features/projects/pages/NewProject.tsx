@@ -2,35 +2,25 @@ import { useState } from 'react'
 import { FileText, UploadCloud } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import { post, type S } from '@/shared/api/client'
 import { LANGS } from '@/shared/constants'
 import { SelectField, TargetLanguage, TextField } from '@/shared/components/form'
 import { BackLink, Form, PageHeader } from '@/shared/components/layout'
 import { Card, LinkBtn } from '@/shared/components/ui'
-import { useAction, useFields } from '@/shared/lib/hooks'
+import { useFields } from '@/shared/lib/hooks'
 import { optionsOf } from '@/shared/lib/ui'
+import { ProjectService } from '../api/ProjectService'
 
 const NewProject = () => {
   const { t } = useTranslation(['projects', 'common'])
   const navigate = useNavigate()
   const [file, setFile] = useState<File | null>(null)
   const { values: f, set } = useFields({ name: '', customer: '', source: 'auto' })
-  const create = useAction(
-    () => {
-      const fd = new FormData()
-      if (file) fd.append('file', file)
-      fd.append('name', f.name)
-      fd.append('customer', f.customer)
-      fd.append('source_lang', f.source)
-      return post<S['ProjectOut']>('/projects', fd)
-    },
-    { onSuccess: (p) => void navigate(`/projects/${p.id}`) },
-  )
+  const create = ProjectService.useCreateProject((p) => void navigate(`/projects/${p.id}`))
 
   return (
     <Form
       onSubmit={() => {
-        create.mutate()
+        if (file) create.mutate({ file, name: f.name, customer: f.customer, sourceLang: f.source })
       }}
       submitLabel={create.isPending ? t('new.analyzing') : t('new.submit')}
       disabled={!file || create.isPending}

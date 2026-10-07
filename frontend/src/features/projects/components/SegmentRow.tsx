@@ -2,7 +2,7 @@ import { MessageSquare, Pencil, RefreshCw } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Highlighted } from '@/features/glossary'
-import type { S } from '@/shared/api/client'
+import type { SegmentEdit, Term } from '@/shared/api/generated'
 import { TextArea } from '@/shared/components/form'
 import { Btn } from '@/shared/components/ui'
 import type { Segment } from '../types'
@@ -11,8 +11,8 @@ interface Props {
   seg: Segment
   lang: string
   editable: boolean
-  onTerm: (seg: Segment, t: S['Term']) => void
-  onSave: (seg: Segment, body: S['SegmentEdit']) => void
+  onTerm: (seg: Segment, t: Term) => void
+  onSave: (seg: Segment, body: SegmentEdit) => void
   onRegenerate: (seg: Segment) => void
   busy: boolean
 }

@@ -1,10 +1,10 @@
-import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
-import { get, type S } from '@/shared/api/client'
 import { TextField } from '@/shared/components/form'
 import { Form } from '@/shared/components/layout'
-import { useAction, useFields } from '@/shared/lib/hooks'
+import { useMutation } from '@/shared/api/base'
+import { useFields } from '@/shared/lib/hooks'
+import { AuthService } from './api/AuthService'
 import { AuthLayout } from './AuthLayout'
 import { useAuth } from './auth-context'
 
@@ -15,14 +15,11 @@ const Register = () => {
   const { user, register } = useAuth()
   const navigate = useNavigate()
   const { values, set } = useFields({ full_name: '', username: '', password: '', confirm: '' })
-  const signUp = useAction(
+  const signUp = useMutation(
     () => register({ full_name: values.full_name, username: values.username, password: values.password }), // not `confirm`
     { onSuccess: () => void navigate('/login', { state: { registered: true } }) },
   )
-  const { data: options } = useQuery({
-    queryKey: ['auth-options'],
-    queryFn: () => get<S['AuthOptions']>('/auth/options'),
-  })
+  const { data: options } = AuthService.useFetchAuthOptions()
   if (user) return <Navigate to="/" replace />
   const tooShort = values.password.length > 0 && values.password.length < MIN_PASSWORD_LENGTH
   const mismatch = values.confirm.length > 0 && values.confirm !== values.password

@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import type { S } from '@/shared/api/client'
+import type { SegmentEdit, Term } from '@/shared/api/generated'
 import { Card } from '@/shared/components/ui'
 import type { Segment } from '../types'
 import { SegmentRow } from './SegmentRow'
@@ -10,8 +10,8 @@ interface Props {
   srcLang: string
   editable: boolean
   busy: boolean
-  onTerm: (seg: Segment, term: S['Term']) => void
-  onSave: (seg: Segment, body: S['SegmentEdit']) => void
+  onTerm: (seg: Segment, term: Term) => void
+  onSave: (seg: Segment, body: SegmentEdit) => void
   onRegenerate: (seg: Segment) => void
 }
 

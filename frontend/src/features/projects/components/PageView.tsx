@@ -1,7 +1,7 @@
 import { Fragment } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Highlighted } from '@/features/glossary'
-import type { S } from '@/shared/api/client'
+import type { Term } from '@/shared/api/generated'
 import type { Segment } from '../types'
 
 /** A line without sentence punctuation and without numbers at the start is a title or heading. */
@@ -12,7 +12,7 @@ interface Props {
   segments: readonly Segment[]
   lang: string
   srcLang: string
-  onTerm: (seg: Segment, term: S['Term']) => void
+  onTerm: (seg: Segment, term: Term) => void
 }
 
 /**

@@ -1,13 +1,13 @@
-import { useQuery } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Highlighted } from '@/features/glossary'
-import { get, type S } from '@/shared/api/client'
+import type { CellOut, Term } from '@/shared/api/generated'
 import { Loading } from '@/shared/components/layout'
 import { Card, ErrorText } from '@/shared/components/ui'
+import { ProjectService } from '../api/ProjectService'
 import type { Segment } from '../types'
 
-type Cell = S['CellOut']
+type Cell = CellOut
 type Side = 'source' | 'target'
 
 /** "B12" -> column 2, row 12. */
@@ -48,13 +48,12 @@ const toGrid = (cells: readonly Cell[]): Grid => {
     if (filled.length === 1 && line[0] === only) return { kind: 'span', row, cell: only, title: i === 0 && only.bold }
     return { kind: filled.every((c) => c.bold) ? 'head' : 'body', row, cells: line }
   })
-  const numeric = new Set(placed.filter((p) => typeof p.cell.value === 'number').map((p) => p.col - 1))
+  const numeric = new Set(placed.filter((p) => p.cell.number !== null).map((p) => p.col - 1))
   return { cols, rows, numeric }
 }
 
 /** An article number ("FB-6001", "UK-4711/60") is not broken at its hyphen. */
-const isWord = (cell: Cell | undefined): boolean =>
-  typeof cell?.value === 'string' && !/\s/.test(cell.value) && /\d/.test(cell.value)
+const isWord = (cell: Cell | undefined): boolean => !!cell?.text && !/\s/.test(cell.text) && /\d/.test(cell.text)
 
 /** Long compounds ("Eckverbindungsbeschlag") are hyphenated in their language, and broken only as a last resort. */
 const wrap = 'hyphens-auto [overflow-wrap:anywhere]'
@@ -64,7 +63,7 @@ interface Props {
   segments: readonly Segment[]
   lang: string
   srcLang: string
-  onTerm: (seg: Segment, term: S['Term']) => void
+  onTerm: (seg: Segment, term: Term) => void
 }
 
 /**
@@ -75,11 +74,7 @@ interface Props {
  */
 export const SheetView = ({ projectId, segments, lang, srcLang, onTerm }: Props) => {
   const { t, i18n } = useTranslation('projects')
-  const { data: sheets, error } = useQuery({
-    queryKey: ['project-cells', projectId],
-    queryFn: () => get<S['SheetOut'][]>(`/projects/${projectId}/cells`),
-    staleTime: Infinity, // the original file does not change
-  })
+  const { data: sheets, error } = ProjectService.useFetchSheetCells(projectId)
   if (error) return <ErrorText error={error} />
   if (!sheets) return <Loading />
 
@@ -88,14 +83,14 @@ export const SheetView = ({ projectId, segments, lang, srcLang, onTerm }: Props)
   )
   const number = (cell: Cell): string =>
     new Intl.NumberFormat(i18n.language, cell.decimals ? { minimumFractionDigits: cell.decimals } : {}).format(
-      Number(cell.value),
+      cell.number ?? 0,
     )
 
   /** The cell on one side: the original text, its translation, or a number (the same on both sides). */
   const side = (sheet: string, cell: Cell, which: Side, extra = ''): ReactNode => {
-    if (typeof cell.value === 'number') return number(cell)
+    if (cell.number !== null) return number(cell)
     const seg = bySheetCell.get(`${sheet}!${cell.ref}`)
-    if (!seg) return cell.value
+    if (!seg) return cell.text
     const tr = seg.translations[lang]
     if (which === 'target' && !tr)
       return <span className="text-xs italic text-stone-600">{t('row.notTranslated')}</span>

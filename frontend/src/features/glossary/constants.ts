@@ -4,6 +4,8 @@ export const ENTRY_STATUSES = ['approved', 'draft', 'rejected'] as const
 type EntryStatus = (typeof ENTRY_STATUSES)[number]
 export const isEntryStatus = (value: string): value is EntryStatus =>
   (ENTRY_STATUSES as readonly string[]).includes(value)
+export const isEntryCategory = (value: string): value is (typeof ENTRY_CATEGORIES)[number] =>
+  (ENTRY_CATEGORIES as readonly string[]).includes(value)
 
 export const STATUS_CLS: Record<EntryStatus, string> = {
   approved: 'bg-emerald-50 text-emerald-800',

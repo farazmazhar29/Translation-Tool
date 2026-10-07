@@ -1,48 +1,52 @@
-import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
-import { get, post, type Lang, type S } from '@/shared/api/client'
+import type { Lang, SegmentOut, Term } from '@/shared/api/generated'
+import { GlossaryService, NO_FILTERS } from '../api/GlossaryService'
 import { isEntryStatus } from '../constants'
 import { EMPTY } from '../lib/entry'
 import { EntryForm } from './EntryForm'
 import { replaceFirst } from '../lib/text'
-import { useAction } from '@/shared/lib/hooks'
+import { useMutation } from '@/shared/api/base'
 import { TextField } from '@/shared/components/form'
 import { Btn, ErrorText, Modal } from '@/shared/components/ui'
 
 interface Props {
-  term: S['Term']
-  seg: S['SegmentOut']
+  term: Term
+  seg: SegmentOut
   lang: string
   src: string
-  projectId: number
+  /** Replaces the term's translation in every segment of the project (the project page knows how). */
+  onReplaceEverywhere: (old: string, value: string) => Promise<unknown>
   editable: boolean
   onClose: () => void
   onSegmentText: (text: string) => void
   onChanged: () => void
 }
 
-export const TermDialog = ({ term, seg, lang, src, projectId, editable, onClose, onSegmentText, onChanged }: Props) => {
+export const TermDialog = ({
+  term,
+  seg,
+  lang,
+  src,
+  editable,
+  onClose,
+  onSegmentText,
+  onReplaceEverywhere,
+  onChanged,
+}: Props) => {
   const { t } = useTranslation(['glossary', 'common'])
   const text = seg.translations[lang]?.text ?? ''
   const [value, setValue] = useState(term.target)
   const [adding, setAdding] = useState(false)
-  const { data: entries = [] } = useQuery({
-    queryKey: ['glossary', { q: '', status: '', category: '' }],
-    queryFn: () => get<S['GlossaryOut'][]>('/glossary'),
-    enabled: term.glossary_id !== null && term.glossary_id !== undefined,
-  })
+  const { data: entries = [] } = GlossaryService.useFetchEntries(NO_FILTERS, term.glossary_id === null)
   const entry = entries.find((e) => e.id === term.glossary_id)
-  const everywhere = useAction(
-    () => post(`/projects/${projectId}/replace-term`, { lang, old: term.target, new: value }),
-    {
-      onSuccess: () => {
-        onChanged()
-        onClose()
-      },
+  const everywhere = useMutation(() => onReplaceEverywhere(term.target, value), {
+    onSuccess: () => {
+      onChanged()
+      onClose()
     },
-  )
+  })
   const changed = value.trim() !== '' && value !== term.target
   const canAdd = editable && term.category !== 'glossary' && term.category !== 'protected'
   const initial = { ...EMPTY, [src]: term.source, [lang]: term.target }

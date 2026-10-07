@@ -1,10 +1,8 @@
 import { Fragment } from 'react'
-import type { S } from '@/shared/api/client'
+import type { Term } from '@/shared/api/generated'
 import { FALLBACK } from '../constants'
 import { chunkify } from '../lib/chunkify'
-import { useSettings } from '@/shared/lib/ui'
-
-type Term = S['Term']
+import { SettingsService } from '@/shared/api/services/SettingsService'
 
 interface Props {
   text: string
@@ -15,7 +13,7 @@ interface Props {
 }
 
 export const Highlighted = ({ text, terms, side, onTerm, className = 'text-sm leading-relaxed' }: Props) => {
-  const colors = useSettings()?.colors ?? FALLBACK
+  const colors = SettingsService.useFetchSettings().data?.colors ?? FALLBACK
   return (
     <p className={`whitespace-pre-wrap ${className}`}>
       {chunkify(text, terms, side).map((c, i) => {

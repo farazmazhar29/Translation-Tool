@@ -1,7 +1,7 @@
 import { screen } from '@testing-library/react'
 import { HttpResponse, http } from 'msw'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { getToken, session, setToken } from '@/shared/api/client'
+import { getToken, session, setToken } from '@/shared/api/session'
 import { renderApp } from '@/testing/render'
 import { server } from '@/testing/server'
 import { AuthProvider } from '../auth'

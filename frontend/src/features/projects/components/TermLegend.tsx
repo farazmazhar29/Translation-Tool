@@ -1,11 +1,11 @@
 import { useTranslation } from 'react-i18next'
 import { TERM_CATEGORIES } from '@/shared/constants'
-import { useSettings } from '@/shared/lib/ui'
+import { SettingsService } from '@/shared/api/services/SettingsService'
 
 /** Colour key of the highlighted term categories (the colours are configurable in the settings). */
 export const TermLegend = () => {
   const { t } = useTranslation('common')
-  const colors = useSettings()?.colors
+  const colors = SettingsService.useFetchSettings().data?.colors
   return (
     <ul className="flex flex-wrap gap-2 text-xs">
       {TERM_CATEGORIES.map((k) => (

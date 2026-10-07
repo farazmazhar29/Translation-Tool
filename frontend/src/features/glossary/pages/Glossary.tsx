@@ -1,9 +1,10 @@
-import { useQuery } from '@tanstack/react-query'
 import { CheckCircle2, Download, Pencil, Plus, ScanSearch, Trash2, Upload } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { can, del, download, get, post, qs, type S } from '@/shared/api/client'
+import type { GlossaryOut, SkippedRow } from '@/shared/api/generated'
+import { can } from '@/shared/api/session'
 import { useAuth } from '@/features/auth'
+import { GlossaryService } from '../api/GlossaryService'
 import { EntryForm } from '../components/EntryForm'
 import { SelectField, TextField } from '@/shared/components/form'
 import { PageHeader, Table } from '@/shared/components/layout'
@@ -11,61 +12,40 @@ import { useConfirm } from '@/shared/components/confirm'
 import { Btn, Card, ErrorText, IconAction, Modal } from '@/shared/components/ui'
 import { ENTRY_CATEGORIES, ENTRY_STATUSES, isEntryStatus, STATUS_CLS } from '../constants'
 import { EMPTY, toForm, type Form } from '../lib/entry'
-import { useAction, useFields, useInvalidate } from '@/shared/lib/hooks'
+import { useRefresh } from '@/shared/api/base'
+import { useFields } from '@/shared/lib/hooks'
 import { fmtDate, optionsOf } from '@/shared/lib/ui'
 
-type Entry = S['GlossaryOut']
+type Entry = GlossaryOut
 
 const Glossary = () => {
   const { t } = useTranslation(['glossary', 'common'])
   const { user } = useAuth()
   const { confirm, dialog } = useConfirm()
-  const refresh = useInvalidate(['glossary'])
+  const refresh = useRefresh(['glossary'])
   const fileRef = useRef<HTMLInputElement>(null)
   const { values: f, set } = useFields({ q: '', status: '', category: '' })
   const [edit, setEdit] = useState<{ id?: number; form: Form } | null>(null)
   const [versions, setVersions] = useState<Entry | null>(null)
   const [note, setNote] = useState('')
-  const [skipped, setSkipped] = useState<S['SkippedRow'][]>([]) // rows of the last import that were not taken
-  const { data: entries = [] } = useQuery({
-    queryKey: ['glossary', f],
-    queryFn: () => get<Entry[]>(`/glossary${qs(f)}`),
+  const [skipped, setSkipped] = useState<SkippedRow[]>([]) // rows of the last import that were not taken
+  const { data: entries = [] } = GlossaryService.useFetchEntries(f)
+  const { data: vers = [] } = GlossaryService.useFetchEntryVersions(versions?.id)
+  const approve = GlossaryService.useSetEntryStatus()
+  const remove = GlossaryService.useDeleteEntry()
+  const imp = GlossaryService.useImportGlossary((r) => {
+    setNote(t('importResult', { created: r.created, updated: r.updated, skipped: r.skipped }))
+    setSkipped(r.skipped_rows)
   })
-  const { data: vers = [] } = useQuery({
-    queryKey: ['glossary-versions', versions?.id],
-    queryFn: () => get<S['GlossaryVersionOut'][]>(`/glossary/${String(versions?.id)}/versions`),
-    enabled: !!versions,
-  })
-  const act = useAction(
-    ({ id, status }: { id: number; status?: string }) =>
-      status ? post(`/glossary/${id}/status?status=${status}`) : del(`/glossary/${id}`),
-    { invalidate: ['glossary'] },
-  )
-  const imp = useAction(
-    (file: File) => {
-      const fd = new FormData()
-      fd.append('file', file)
-      return post<S['ImportResult']>('/glossary/import/xlsx', fd)
-    },
-    {
-      invalidate: ['glossary'],
-      onSuccess: (r) => {
-        setNote(t('importResult', { created: r.created, updated: r.updated, skipped: r.skipped }))
-        setSkipped(r.skipped_rows)
-      },
-    },
-  )
-  const scan = useAction(() => get<S['DuplicateGroup'][]>('/glossary/duplicates/scan'), {
-    onSuccess: (groups) => {
-      setSkipped([])
-      setNote(
-        groups.length
-          ? t('duplicatesFound', {
-              list: groups.map((x) => t('duplicateItem', { term: x.term, lang: x.lang })).join(', '),
-            })
-          : t('noDuplicates'),
-      )
-    },
+  const scan = GlossaryService.useScanDuplicates((groups) => {
+    setSkipped([])
+    setNote(
+      groups.length
+        ? t('duplicatesFound', {
+            list: groups.map((x) => t('duplicateItem', { term: x.term, lang: x.lang })).join(', '),
+          })
+        : t('noDuplicates'),
+    )
   })
   const reviewer = can(user, 'reviewer')
   const statusFilter = optionsOf(ENTRY_STATUSES, (s) => t(`status.${s}`), ['', t('statusAll')])
@@ -84,7 +64,7 @@ const Glossary = () => {
         </Btn>
         <Btn
           onClick={() => {
-            void download('/glossary/export/xlsx', 'glossar.xlsx')
+            void GlossaryService.exportGlossary()
           }}
         >
           <Download className="size-4" aria-hidden="true" />
@@ -131,7 +111,7 @@ const Glossary = () => {
           )}
         </div>
       )}
-      <ErrorText error={imp.error ?? act.error} />
+      <ErrorText error={imp.error ?? approve.error ?? remove.error} />
       <Card className="grid gap-3 lg:grid-cols-3">
         <TextField hideLabel label={t('search')} placeholder={t('searchPlaceholder')} value={f.q} onChange={set('q')} />
         <SelectField
@@ -200,7 +180,7 @@ const Glossary = () => {
                   label={t('approve')}
                   icon={CheckCircle2}
                   onClick={() => {
-                    act.mutate({ id: e.id, status: 'approved' })
+                    approve.mutate({ id: e.id, status: 'approved' })
                   }}
                 />
               )}
@@ -225,7 +205,7 @@ const Glossary = () => {
                       confirmLabel: t('common:delete'),
                       destructive: true,
                     }).then((ok) => {
-                      if (ok) act.mutate({ id: e.id })
+                      if (ok) remove.mutate(e.id)
                     })
                   }}
                 />

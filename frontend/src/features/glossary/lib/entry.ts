@@ -1,6 +1,6 @@
-import type { S } from '@/shared/api/client'
+import type { GlossaryIn, GlossaryOut } from '@/shared/api/generated'
 
-type Entry = S['GlossaryOut']
+type Entry = GlossaryOut
 export interface Form {
   de: string
   en: string
@@ -36,7 +36,7 @@ export const toForm = (e: Entry): Form => ({
   dnt: e.do_not_translate,
   status: e.status,
 })
-export const toBody = (f: Form, force: boolean): S['GlossaryIn'] => ({
+export const toBody = (f: Form, force: boolean): GlossaryIn => ({
   terms: Object.fromEntries((['de', 'en'] as const).map((l) => [l, f[l].trim()] as const).filter(([, v]) => v)),
   synonyms: { de: list(f.synDe), en: list(f.synEn) },
   description: f.description,

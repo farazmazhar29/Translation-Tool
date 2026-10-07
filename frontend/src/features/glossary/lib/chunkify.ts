@@ -1,6 +1,4 @@
-import type { S } from '@/shared/api/client'
-
-type Term = S['Term']
+import type { Term } from '@/shared/api/generated'
 
 interface Chunk {
   text: string

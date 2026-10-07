@@ -1,30 +1,24 @@
-import { useQuery } from '@tanstack/react-query'
 import { Check, Minus, Pencil, Plus } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { get, post, put, type S } from '@/shared/api/client'
 import { Checkbox, SelectField, TextField } from '@/shared/components/form'
 import { Form, PageHeader, Table } from '@/shared/components/layout'
 import { Btn, IconAction, Modal } from '@/shared/components/ui'
-import { useAction, useFields } from '@/shared/lib/hooks'
+import { useFields } from '@/shared/lib/hooks'
 import { optionsOf } from '@/shared/lib/ui'
 import { ROLES } from '@/shared/constants'
-import { EMPTY } from './constants'
+import { UserService } from './api/UserService'
+import { EMPTY, type UserForm } from './constants'
 
-type UserIn = S['UserIn']
-
-const UserDialog = ({ id, initial, onClose }: { id?: number; initial: UserIn; onClose: () => void }) => {
+const UserDialog = ({ id, initial, onClose }: { id?: number; initial: UserForm; onClose: () => void }) => {
   const { t } = useTranslation(['users', 'common'])
   const { values: f, set } = useFields(initial)
-  const save = useAction(() => (id ? put(`/users/${id}`, { ...f }) : post('/users', { ...f })), {
-    invalidate: ['users'],
-    onSuccess: onClose,
-  })
+  const save = UserService.useCreateOrUpdateUser(onClose)
   return (
     <Modal title={id ? t('editUser') : t('newUser')} onClose={onClose}>
       <Form
         onSubmit={() => {
-          save.mutate()
+          save.mutate({ id, user: f })
         }}
         submitLabel={t('common:save')}
         disabled={save.isPending}
@@ -43,7 +37,7 @@ const UserDialog = ({ id, initial, onClose }: { id?: number; initial: UserIn; on
           value={f.role}
           options={optionsOf(ROLES, (r) => t(`common:role.${r}`))}
           onChange={(role) => {
-            set('role')(role as UserIn['role'])
+            set('role')(role as UserForm['role'])
           }}
         />
         <Checkbox label={t('active')} checked={f.active} onChange={set('active')} />
@@ -54,8 +48,8 @@ const UserDialog = ({ id, initial, onClose }: { id?: number; initial: UserIn; on
 
 const Users = () => {
   const { t } = useTranslation(['users', 'common'])
-  const { data: users = [] } = useQuery({ queryKey: ['users'], queryFn: () => get<S['UserOut'][]>('/users') })
-  const [editing, setEditing] = useState<{ id?: number; initial: UserIn } | null>(null)
+  const { data: users = [] } = UserService.useFetchUsers()
+  const [editing, setEditing] = useState<{ id?: number; initial: UserForm } | null>(null)
   return (
     <div className="space-y-4">
       <PageHeader title={t('title')}>

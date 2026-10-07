@@ -3,9 +3,11 @@ import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
 import { useAuth } from '@/features/auth'
-import { can, download, type S } from '@/shared/api/client'
+import { can } from '@/shared/api/session'
+import type { ProjectDetail } from '@/shared/api/generated'
 import { Card, ErrorText, StatusBadge } from '@/shared/components/ui'
 import { fmtDate } from '@/shared/lib/ui'
+import { ProjectService } from '../api/ProjectService'
 import type { Run } from '../types'
 import { TranslationSetup } from './TranslationSetup'
 import { WorkflowSteps } from './WorkflowSteps'
@@ -40,7 +42,7 @@ export const ProjectHeader = ({
   run,
   error,
 }: {
-  project: S['ProjectDetail']
+  project: ProjectDetail
   progress?: number // the live value while a job runs; the project itself is only reloaded when it is over
   editable: boolean
   hasTranslation: boolean
@@ -80,7 +82,7 @@ export const ProjectHeader = ({
               title={t('view.original')}
               className="grid size-7 shrink-0 place-items-center rounded-full text-stone-600 transition hover:bg-stone-100 hover:text-ink"
               onClick={() => {
-                void download(`/projects/${p.id}/original`, p.filename)
+                void ProjectService.downloadOriginal(p.id, p.filename)
               }}
             >
               <FileDown className="size-4" aria-hidden="true" />

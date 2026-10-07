@@ -1,13 +1,14 @@
-import { useQuery } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useParams } from 'react-router-dom'
 import { useAuth } from '@/features/auth'
 import { TermDialog } from '@/features/glossary'
-import { can, get, post, put, type S } from '@/shared/api/client'
+import { can } from '@/shared/api/session'
+import type { SegmentEdit, Term } from '@/shared/api/generated'
 import { BackLink, Loading } from '@/shared/components/layout'
 import { ErrorText } from '@/shared/components/ui'
-import { useAction, useInvalidate } from '@/shared/lib/hooks'
+import { useMutation, useRefresh } from '@/shared/api/base'
+import { ProjectService } from '../api/ProjectService'
 import { ExportDialog } from '../components/ExportDialog'
 import { HistoryPanel } from '../components/HistoryPanel'
 import { ProjectHeader } from '../components/ProjectHeader'
@@ -20,7 +21,7 @@ import { SheetView } from '../components/SheetView'
 import { SourcePreview } from '../components/SourcePreview'
 import { TermLegend } from '../components/TermLegend'
 import { ViewSwitch } from '../components/ViewSwitch'
-import { EDITABLE, FOCUS_MS, POLL_MS, PROJECT_QUERIES } from '../constants'
+import { EDITABLE, FOCUS_MS, PROJECT_QUERIES } from '../constants'
 import type { Panel, Run, Segment } from '../types'
 
 /** One project: translation setup, review workflow and the segments. The parts live in `../components`. */
@@ -43,26 +44,12 @@ const ProjectView = () => {
       row?.classList.remove('ring-2', 'ring-brand', 'ring-inset')
     }
   }, [focus])
-  const [modal, setModal] = useState<{ kind: 'term'; seg: Segment; term: S['Term'] } | { kind: 'export' } | null>(null)
+  const [modal, setModal] = useState<{ kind: 'term'; seg: Segment; term: Term } | { kind: 'export' } | null>(null)
 
-  const { data: p, error } = useQuery({
-    queryKey: ['project', id],
-    queryFn: () => get<S['ProjectDetail']>(`/projects/${id}`),
-  })
-  const refresh = useInvalidate(PROJECT_QUERIES)
-  // While the translation runs, ask the small status endpoint (a few hundred bytes) instead of loading the whole
-  // project with all its segments again and again; when the job is over, load the project once.
-  const { data: status } = useQuery({
-    queryKey: ['project-status', id],
-    queryFn: async () => {
-      const job = await get<S['JobStatus']>(`/projects/${id}/status`)
-      if (job.job_state !== 'running') void refresh()
-      return job
-    },
-    enabled: p?.job_state === 'running',
-    refetchInterval: (q) => (q.state.data?.job_state === 'running' ? POLL_MS : false),
-  })
-  const act = useAction((fn: () => Promise<unknown>) => fn(), { invalidate: PROJECT_QUERIES })
+  const { data: p, error } = ProjectService.useFetchProject(id)
+  const refresh = useRefresh(PROJECT_QUERIES)
+  const { data: status } = ProjectService.useFetchJobStatus(id, p?.job_state === 'running', () => void refresh())
+  const act = useMutation((fn: () => Promise<unknown>) => fn(), { invalidate: PROJECT_QUERIES })
   const run: Run = (fn) => {
     act.mutate(fn)
   }
@@ -77,8 +64,8 @@ const ProjectView = () => {
   const hasTranslation = p.segments.some((s) => Object.keys(s.translations).length > 0)
   const srcLang = p.source_lang === 'auto' ? p.detected_lang : p.source_lang
   const isSheet = p.file_type === 'xlsx'
-  const save = (seg: Segment, body: S['SegmentEdit']): void => {
-    run(() => put(`/segments/${seg.id}/${lang}`, { ...body }))
+  const save = (seg: Segment, body: SegmentEdit): void => {
+    run(() => ProjectService.editSegment(seg.id, lang, body))
   }
   return (
     <div className="space-y-4">
@@ -156,7 +143,7 @@ const ProjectView = () => {
           }}
           onSave={save}
           onRegenerate={(seg) => {
-            run(() => post(`/segments/${seg.id}/${lang}/retranslate`))
+            run(() => ProjectService.retranslateSegment(seg.id, lang))
           }}
         />
       )}
@@ -168,7 +155,6 @@ const ProjectView = () => {
           seg={modal.seg}
           lang={lang}
           src={srcLang}
-          projectId={id}
           editable={canEdit}
           onClose={() => {
             setModal(null)
@@ -176,6 +162,7 @@ const ProjectView = () => {
           onSegmentText={(text) => {
             save(modal.seg, { text })
           }}
+          onReplaceEverywhere={(old, value) => ProjectService.replaceTerm(id, lang, old, value)}
           onChanged={() => {
             void refresh()
           }}

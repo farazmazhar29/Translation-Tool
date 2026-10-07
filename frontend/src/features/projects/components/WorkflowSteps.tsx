@@ -1,11 +1,11 @@
 import { Check } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import type { S } from '@/shared/api/client'
+import type { ProjectOut } from '@/shared/api/generated'
 
 const STEPS = ['new', 'preview_ready', 'approved'] as const
 
 /** Where the project is in the process: translated (in review), approved. Archiving is not a step. */
-export const WorkflowSteps = ({ status }: { status: S['ProjectOut']['status'] }) => {
+export const WorkflowSteps = ({ status }: { status: ProjectOut['status'] }) => {
   const { t } = useTranslation('common')
   const current = STEPS.indexOf(status)
   return (

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { S } from '@/shared/api/client'
+import type { GlossaryOut } from '@/shared/api/generated'
 import { EMPTY, toBody, toForm } from '../lib/entry'
 
 describe('glossary form mapping', () => {
@@ -18,7 +18,7 @@ describe('glossary form mapping', () => {
   })
 
   it('round-trips an entry through the form', () => {
-    const entry: S['GlossaryOut'] = {
+    const entry: GlossaryOut = {
       id: 1,
       terms: { de: 'Korpus', en: 'carcass' },
       synonyms: { de: ['Kasten'], en: [] },
@@ -32,7 +32,7 @@ describe('glossary form mapping', () => {
     }
     const body = toBody(toForm(entry), true)
     expect(body.terms).toEqual(entry.terms)
-    expect(body.synonyms['de']).toEqual(['Kasten'])
+    expect(body.synonyms?.['de']).toEqual(['Kasten'])
     expect(body.force).toBe(true)
   })
 })

@@ -1,24 +1,18 @@
-import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Archive, ArchiveRestore, Copy, Plus, Trash2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Link, useSearchParams } from 'react-router-dom'
-import { can, del, get, post, qs, type S } from '@/shared/api/client'
+import { can } from '@/shared/api/session'
 import { useAuth } from '@/features/auth'
 import { SelectField, TextField } from '@/shared/components/form'
 import { PageHeader, Table } from '@/shared/components/layout'
 import { useConfirm } from '@/shared/components/confirm'
 import { Card, IconAction, LinkBtn, StatusBadge } from '@/shared/components/ui'
-import { useAction, useFields } from '@/shared/lib/hooks'
+import { useFields } from '@/shared/lib/hooks'
 import { LANGS, STATUSES } from '@/shared/constants'
 import { fmtDate, optionsOf, type Option } from '@/shared/lib/ui'
+import { ProjectService, type ProjectFilters, type RowAction } from '../api/ProjectService'
 import { ARCHIVE_VALUES } from '../constants'
-
-type Filters = Record<
-  'q' | 'status' | 'archived' | 'lang' | 'customer' | 'editor' | 'term' | 'date_from' | 'date_to',
-  string
->
-type Action = 'archive' | 'unarchive' | 'copy' | 'delete'
 
 const Projects = () => {
   const { t } = useTranslation(['projects', 'common'])
@@ -26,7 +20,7 @@ const Projects = () => {
   const { confirm, dialog } = useConfirm()
   const [moreFilters, setMoreFilters] = useState(false)
   const [params] = useSearchParams()
-  const { values: f, set } = useFields<Filters>({
+  const { values: f, set } = useFields<ProjectFilters>({
     q: '',
     status: params.get('status') ?? '',
     archived: 'no',
@@ -37,17 +31,10 @@ const Projects = () => {
     date_from: '',
     date_to: '',
   })
-  const { data: projects = [], isLoading } = useQuery({
-    queryKey: ['projects', f],
-    queryFn: () => get<S['ProjectOut'][]>(`/projects${qs(f)}`),
-  })
-  const { data: editors = [] } = useQuery({ queryKey: ['editors'], queryFn: () => get<string[]>('/users/names') })
-  const act = useAction(
-    ({ id, action }: { id: number; action: Action }) =>
-      action === 'delete' ? del(`/projects/${id}`) : post(`/projects/${id}/${action}`),
-    { invalidate: ['projects'] },
-  )
-  const run = (id: number, action: Action): void => {
+  const { data: projects = [], loading: isLoading } = ProjectService.useFetchProjects(f)
+  const { data: editors = [] } = ProjectService.useFetchEditorNames()
+  const act = ProjectService.useRowAction()
+  const run = (id: number, action: RowAction): void => {
     act.mutate({ id, action })
   }
 

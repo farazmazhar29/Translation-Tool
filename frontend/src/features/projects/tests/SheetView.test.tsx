@@ -1,21 +1,22 @@
 import { screen, within } from '@testing-library/react'
 import { HttpResponse, http } from 'msw'
 import { describe, expect, it, vi } from 'vitest'
-import type { S } from '@/shared/api/client'
+import type { CellOut, SheetOut } from '@/shared/api/generated'
 import { segment, term } from '@/testing/fixtures'
 import { renderApp } from '@/testing/render'
 import { server } from '@/testing/server'
 import { SheetView } from '../components/SheetView'
 
-const cell = (ref: string, value: string | number, over: Partial<S['CellOut']> = {}): S['CellOut'] => ({
+const cell = (ref: string, value: string | number, over: Partial<CellOut> = {}): CellOut => ({
   ref,
-  value,
+  text: typeof value === 'string' ? value : null,
+  number: typeof value === 'number' ? value : null,
   decimals: 0,
   bold: false,
   ...over,
 })
 
-const sheets: S['SheetOut'][] = [
+const sheets: SheetOut[] = [
   {
     name: 'Ersatzteile',
     cells: [

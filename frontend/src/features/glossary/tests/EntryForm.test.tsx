@@ -2,15 +2,15 @@ import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { HttpResponse, http } from 'msw'
 import { describe, expect, it, vi } from 'vitest'
-import type { S } from '@/shared/api/client'
-import { setToken } from '@/shared/api/client'
+import type { GlossaryOut } from '@/shared/api/generated'
+import { setToken } from '@/shared/api/session'
 import { AuthProvider } from '@/features/auth'
 import { EMPTY } from '../lib/entry'
 import { renderApp } from '@/testing/render'
 import { server } from '@/testing/server'
 import { EntryForm } from '../components/EntryForm'
 
-const duplicate: S['GlossaryOut'] = {
+const duplicate: GlossaryOut = {
   id: 2,
   terms: { de: 'Korpus', en: 'carcass' },
   synonyms: {},

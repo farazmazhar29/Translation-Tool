@@ -1,6 +1,7 @@
 import { lazy, type ComponentType, type ReactNode } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
-import { can, type Role } from '@/shared/api/client'
+import { can } from '@/shared/api/session'
+import type { Role } from '@/shared/api/generated'
 import { Login, Register, useAuth } from '@/features/auth'
 import { Shell } from './Shell'
 

@@ -1,4 +1,4 @@
-import type { Role } from '@/shared/api/client'
+import type { Role } from '@/shared/api/generated'
 
 /** Navigation entries (`key` selects the translated label `common:nav.<key>`) and the lowest role that sees them. */
 export const NAV = [

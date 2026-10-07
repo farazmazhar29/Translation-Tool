@@ -1,26 +1,20 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQueryClient } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
-import { ApiError, get, getToken, post, setToken, type S } from '@/shared/api/client'
+import type { RegisterIn } from '@/shared/api/generated'
+import { getToken, setToken } from '@/shared/api/session'
+import { AuthService, CURRENT_USER } from './api/AuthService'
 import { Ctx } from './auth-context'
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const qc = useQueryClient()
-  const { data, isLoading } = useQuery({
-    queryKey: ['current-user'],
-    queryFn: () => get<S['UserOut']>('/users/current-user'),
-    enabled: !!getToken(),
-    // A restart or a short network gap of the server must not look like "signed out": try again a few times.
-    // A rejected token (401) is final: the API client has already ended the session.
-    retry: (failures, error) => !(error instanceof ApiError && error.status === 401) && failures < 3,
-    retryDelay: (failure) => 400 * 2 ** failure,
-  })
+  const { data, loading } = AuthService.useFetchCurrentUser()
   const login = async (username: string, password: string): Promise<void> => {
-    const res = await post<S['LoginOut']>('/auth/login', new URLSearchParams({ username, password }))
+    const res = await AuthService.login(username, password)
     setToken(res.access_token)
-    qc.setQueryData(['current-user'], res.user)
+    qc.setQueryData(CURRENT_USER, res.user)
   }
-  const register = async (body: S['RegisterIn']): Promise<void> => {
-    await post<S['UserOut']>('/auth/register', { ...body }) // creating the account does not sign in
+  const register = async (body: RegisterIn): Promise<void> => {
+    await AuthService.register(body) // creating the account does not sign in
   }
   const logout = (): void => {
     setToken(null)
@@ -28,7 +22,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }
   return (
     <Ctx
-      value={{ user: getToken() ? (data ?? null) : null, loading: !!getToken() && isLoading, login, register, logout }}
+      value={{ user: getToken() ? (data ?? null) : null, loading: !!getToken() && loading, login, register, logout }}
     >
       {children}
     </Ctx>
