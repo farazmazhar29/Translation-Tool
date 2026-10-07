@@ -8,7 +8,7 @@ from sqlalchemy import func
 
 from app.accounts.security import Me
 from app.core.db import DB
-from app.core.enums import ProjectStatus
+from app.core.enums import FINISHED_STATUSES, ProjectStatus
 from app.dashboard.schemas import DashboardOut
 from app.glossary.models import GlossaryEntry
 from app.projects.models import Project, Segment, Translation
@@ -32,8 +32,9 @@ def dashboard(db: DB, _: Me) -> DashboardOut:
     return DashboardOut.model_validate(
         {
             "open": status[ProjectStatus.NEW] + status[ProjectStatus.PREVIEW_READY],
-            "in_review": status[ProjectStatus.IN_REVIEW],
-            "approved": status[ProjectStatus.APPROVED],
+            "in_review": status[ProjectStatus.PREVIEW_READY],  # a finished preview is waiting for the reviewer
+            # approved work stays approved when it is archived (by hand, or by an export, which sets ARCHIVED)
+            "approved": sum(p.status in FINISHED_STATUSES for p in projects),
             "edited_today": sum(p.updated_at >= today for p in projects),
             "recent": sorted(projects, key=lambda p: p.updated_at, reverse=True)[:6],
             "top_terms": [
