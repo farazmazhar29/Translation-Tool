@@ -10,9 +10,16 @@ from openpyxl import Workbook, load_workbook
 
 from app.accounts.security import Admin, Me, Reviewer, Translator
 from app.core.db import DB
-from app.core.enums import EntryCategory, GlossaryAction, GlossaryStatus, Lang, Role
+from app.core.enums import EntryCategory, GlossaryAction, GlossaryStatus, ImportSkip, Lang, Role
 from app.glossary.models import GlossaryEntry, GlossaryVersion
-from app.glossary.schemas import DuplicateGroup, GlossaryIn, GlossaryOut, GlossaryVersionOut, ImportResult
+from app.glossary.schemas import (
+    DuplicateGroup,
+    GlossaryIn,
+    GlossaryOut,
+    GlossaryVersionOut,
+    ImportResult,
+    SkippedRow,
+)
 
 router = APIRouter(prefix="/api/glossary", tags=["Glossary"])
 
@@ -227,16 +234,16 @@ def import_xlsx(
             for lang in Lang
         }
         dups = duplicates(db, terms) if terms else []
-        reason = (
-            "Begriff oder Übersetzung fehlt"
-            if not terms or (not dnt and len(terms) < 2)
-            else f"Dublette: {next(iter(terms.values()))}"
-            if dups and not update_existing
-            else ""
-        )
-        if reason:
+        if not terms or (not dnt and len(terms) < 2):
+            skip = SkippedRow(row=n, code=ImportSkip.MISSING_TERM, reason="Begriff oder Übersetzung fehlt")
+        elif dups and not update_existing:
+            term = next(iter(terms.values()))
+            skip = SkippedRow(row=n, code=ImportSkip.DUPLICATE, term=term, reason=f"Dublette: {term}")
+        else:
+            skip = None
+        if skip:
             res.skipped += 1
-            res.skipped_rows.append({"row": n, "reason": reason})
+            res.skipped_rows.append(skip)
             continue
         if dups:
             e = dups[0]

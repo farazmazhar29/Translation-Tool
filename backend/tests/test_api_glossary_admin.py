@@ -269,6 +269,12 @@ def test_excel_import_creates_updates_and_reports_what_it_skipped(client: TestCl
         (5, "Begriff oder Übersetzung fehlt"),
         (6, "Begriff oder Übersetzung fehlt"),
     }
+    # the codes let the interface word the reasons in its own language; a duplicate names its term
+    assert {(r["row"], r["code"], r["term"] != "") for r in result["skipped_rows"]} == {
+        (4, "duplicate", True),
+        (5, "missing_term", False),
+        (6, "missing_term", False),
+    }
 
     stored = {e["terms"]["de"]: e for e in client.get("/api/glossary", headers=reviewer, params={"q": t}).json()}
     assert stored[f"{t} neu"]["synonyms"]["de"] == ["n1", "n2", "n3"]

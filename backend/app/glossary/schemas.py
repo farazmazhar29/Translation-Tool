@@ -5,7 +5,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from app.core.enums import EntryCategory, GlossaryAction, GlossaryStatus, TermCategory
+from app.core.enums import EntryCategory, GlossaryAction, GlossaryStatus, ImportSkip, TermCategory
 from app.core.schemas import ORM
 
 
@@ -60,8 +60,15 @@ class DuplicateGroup(BaseModel):
     ids: list[int]
 
 
+class SkippedRow(BaseModel):
+    row: int = Field(description="Row number in the sheet, the header being row 1")
+    code: ImportSkip
+    term: str = Field(default="", description="The term of a duplicate")
+    reason: str = Field(description="German text of the reason, for API clients without their own wording")
+
+
 class ImportResult(BaseModel):
     created: int
     updated: int
     skipped: int
-    skipped_rows: list[dict[str, Any]]
+    skipped_rows: list[SkippedRow]

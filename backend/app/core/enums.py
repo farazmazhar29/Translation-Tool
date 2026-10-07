@@ -65,6 +65,13 @@ class EntryCategory(StrEnum):
     PRODUCT = "product"
 
 
+class ImportSkip(StrEnum):
+    """Why an Excel row was not imported; the interface words it in its own language."""
+
+    MISSING_TERM = "missing_term"  # no term, or no translation for a term that is to be translated
+    DUPLICATE = "duplicate"
+
+
 class GlossaryAction(StrEnum):
     CREATE = "create"
     UPDATE = "update"
