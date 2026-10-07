@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { post, type Lang, type S } from '@/shared/api/client'
 import { LangCheckboxes, SelectField } from '@/shared/components/form'
+import { useConfirm } from '@/shared/components/confirm'
 import { Btn } from '@/shared/components/ui'
 import { LANGS } from '@/shared/constants'
 import { optionsOf } from '@/shared/lib/ui'
@@ -18,6 +19,7 @@ export const TranslationSetup = ({
   run: Run
 }) => {
   const { t } = useTranslation(['projects', 'common'])
+  const { confirm, dialog } = useConfirm()
   const [srcPick, setSrcPick] = useState<string | null>(null)
   const [targetsPick, setTargetsPick] = useState<Lang[] | null>(null)
   const src = srcPick ?? p.source_lang
@@ -39,14 +41,23 @@ export const TranslationSetup = ({
         variant="primary"
         disabled={p.job_state === 'running' || targets.length === 0}
         onClick={() => {
-          if (!hasTranslation || window.confirm(t('view.confirmOverwrite'))) {
-            run(() => post(`/projects/${p.id}/translate`, { source_lang: src, target_langs: targets }))
-          }
+          void (async () => {
+            const ok =
+              !hasTranslation ||
+              (await confirm({
+                title: t('view.retranslateTitle'),
+                message: t('view.confirmOverwrite'),
+                confirmLabel: t('view.retranslate'),
+                destructive: true,
+              }))
+            if (ok) run(() => post(`/projects/${p.id}/translate`, { source_lang: src, target_langs: targets }))
+          })()
         }}
       >
         {hasTranslation ? t('view.retranslate') : t('view.startTranslation')}
       </Btn>
       <span className="basis-full text-xs text-stone-600">{t('view.previewOnly')}</span>
+      {dialog}
     </div>
   )
 }

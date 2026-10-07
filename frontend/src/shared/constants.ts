@@ -16,8 +16,7 @@ export const EXPORT_MODES = ['translation', 'both'] as const
 /** Colours per project status: `chip` for the badge, `dot` for the small circle in it (and the workflow steps). */
 export const STATUS_STYLE = {
   new: { chip: 'bg-stone-100 text-stone-700', dot: 'bg-stone-400' },
-  preview_ready: { chip: 'bg-sky-50 text-sky-800', dot: 'bg-sky-500' },
-  in_review: { chip: 'bg-amber-50 text-amber-800', dot: 'bg-amber-500' },
+  preview_ready: { chip: 'bg-amber-50 text-amber-800', dot: 'bg-amber-500' }, // waiting for the reviewer
   approved: { chip: 'bg-emerald-50 text-emerald-800', dot: 'bg-emerald-500' },
   archived: { chip: 'bg-stone-200 text-stone-700', dot: 'bg-stone-500' },
 } as const

@@ -19,10 +19,10 @@ interface Props {
 export const SegmentTable = ({ segments, lang, srcLang, ...row }: Props) => {
   const { t } = useTranslation('projects')
   return (
-    <Card className="p-0">
-      <div className="grid border-b border-line bg-stone-50 text-[11px] font-bold uppercase tracking-wider text-stone-600 md:grid-cols-2">
+    <Card flush>
+      <div className="grid border-b border-line bg-stone-50 text-[11px] font-bold uppercase tracking-wider text-stone-600 lg:grid-cols-2">
         <span className="px-6 py-3.5">{t('view.columnOriginal', { lang: srcLang.toUpperCase() || '?' })}</span>
-        <span className="hidden px-6 py-3.5 md:block md:pl-0">
+        <span className="hidden px-6 py-3.5 lg:block lg:pl-0">
           {t('view.columnTranslation', { lang: lang.toUpperCase() })}
         </span>
       </div>

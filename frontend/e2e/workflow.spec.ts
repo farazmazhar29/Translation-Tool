@@ -6,7 +6,7 @@ test('translator → reviewer: upload, preview, edit, approve, export', async ({
   const url = await createProject(page, 'E2E Montageanleitung')
 
   // upload analysed the file: language detected, nothing translated yet
-  await expect(page.getByText('Erkannte Sprache:')).toContainText('DE')
+  await expect(page.locator('dl').filter({ hasText: 'Erkannte Sprache' })).toContainText('DE')
   await expect(page.getByText('Noch nicht übersetzt')).toHaveCount(0)
 
   // translation creates a preview with highlighted terms; export is not offered yet
@@ -23,7 +23,8 @@ test('translator → reviewer: upload, preview, edit, approve, export', async ({
   await page.keyboard.press('Escape')
   await expect(dialog).toBeHidden()
 
-  // manual edit is attributed to the editor
+  // manual edit is attributed to the editor (editing happens in the segment list)
+  await page.getByRole('button', { name: 'Segmente bearbeiten' }).click()
   await page.getByRole('button', { name: 'Bearbeiten' }).nth(1).click()
   await page.getByRole('textbox').first().fill('Edited by hand')
   await page.getByRole('button', { name: 'Übernehmen' }).click()
@@ -38,8 +39,9 @@ test('translator → reviewer: upload, preview, edit, approve, export', async ({
   await page.getByRole('button', { name: 'Abmelden' }).click()
   await login(page, 'reviewer')
   await page.goto(url)
-  page.once('dialog', (d) => void d.accept())
   await page.getByRole('button', { name: 'Übersetzung freigeben' }).click()
+  await expect(page.getByRole('dialog', { name: 'Übersetzung freigeben?' })).toBeVisible() // our own dialog, not the browser's
+  await page.getByRole('dialog').getByRole('button', { name: 'Übersetzung freigeben' }).click()
   await expect(page.getByText('Freigegeben', { exact: true })).toBeVisible()
 
   // export to Excel with custom columns, downloads a file
@@ -54,6 +56,13 @@ test('translator → reviewer: upload, preview, edit, approve, export', async ({
   // history lists the release and the export
   await page.getByRole('button', { name: 'Verlauf' }).click()
   await expect(page.getByText(/Freigabe #\d+/)).toBeVisible()
+
+  // "archive afterwards" was ticked (the default): the project left the active list
+  await page.getByRole('link', { name: 'Zurück zu den Projekten' }).click()
+  await expect(page.getByRole('table')).toBeVisible()
+  await expect(page.getByRole('link', { name: 'E2E Montageanleitung' })).toHaveCount(0)
+  await page.getByText('Archivierte', { exact: true }).click()
+  await expect(page.getByRole('link', { name: 'E2E Montageanleitung' })).toBeVisible()
 })
 
 test('glossary: duplicates are detected and drafts need approval', async ({ page }) => {

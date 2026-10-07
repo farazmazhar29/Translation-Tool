@@ -27,8 +27,9 @@ test.describe('accessibility (axe, WCAG 2.x A/AA)', () => {
     await page.getByRole('button', { name: 'Qualitätsprüfung' }).click()
     await expectAccessible(page, 'quality panel')
 
-    page.once('dialog', (d) => void d.accept())
     await page.getByRole('button', { name: 'Übersetzung freigeben' }).click()
+    await expectAccessible(page, 'confirmation dialog')
+    await page.getByRole('dialog').getByRole('button', { name: 'Übersetzung freigeben' }).click()
     await page.getByRole('button', { name: 'Exportieren', exact: true }).click()
     await page.getByLabel('Format').selectOption('xlsx')
     await expectAccessible(page, 'export dialog')

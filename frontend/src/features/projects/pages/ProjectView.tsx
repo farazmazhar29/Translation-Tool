@@ -6,16 +6,20 @@ import { useAuth } from '@/features/auth'
 import { TermDialog } from '@/features/glossary'
 import { can, get, post, put, type S } from '@/shared/api/client'
 import { BackLink, Loading } from '@/shared/components/layout'
-import { Card, ErrorText, Modal } from '@/shared/components/ui'
+import { ErrorText } from '@/shared/components/ui'
 import { useAction, useInvalidate } from '@/shared/lib/hooks'
 import { ExportDialog } from '../components/ExportDialog'
 import { HistoryPanel } from '../components/HistoryPanel'
 import { ProjectHeader } from '../components/ProjectHeader'
 import { ProjectToolbar } from '../components/ProjectToolbar'
+import { PageView } from '../components/PageView'
 import { QualityPanel } from '../components/QualityPanel'
+import { SaveStatus } from '../components/SaveStatus'
 import { SegmentTable } from '../components/SegmentTable'
+import { SourcePreview } from '../components/SourcePreview'
 import { TermLegend } from '../components/TermLegend'
-import { EDITABLE, PROJECT_QUERIES } from '../constants'
+import { ViewSwitch } from '../components/ViewSwitch'
+import { EDITABLE, POLL_MS, PROJECT_QUERIES } from '../constants'
 import type { Panel, Run, Segment } from '../types'
 
 /** One project: translation setup, review workflow and the segments. The parts live in `../components`. */
@@ -25,14 +29,26 @@ const ProjectView = () => {
   const { user } = useAuth()
   const [picked, setLang] = useState('')
   const [panel, setPanel] = useState<Panel>(null)
+  const [view, setView] = useState<'page' | 'list'>('page')
   const [modal, setModal] = useState<{ kind: 'term'; seg: Segment; term: S['Term'] } | { kind: 'export' } | null>(null)
 
   const { data: p, error } = useQuery({
     queryKey: ['project', id],
     queryFn: () => get<S['ProjectDetail']>(`/projects/${id}`),
-    refetchInterval: (q) => (q.state.data?.job_state === 'running' ? 1500 : false),
   })
   const refresh = useInvalidate(PROJECT_QUERIES)
+  // While the translation runs, ask the small status endpoint (a few hundred bytes) instead of loading the whole
+  // project with all its segments again and again; when the job is over, load the project once.
+  const { data: status } = useQuery({
+    queryKey: ['project-status', id],
+    queryFn: async () => {
+      const job = await get<S['JobStatus']>(`/projects/${id}/status`)
+      if (job.job_state !== 'running') void refresh()
+      return job
+    },
+    enabled: p?.job_state === 'running',
+    refetchInterval: (q) => (q.state.data?.job_state === 'running' ? POLL_MS : false),
+  })
   const act = useAction((fn: () => Promise<unknown>) => fn(), { invalidate: PROJECT_QUERIES })
   const run: Run = (fn) => {
     act.mutate(fn)
@@ -53,7 +69,14 @@ const ProjectView = () => {
   return (
     <div className="space-y-4">
       <BackLink to="/projects">{t('common:backToProjects')}</BackLink>
-      <ProjectHeader project={p} editable={editable} hasTranslation={hasTranslation} run={run} error={act.error} />
+      <ProjectHeader
+        project={p}
+        progress={status?.job_state === 'running' ? status.job_progress : undefined}
+        editable={editable}
+        hasTranslation={hasTranslation}
+        run={run}
+        error={act.error}
+      />
       {hasTranslation && (
         <>
           <ProjectToolbar
@@ -68,12 +91,25 @@ const ProjectView = () => {
               setModal({ kind: 'export' })
             }}
           />
-          <TermLegend />
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <TermLegend />
+            <ViewSwitch value={view} onChange={setView} />
+          </div>
         </>
       )}
       {panel === 'quality' && <QualityPanel projectId={id} lang={lang} />}
       {panel === 'history' && <HistoryPanel projectId={id} />}
-      {hasTranslation && (
+      {hasTranslation && view === 'page' && (
+        <PageView
+          segments={p.segments}
+          lang={lang}
+          srcLang={srcLang}
+          onTerm={(seg, term) => {
+            setModal({ kind: 'term', seg, term })
+          }}
+        />
+      )}
+      {hasTranslation && view === 'list' && (
         <SegmentTable
           segments={p.segments}
           lang={lang}
@@ -89,16 +125,7 @@ const ProjectView = () => {
           }}
         />
       )}
-      {!hasTranslation && !running && (
-        <Card>
-          <p className="text-sm text-stone-600">{t('view.analyzed')}</p>
-          <ol className="mt-3 list-decimal space-y-1 pl-5 text-sm text-stone-600">
-            {p.segments.slice(0, 15).map((s) => (
-              <li key={s.id}>{s.source_text.slice(0, 160)}</li>
-            ))}
-          </ol>
-        </Card>
-      )}
+      {!hasTranslation && !running && <SourcePreview segments={p.segments} />}
 
       {modal?.kind === 'term' && (
         <TermDialog
@@ -132,11 +159,7 @@ const ProjectView = () => {
           }}
         />
       )}
-      {act.isPending && (
-        <Modal title={t('view.pleaseWait')} onClose={() => undefined}>
-          <p className="text-sm text-stone-600">{t('view.running')}</p>
-        </Modal>
-      )}
+      <SaveStatus pending={act.isPending} failed={act.isError} />
     </div>
   )
 }

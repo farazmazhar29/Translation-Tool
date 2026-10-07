@@ -29,8 +29,7 @@ export const de = {
   role: { translator: 'Übersetzer', reviewer: 'Prüfer', admin: 'Administrator' },
   status: {
     new: 'Neu',
-    preview_ready: 'Vorschau bereit',
-    in_review: 'In Prüfung',
+    preview_ready: 'In Prüfung',
     approved: 'Freigegeben',
     archived: 'Archiviert',
   },

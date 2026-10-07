@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { get, type S } from '@/shared/api/client'
 import { Btn, Card } from '@/shared/components/ui'
 import { SEV } from '../constants'
+import { findingText } from '../lib/findings'
 
 /** Quality check of one target language; clicking a finding scrolls to the segment. */
 export const QualityPanel = ({ projectId, lang }: { projectId: number; lang: string }) => {
@@ -46,7 +47,7 @@ export const QualityPanel = ({ projectId, lang }: { projectId: number; lang: str
                 document.getElementById(`seg-${String(w.idx)}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
               }
             >
-              <strong>{w.idx >= 0 ? `#${String(w.idx + 1)}` : '•'}</strong> {w.message}
+              <strong>{w.idx >= 0 ? `#${String(w.idx + 1)}` : '•'}</strong> {findingText(w, t)}
             </button>
           </li>
         ))}

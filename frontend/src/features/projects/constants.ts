@@ -1,5 +1,8 @@
+/** While a translation runs, its progress is asked for this often (milliseconds). */
+export const POLL_MS = 1500
+
 /** Project states in which segments may still be edited. */
-export const EDITABLE = ['new', 'preview_ready', 'in_review']
+export const EDITABLE = ['new', 'preview_ready']
 /** Query keys of everything that shows project data (refreshed after each change). */
 export const PROJECT_QUERIES = ['project', 'quality', 'history'] // everything that shows project data
 /** Badge colours of the quality-check severities. */

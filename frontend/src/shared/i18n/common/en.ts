@@ -31,8 +31,7 @@ export const en: Texts<typeof de> = {
   role: { translator: 'Translator', reviewer: 'Reviewer', admin: 'Administrator' },
   status: {
     new: 'New',
-    preview_ready: 'Preview ready',
-    in_review: 'In review',
+    preview_ready: 'In review',
     approved: 'Approved',
     archived: 'Archived',
   },

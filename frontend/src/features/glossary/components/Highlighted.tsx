@@ -11,12 +11,13 @@ interface Props {
   terms: Term[]
   side: 'source' | 'target'
   onTerm: (t: Term) => void
+  className?: string // text size and spacing; the default suits table rows
 }
 
-export const Highlighted = ({ text, terms, side, onTerm }: Props) => {
+export const Highlighted = ({ text, terms, side, onTerm, className = 'text-sm leading-relaxed' }: Props) => {
   const colors = useSettings()?.colors ?? FALLBACK
   return (
-    <p className="whitespace-pre-wrap text-sm leading-relaxed">
+    <p className={`whitespace-pre-wrap ${className}`}>
       {chunkify(text, terms, side).map((c, i) => {
         const term = c.term
         if (!term) return <Fragment key={i}>{c.text}</Fragment>

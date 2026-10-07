@@ -31,7 +31,7 @@ export const SegmentRow = ({ seg, lang, editable, onTerm, onSave, onRegenerate, 
   return (
     <div
       id={`seg-${seg.idx}`}
-      className={`grid gap-5 border-b border-line px-6 py-5 last:border-b-0 md:grid-cols-2 md:gap-8 ${missing ? 'bg-red-50/50' : 'hover:bg-stone-50/60'}`}
+      className={`grid gap-5 border-b border-line px-6 py-5 last:border-b-0 lg:grid-cols-2 lg:gap-8 ${missing ? 'bg-red-50/50' : 'hover:bg-stone-50/60'}`}
     >
       <div>
         <div className="mb-2 flex min-h-7 items-center">
@@ -44,6 +44,7 @@ export const SegmentRow = ({ seg, lang, editable, onTerm, onSave, onRegenerate, 
             text={seg.source_text}
             terms={terms}
             side="source"
+            className="text-[15px] leading-relaxed"
             onTerm={(term) => {
               onTerm(seg, term)
             }}
@@ -51,7 +52,7 @@ export const SegmentRow = ({ seg, lang, editable, onTerm, onSave, onRegenerate, 
         </div>
       </div>
       <div>
-        <span className="mb-2 block text-xs font-bold uppercase tracking-wider text-stone-600 md:hidden">
+        <span className="mb-2 block text-xs font-bold uppercase tracking-wider text-stone-600 lg:hidden">
           {t('row.translation')}
         </span>
         <div className="mb-2 flex min-h-7 items-center gap-2">
@@ -134,6 +135,7 @@ export const SegmentRow = ({ seg, lang, editable, onTerm, onSave, onRegenerate, 
                 text={tr.text}
                 terms={terms}
                 side="target"
+                className="text-[15px] leading-relaxed"
                 onTerm={(term) => {
                   onTerm(seg, term)
                 }}
