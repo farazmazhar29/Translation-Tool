@@ -374,7 +374,16 @@ Checked on the user's projects: both archived ones show "Archived", and the dash
   * The term dialog (glossary) receives "replace everywhere" from the project page, so the glossary feature does not depend on the projects feature.
 * **Bundles.** The generated client (37.6 kB, 5.3 kB gzipped) and the libraries are their own chunks, cached across app releases; no chunk passes Vite's 500 kB warning.
 
-Tests: the API configuration is tested through generated factories (token, errors, 401, download errors, saving a file) and `useApiRequest` directly. All 162 unit tests, 332 backend tests and 15 end-to-end tests pass unchanged in behaviour.
+Tests (D-58): the API configuration is tested through generated factories (token, errors, 401, download errors, saving a file) and `useApiRequest` directly. All 162 unit tests, 332 backend tests and 15 end-to-end tests pass unchanged in behaviour.
+
+**D-59 - Users can be deleted; their name stays and is retired (2026-10-07).** Until now a user could only be deactivated. A delete was easy to add safely: projects, translations, approvals, exports and glossary changes store who made them as **text**, not as a reference, so nothing breaks and the history keeps the name. Of three options (deactivate only, delete and keep the name, delete and anonymise), the user chose to keep the name. Anonymising would be the answer to a GDPR erasure request and can be added later.
+* `DELETE /api/users/{uid}` (admins). An admin cannot delete themselves, and since the caller stays an admin, the application never ends up without one. The deleted user's token stops working at once (the user is looked up on every request).
+* **The name is retired** (`retired_usernames`, migration 0007, stored in lower case). Self-registration is on, so without this someone could sign up as "max" and pass for the author of the former max's approvals. Creating or registering a retired name is refused with its own message.
+* The editor filter of the project list still offers deleted users' names, because their work is still there.
+* Creating a user in the admin page now also compares names case-insensitively, as registration already did ("Admin" next to "admin" was possible there).
+* Frontend: a delete icon per row (not on your own row) with a confirmation that says the name stays in the history and is not given again.
+
+Tests: deletion with the history intact, the dead token and the refused sign-in, the retired name for both creation paths (also in other letter case), the case-insensitive check, and the 400/404/403 cases. In the frontend: confirm and delete, no button on your own row, and no "active" choice for a new user.
 
 ## 6. Problems found and how they were fixed
 
@@ -475,6 +484,8 @@ TanStack Query lint, Knip, `prettier --check` + `npm audit` in CI, Husky + lint-
 * **2026-10-07** - Quality check reads the current glossary; hints can be accepted; migration 0005 (D-56).
 * **2026-10-07** - Archived is a flag only; one badge for all archived projects; migration 0006 (D-57).
 * **2026-10-07** - Generated API client (openapi-generator, axios) and one service per feature (D-58).
+* **2026-10-07** - "Active" is only offered when editing a user: a new account is always active; deactivating removes access while the history keeps the name (there is no delete).
+* **2026-10-07** - Users can be deleted; the name stays in the history and is retired; migration 0007 (D-59).
 * **2026-10-07** - README rewritten as a short guide: tools, Docker steps, development commands, AI and architecture in brief; requirement table and links to this log removed.
 
 ## 9. Sources (research, 2026-10-01 and 2026-10-03)

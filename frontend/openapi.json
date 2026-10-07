@@ -215,7 +215,7 @@
     "tags": [
      "Users"
     ],
-    "summary": "Usernames (for the editor filter)",
+    "summary": "Usernames (for the editor filter), deleted users included",
     "operationId": "user_names",
     "responses": {
      "200": {
@@ -280,6 +280,56 @@
        "application/json": {
         "schema": {
          "$ref": "#/components/schemas/UserOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "delete": {
+    "tags": [
+     "Users"
+    ],
+    "summary": "Delete a user; their name stays in the history and is never given to anyone else",
+    "description": "Projects, approvals, exports and glossary changes store who made them as text, so they keep the name. The name is\nretired: a new account with it could otherwise pass for the author of that work. The caller stays an admin, so\ndeleting never leaves the application without one.",
+    "operationId": "delete_user",
+    "security": [
+     {
+      "OAuth2PasswordBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "uid",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "integer",
+       "title": "Uid"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": {
+          "type": "boolean"
+         },
+         "title": "Response Delete User"
         }
        }
       }

@@ -12,7 +12,7 @@ from app.core.config import settings
 
 EXPECTED_TABLES = {
     "users", "projects", "segments", "translations", "glossary_entries", "glossary_versions",
-    "releases", "export_files", "app_settings", "export_templates",
+    "releases", "export_files", "app_settings", "export_templates", "retired_usernames",
 }  # fmt: skip
 
 
@@ -35,7 +35,7 @@ def test_upgrade_creates_every_table_and_records_the_revision(fresh_db: Engine) 
     migrate.upgrade_to_head()
     assert tables(fresh_db) == EXPECTED_TABLES | {"alembic_version"}
     with fresh_db.connect() as conn:
-        assert conn.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "0006"
+        assert conn.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "0007"
 
 
 def test_models_and_migrations_have_not_drifted_apart(fresh_db: Engine) -> None:
@@ -64,7 +64,7 @@ def test_a_database_from_the_first_version_is_adopted_not_rebuilt(fresh_db: Engi
     assert "alembic_version" not in tables(fresh_db)
     migrate.upgrade_to_head()  # must not fail with "table already exists", and must still apply newer revisions
     with fresh_db.connect() as conn:
-        assert conn.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "0006"
+        assert conn.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "0007"
     assert tables(fresh_db) == EXPECTED_TABLES | {"alembic_version"}
 
 

@@ -1,9 +1,11 @@
-import { Check, Minus, Pencil, Plus } from 'lucide-react'
+import { Check, Minus, Pencil, Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useAuth } from '@/features/auth'
+import { useConfirm } from '@/shared/components/confirm'
 import { Checkbox, SelectField, TextField } from '@/shared/components/form'
 import { Form, PageHeader, Table } from '@/shared/components/layout'
-import { Btn, IconAction, Modal } from '@/shared/components/ui'
+import { Btn, ErrorText, IconAction, Modal } from '@/shared/components/ui'
 import { useFields } from '@/shared/lib/hooks'
 import { optionsOf } from '@/shared/lib/ui'
 import { ROLES } from '@/shared/constants'
@@ -40,7 +42,9 @@ const UserDialog = ({ id, initial, onClose }: { id?: number; initial: UserForm; 
             set('role')(role as UserForm['role'])
           }}
         />
-        <Checkbox label={t('active')} checked={f.active} onChange={set('active')} />
+        {/* a new account is always active; deactivating is how an existing user loses access (there is no delete,
+            so their name stays on their translations and approvals) */}
+        {id && <Checkbox label={t('active')} checked={f.active} onChange={set('active')} />}
       </Form>
     </Modal>
   )
@@ -48,7 +52,10 @@ const UserDialog = ({ id, initial, onClose }: { id?: number; initial: UserForm; 
 
 const Users = () => {
   const { t } = useTranslation(['users', 'common'])
+  const { user: me } = useAuth()
+  const { confirm, dialog } = useConfirm()
   const { data: users = [] } = UserService.useFetchUsers()
+  const remove = UserService.useDeleteUser()
   const [editing, setEditing] = useState<{ id?: number; initial: UserForm } | null>(null)
   return (
     <div className="space-y-4">
@@ -63,6 +70,7 @@ const Users = () => {
           {t('addUser')}
         </Btn>
       </PageHeader>
+      <ErrorText error={remove.error} />
       <Table
         headers={[
           t('user'),
@@ -102,11 +110,29 @@ const Users = () => {
                   })
                 }}
               />
+              {u.id !== me?.id && ( // nobody deletes their own account
+                <IconAction
+                  label={t('common:delete')}
+                  icon={Trash2}
+                  destructive
+                  onClick={() => {
+                    void confirm({
+                      title: t('deleteTitle'),
+                      message: t('confirmDelete', { name: u.username }),
+                      confirmLabel: t('common:delete'),
+                      destructive: true,
+                    }).then((ok) => {
+                      if (ok) remove.mutate(u.id)
+                    })
+                  }}
+                />
+              )}
             </td>
           </tr>
         ))}
       </Table>
       <p className="text-xs text-stone-600">{t('rights')}</p>
+      {dialog}
       {editing && (
         <UserDialog
           id={editing.id}

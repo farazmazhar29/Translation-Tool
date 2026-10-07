@@ -4820,6 +4820,44 @@ export const UsersApiAxiosParamCreator = function (configuration?: Configuration
             };
         },
         /**
+         * Projects, approvals, exports and glossary changes store who made them as text, so they keep the name. The name is retired: a new account with it could otherwise pass for the author of that work. The caller stays an admin, so deleting never leaves the application without one.
+         * @summary Delete a user; their name stays in the history and is never given to anyone else
+         * @param {number} uid 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        deleteUser: async (uid: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'uid' is not null or undefined
+            assertParamExists('deleteUser', 'uid', uid)
+            const localVarPath = `/api/users/{uid}`
+                .replace('{uid}', encodeURIComponent(String(uid)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'DELETE', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication OAuth2PasswordBearer required
+            // oauth required
+            await setOAuthToObject(localVarHeaderParameter, "OAuth2PasswordBearer", [], configuration)
+
+            localVarHeaderParameter['Accept'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
          * 
          * @summary List Users
          * @param {*} [options] Override http request option.
@@ -4932,7 +4970,7 @@ export const UsersApiAxiosParamCreator = function (configuration?: Configuration
         },
         /**
          * 
-         * @summary Usernames (for the editor filter)
+         * @summary Usernames (for the editor filter), deleted users included
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -4987,6 +5025,19 @@ export const UsersApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
+         * Projects, approvals, exports and glossary changes store who made them as text, so they keep the name. The name is retired: a new account with it could otherwise pass for the author of that work. The caller stays an admin, so deleting never leaves the application without one.
+         * @summary Delete a user; their name stays in the history and is never given to anyone else
+         * @param {number} uid 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async deleteUser(uid: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<{ [key: string]: boolean; }>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.deleteUser(uid, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['UsersApi.deleteUser']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
          * 
          * @summary List Users
          * @param {*} [options] Override http request option.
@@ -5026,7 +5077,7 @@ export const UsersApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
-         * @summary Usernames (for the editor filter)
+         * @summary Usernames (for the editor filter), deleted users included
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -5054,6 +5105,16 @@ export const UsersApiFactory = function (configuration?: Configuration, basePath
          */
         createUser(requestParameters: UsersApiCreateUserRequest, options?: RawAxiosRequestConfig): AxiosPromise<UserOut> {
             return localVarFp.createUser(requestParameters.userIn, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Projects, approvals, exports and glossary changes store who made them as text, so they keep the name. The name is retired: a new account with it could otherwise pass for the author of that work. The caller stays an admin, so deleting never leaves the application without one.
+         * @summary Delete a user; their name stays in the history and is never given to anyone else
+         * @param {UsersApiDeleteUserRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        deleteUser(requestParameters: UsersApiDeleteUserRequest, options?: RawAxiosRequestConfig): AxiosPromise<{ [key: string]: boolean; }> {
+            return localVarFp.deleteUser(requestParameters.uid, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -5085,7 +5146,7 @@ export const UsersApiFactory = function (configuration?: Configuration, basePath
         },
         /**
          * 
-         * @summary Usernames (for the editor filter)
+         * @summary Usernames (for the editor filter), deleted users included
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -5100,6 +5161,13 @@ export const UsersApiFactory = function (configuration?: Configuration, basePath
  */
 export interface UsersApiCreateUserRequest {
     readonly userIn: UserIn
+}
+
+/**
+ * Request parameters for deleteUser operation in UsersApi.
+ */
+export interface UsersApiDeleteUserRequest {
+    readonly uid: number
 }
 
 /**
@@ -5124,6 +5192,17 @@ export class UsersApi extends BaseAPI {
      */
     public createUser(requestParameters: UsersApiCreateUserRequest, options?: RawAxiosRequestConfig) {
         return UsersApiFp(this.configuration).createUser(requestParameters.userIn, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Projects, approvals, exports and glossary changes store who made them as text, so they keep the name. The name is retired: a new account with it could otherwise pass for the author of that work. The caller stays an admin, so deleting never leaves the application without one.
+     * @summary Delete a user; their name stays in the history and is never given to anyone else
+     * @param {UsersApiDeleteUserRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public deleteUser(requestParameters: UsersApiDeleteUserRequest, options?: RawAxiosRequestConfig) {
+        return UsersApiFp(this.configuration).deleteUser(requestParameters.uid, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -5159,7 +5238,7 @@ export class UsersApi extends BaseAPI {
 
     /**
      * 
-     * @summary Usernames (for the editor filter)
+     * @summary Usernames (for the editor filter), deleted users included
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */

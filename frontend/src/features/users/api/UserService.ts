@@ -18,4 +18,9 @@ export const UserService = {
       { invalidate: ['users'], onSuccess },
     )
   },
+
+  /** Deletes a user. Their name stays in the history and is never given to anyone else. */
+  useDeleteUser() {
+    return useMutation((id: number) => unwrap(api.deleteUser({ uid: id })), { invalidate: ['users', 'editors'] })
+  },
 }

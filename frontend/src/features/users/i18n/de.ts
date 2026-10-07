@@ -13,6 +13,9 @@ export const de = {
   role: 'Rolle',
   active: 'Aktiv',
   user: 'Benutzer',
+  deleteTitle: 'Benutzer löschen?',
+  confirmDelete:
+    '„{{name}}“ wird gelöscht. In Projekten, Freigaben und Exporten bleibt der Name erhalten, und der Benutzername wird nicht neu vergeben.',
   rights:
     'Rechte: Übersetzer erstellen, übersetzen und bearbeiten · Prüfer kontrollieren und geben frei · Administratoren verwalten Benutzer, Glossar, Einstellungen und Rechte.',
 }

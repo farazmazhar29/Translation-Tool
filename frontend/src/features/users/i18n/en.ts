@@ -15,6 +15,9 @@ export const en: Texts<typeof de> = {
   role: 'Role',
   active: 'Active',
   user: 'User',
+  deleteTitle: 'Delete user?',
+  confirmDelete:
+    '“{{name}}” will be deleted. Projects, approvals and exports keep the name, and the username is never given to anyone else.',
   rights:
     'Permissions: translators create, translate and edit · reviewers check and approve · administrators manage users, glossary, settings and permissions.',
 }

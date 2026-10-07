@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import func
 
-from app.accounts.models import User
+from app.accounts.models import RetiredUsername, User
 from app.accounts.schemas import MIN_PASSWORD_LENGTH, AuthOptions, LoginOut, RegisterIn, UserIn, UserOut
 from app.accounts.security import DUMMY_HASH, Admin, Me, create_token, hash_password, needs_rehash, verify_password
 from app.core.config import settings
@@ -17,6 +17,16 @@ from app.core.ratelimit import FailureLimiter, RateLimited
 router = APIRouter(prefix="/api")
 
 login_limiter = FailureLimiter(settings.login_max_failures, settings.login_window_minutes * 60)
+
+
+def check_username_free(db: DB, username: str) -> None:
+    """Case-insensitive ("Admin" next to "admin" would be a look-alike account), and never the name of a deleted
+    user, which the history still shows."""
+    name = username.lower()
+    if db.query(User).filter(func.lower(User.username) == name).first():
+        raise HTTPException(409, "Benutzername existiert bereits")
+    if db.get(RetiredUsername, name):
+        raise HTTPException(409, "Dieser Benutzername gehörte einem gelöschten Konto und wird nicht neu vergeben")
 
 
 @router.post("/auth/login", tags=["Auth"], summary="Log in (rate limited per IP and username)")
@@ -68,9 +78,7 @@ def register(db: DB, request: Request, body: RegisterIn) -> UserOut:
             f"Zu viele Registrierungen. Bitte in {e.retry_after // 60 + 1} Minute(n) erneut versuchen.",
             headers={"Retry-After": str(e.retry_after)},
         ) from None
-    # Case-insensitive: "Admin" must not be registrable next to "admin" (look-alike accounts).
-    if db.query(User).filter(func.lower(User.username) == body.username.lower()).first():
-        raise HTTPException(409, "Benutzername existiert bereits")
+    check_username_free(db, body.username)
     u = User(
         username=body.username,
         full_name=body.full_name.strip(),
@@ -97,17 +105,19 @@ def list_users(db: DB, _: Admin) -> list[User]:
     return db.query(User).order_by(User.id).all()
 
 
-@router.get("/users/names", tags=["Users"], summary="Usernames (for the editor filter)")
+@router.get("/users/names", tags=["Users"], summary="Usernames (for the editor filter), deleted users included")
 def user_names(db: DB, _: Me) -> list[str]:
-    return [u.username for u in db.query(User)]
+    # a deleted user's work stays in the history, so the filter still offers the name (as it was written)
+    names = [u.username for u in db.query(User)]
+    known = {n.lower() for n in names}
+    return names + [r.username for r in db.query(RetiredUsername) if r.username not in known]
 
 
 @router.post("/users", response_model=UserOut, tags=["Users"])
 def create_user(db: DB, _: Admin, body: UserIn) -> User:
     if len(body.password) < MIN_PASSWORD_LENGTH:
         raise HTTPException(400, f"Passwort muss mindestens {MIN_PASSWORD_LENGTH} Zeichen haben")
-    if db.query(User).filter(User.username == body.username).first():
-        raise HTTPException(409, "Benutzername existiert bereits")
+    check_username_free(db, body.username)
     u = User(
         username=body.username,
         full_name=body.full_name,
@@ -134,3 +144,23 @@ def update_user(db: DB, admin: Admin, uid: int, body: UserIn) -> User:
         u.password_hash = hash_password(body.password)
     db.commit()
     return u
+
+
+@router.delete(
+    "/users/{uid}",
+    tags=["Users"],
+    summary="Delete a user; their name stays in the history and is never given to anyone else",
+)
+def delete_user(db: DB, admin: Admin, uid: int) -> dict[str, bool]:
+    """Projects, approvals, exports and glossary changes store who made them as text, so they keep the name. The name is
+    retired: a new account with it could otherwise pass for the author of that work. The caller stays an admin, so
+    deleting never leaves the application without one."""
+    u = db.get(User, uid)
+    if u is None:
+        raise HTTPException(404, "Benutzer nicht gefunden")
+    if u.id == admin.id:
+        raise HTTPException(400, "Das eigene Konto kann nicht gelöscht werden")
+    db.add(RetiredUsername(username=u.username.lower(), retired_by=admin.username))
+    db.delete(u)
+    db.commit()
+    return {"deleted": True}
