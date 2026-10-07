@@ -12,12 +12,12 @@
      "Auth"
     ],
     "summary": "Log in (rate limited per IP and username)",
-    "operationId": "login_api_auth_login_post",
+    "operationId": "login",
     "requestBody": {
      "content": {
       "application/x-www-form-urlencoded": {
        "schema": {
-        "$ref": "#/components/schemas/Body_login_api_auth_login_post"
+        "$ref": "#/components/schemas/Body_login"
        }
       }
      },
@@ -53,7 +53,7 @@
      "Auth"
     ],
     "summary": "What the login page may offer",
-    "operationId": "auth_options_api_auth_options_get",
+    "operationId": "auth_options",
     "responses": {
      "200": {
       "description": "Successful Response",
@@ -74,7 +74,7 @@
      "Auth"
     ],
     "summary": "Create an account (always a translator); the user signs in afterwards",
-    "operationId": "register_api_auth_register_post",
+    "operationId": "register",
     "requestBody": {
      "content": {
       "application/json": {
@@ -116,7 +116,7 @@
     ],
     "summary": "The signed-in user (profile and role)",
     "description": "What the browser asks on every page load: who owns this token, and what may they do?",
-    "operationId": "read_current_user_api_users_current_user_get",
+    "operationId": "read_current_user",
     "responses": {
      "200": {
       "description": "Successful Response",
@@ -142,7 +142,7 @@
      "Users"
     ],
     "summary": "List Users",
-    "operationId": "list_users_api_users_get",
+    "operationId": "list_users",
     "responses": {
      "200": {
       "description": "Successful Response",
@@ -153,7 +153,7 @@
           "$ref": "#/components/schemas/UserOut"
          },
          "type": "array",
-         "title": "Response List Users Api Users Get"
+         "title": "Response List Users"
         }
        }
       }
@@ -170,7 +170,7 @@
      "Users"
     ],
     "summary": "Create User",
-    "operationId": "create_user_api_users_post",
+    "operationId": "create_user",
     "requestBody": {
      "content": {
       "application/json": {
@@ -216,7 +216,7 @@
      "Users"
     ],
     "summary": "Usernames (for the editor filter)",
-    "operationId": "user_names_api_users_names_get",
+    "operationId": "user_names",
     "responses": {
      "200": {
       "description": "Successful Response",
@@ -227,7 +227,7 @@
           "type": "string"
          },
          "type": "array",
-         "title": "Response User Names Api Users Names Get"
+         "title": "Response User Names"
         }
        }
       }
@@ -246,7 +246,7 @@
      "Users"
     ],
     "summary": "Update User",
-    "operationId": "update_user_api_users__uid__put",
+    "operationId": "update_user",
     "security": [
      {
       "OAuth2PasswordBearer": []
@@ -303,7 +303,7 @@
      "Settings"
     ],
     "summary": "Get Settings",
-    "operationId": "get_settings_api_settings_get",
+    "operationId": "get_settings",
     "responses": {
      "200": {
       "description": "Successful Response",
@@ -327,7 +327,7 @@
      "Settings"
     ],
     "summary": "Put Settings",
-    "operationId": "put_settings_api_settings_put",
+    "operationId": "put_settings",
     "requestBody": {
      "content": {
       "application/json": {
@@ -374,8 +374,8 @@
     "tags": [
      "Dashboard"
     ],
-    "summary": "Dashboard",
-    "operationId": "dashboard_api_dashboard_get",
+    "summary": "Get Dashboard",
+    "operationId": "get_dashboard",
     "responses": {
      "200": {
       "description": "Successful Response",
@@ -401,7 +401,7 @@
      "Glossary"
     ],
     "summary": "List Entries",
-    "operationId": "list_entries_api_glossary_get",
+    "operationId": "list_entries",
     "security": [
      {
       "OAuth2PasswordBearer": []
@@ -473,7 +473,7 @@
          "items": {
           "$ref": "#/components/schemas/GlossaryOut"
          },
-         "title": "Response List Entries Api Glossary Get"
+         "title": "Response List Entries"
         }
        }
       }
@@ -495,7 +495,7 @@
      "Glossary"
     ],
     "summary": "Create an entry (translators create drafts)",
-    "operationId": "create_entry_api_glossary_post",
+    "operationId": "create_entry",
     "security": [
      {
       "OAuth2PasswordBearer": []
@@ -541,7 +541,7 @@
      "Glossary"
     ],
     "summary": "Update Entry",
-    "operationId": "update_entry_api_glossary__eid__put",
+    "operationId": "update_entry",
     "security": [
      {
       "OAuth2PasswordBearer": []
@@ -596,7 +596,7 @@
      "Glossary"
     ],
     "summary": "Delete Entry",
-    "operationId": "delete_entry_api_glossary__eid__delete",
+    "operationId": "delete_entry",
     "security": [
      {
       "OAuth2PasswordBearer": []
@@ -623,7 +623,7 @@
          "additionalProperties": {
           "type": "boolean"
          },
-         "title": "Response Delete Entry Api Glossary  Eid  Delete"
+         "title": "Response Delete Entry"
         }
        }
       }
@@ -647,7 +647,7 @@
      "Glossary"
     ],
     "summary": "Approve or reject an entry",
-    "operationId": "set_status_api_glossary__eid__status_post",
+    "operationId": "set_entry_status",
     "security": [
      {
       "OAuth2PasswordBearer": []
@@ -702,7 +702,7 @@
      "Glossary"
     ],
     "summary": "Version history of an entry",
-    "operationId": "versions_api_glossary__eid__versions_get",
+    "operationId": "entry_versions",
     "security": [
      {
       "OAuth2PasswordBearer": []
@@ -729,7 +729,7 @@
          "items": {
           "$ref": "#/components/schemas/GlossaryVersionOut"
          },
-         "title": "Response Versions Api Glossary  Eid  Versions Get"
+         "title": "Response Entry Versions"
         }
        }
       }
@@ -753,7 +753,7 @@
      "Glossary"
     ],
     "summary": "Find duplicate terms",
-    "operationId": "scan_duplicates_api_glossary_duplicates_scan_get",
+    "operationId": "scan_duplicates",
     "responses": {
      "200": {
       "description": "Successful Response",
@@ -764,7 +764,7 @@
           "$ref": "#/components/schemas/DuplicateGroup"
          },
          "type": "array",
-         "title": "Response Scan Duplicates Api Glossary Duplicates Scan Get"
+         "title": "Response Scan Duplicates"
         }
        }
       }
@@ -783,7 +783,7 @@
      "Glossary"
     ],
     "summary": "Export the glossary to Excel",
-    "operationId": "export_xlsx_api_glossary_export_xlsx_get",
+    "operationId": "export_glossary",
     "responses": {
      "200": {
       "description": "Successful Response"
@@ -803,7 +803,7 @@
     ],
     "summary": "Import glossary entries from Excel",
     "description": "Columns: de, en, de_synonyme, en_synonyme, beschreibung, nicht_uebersetzen, kategorie, status.",
-    "operationId": "import_xlsx_api_glossary_import_xlsx_post",
+    "operationId": "import_glossary",
     "security": [
      {
       "OAuth2PasswordBearer": []
@@ -826,7 +826,7 @@
      "content": {
       "multipart/form-data": {
        "schema": {
-        "$ref": "#/components/schemas/Body_import_xlsx_api_glossary_import_xlsx_post"
+        "$ref": "#/components/schemas/Body_import_glossary"
        }
       }
      }
@@ -862,7 +862,7 @@
     ],
     "summary": "Search and filter projects",
     "description": "`term` searches inside original and translated text.",
-    "operationId": "list_projects_api_projects_get",
+    "operationId": "list_projects",
     "security": [
      {
       "OAuth2PasswordBearer": []
@@ -1001,7 +1001,7 @@
          "items": {
           "$ref": "#/components/schemas/ProjectOut"
          },
-         "title": "Response List Projects Api Projects Get"
+         "title": "Response List Projects"
         }
        }
       }
@@ -1023,7 +1023,7 @@
      "Projects"
     ],
     "summary": "Upload a file \u2013 the project is created automatically",
-    "operationId": "create_project_api_projects_post",
+    "operationId": "create_project",
     "security": [
      {
       "OAuth2PasswordBearer": []
@@ -1034,7 +1034,7 @@
      "content": {
       "multipart/form-data": {
        "schema": {
-        "$ref": "#/components/schemas/Body_create_project_api_projects_post"
+        "$ref": "#/components/schemas/Body_create_project"
        }
       }
      }
@@ -1068,8 +1068,8 @@
     "tags": [
      "Projects"
     ],
-    "summary": "Project Detail",
-    "operationId": "project_detail_api_projects__pid__get",
+    "summary": "Get Project Detail",
+    "operationId": "get_project_detail",
     "security": [
      {
       "OAuth2PasswordBearer": []
@@ -1114,7 +1114,7 @@
      "Projects"
     ],
     "summary": "Patch Project",
-    "operationId": "patch_project_api_projects__pid__patch",
+    "operationId": "patch_project",
     "security": [
      {
       "OAuth2PasswordBearer": []
@@ -1169,7 +1169,7 @@
      "Projects"
     ],
     "summary": "Delete a project (admin)",
-    "operationId": "delete_project_api_projects__pid__delete",
+    "operationId": "delete_project",
     "security": [
      {
       "OAuth2PasswordBearer": []
@@ -1196,7 +1196,7 @@
          "additionalProperties": {
           "type": "boolean"
          },
-         "title": "Response Delete Project Api Projects  Pid  Delete"
+         "title": "Response Delete Project"
         }
        }
       }
@@ -1219,8 +1219,8 @@
     "tags": [
      "Projects"
     ],
-    "summary": "Archive",
-    "operationId": "archive_api_projects__pid__archive_post",
+    "summary": "Archive Project",
+    "operationId": "archive_project",
     "security": [
      {
       "OAuth2PasswordBearer": []
@@ -1266,8 +1266,8 @@
     "tags": [
      "Projects"
     ],
-    "summary": "Unarchive",
-    "operationId": "unarchive_api_projects__pid__unarchive_post",
+    "summary": "Unarchive Project",
+    "operationId": "unarchive_project",
     "security": [
      {
       "OAuth2PasswordBearer": []
@@ -1314,7 +1314,7 @@
      "Projects"
     ],
     "summary": "Copy a project (optionally with translations)",
-    "operationId": "copy_project_api_projects__pid__copy_post",
+    "operationId": "copy_project",
     "security": [
      {
       "OAuth2PasswordBearer": []
@@ -1371,7 +1371,7 @@
      "Projects"
     ],
     "summary": "Download the original file",
-    "operationId": "download_original_api_projects__pid__original_get",
+    "operationId": "download_original",
     "security": [
      {
       "OAuth2PasswordBearer": []
@@ -1411,7 +1411,7 @@
      "Projects"
     ],
     "summary": "All non-empty cells of an Excel project, for the table view",
-    "operationId": "sheet_cells_api_projects__pid__cells_get",
+    "operationId": "get_sheet_cells",
     "security": [
      {
       "OAuth2PasswordBearer": []
@@ -1438,7 +1438,7 @@
          "items": {
           "$ref": "#/components/schemas/SheetOut"
          },
-         "title": "Response Sheet Cells Api Projects  Pid  Cells Get"
+         "title": "Response Get Sheet Cells"
         }
        }
       }
@@ -1463,7 +1463,7 @@
     ],
     "summary": "Start the PREVIEW translation",
     "description": "Only creates a preview. The final translation is produced on approval.",
-    "operationId": "start_translation_api_projects__pid__translate_post",
+    "operationId": "start_translation",
     "security": [
      {
       "OAuth2PasswordBearer": []
@@ -1526,8 +1526,8 @@
     "tags": [
      "Translation"
     ],
-    "summary": "Job Status",
-    "operationId": "job_status_api_projects__pid__status_get",
+    "summary": "Get Job Status",
+    "operationId": "get_job_status",
     "security": [
      {
       "OAuth2PasswordBearer": []
@@ -1574,7 +1574,7 @@
      "Translation"
     ],
     "summary": "Edit translation text or comment",
-    "operationId": "edit_segment_api_segments__sid___lang__put",
+    "operationId": "edit_segment",
     "security": [
      {
       "OAuth2PasswordBearer": []
@@ -1640,7 +1640,7 @@
      "Translation"
     ],
     "summary": "Regenerate one segment",
-    "operationId": "retranslate_api_segments__sid___lang__retranslate_post",
+    "operationId": "retranslate_segment",
     "security": [
      {
       "OAuth2PasswordBearer": []
@@ -1696,7 +1696,7 @@
      "Translation"
     ],
     "summary": "Replace a translated term in the whole project",
-    "operationId": "replace_term_api_projects__pid__replace_term_post",
+    "operationId": "replace_term",
     "security": [
      {
       "OAuth2PasswordBearer": []
@@ -1733,7 +1733,7 @@
          "additionalProperties": {
           "type": "integer"
          },
-         "title": "Response Replace Term Api Projects  Pid  Replace Term Post"
+         "title": "Response Replace Term"
         }
        }
       }
@@ -1756,8 +1756,8 @@
     "tags": [
      "Quality"
     ],
-    "summary": "Quality Check",
-    "operationId": "quality_check_api_projects__pid__quality_get",
+    "summary": "Get Quality",
+    "operationId": "get_quality",
     "security": [
      {
       "OAuth2PasswordBearer": []
@@ -1821,7 +1821,7 @@
     ],
     "summary": "Accept findings as they are (or reopen them with [])",
     "description": "A judgment call (a long translation, a different number of line breaks, an ambiguous term) can be accepted;\nan error (a missing translation, a broken glossary term) cannot, it has to be fixed.",
-    "operationId": "accept_findings_api_projects__pid__quality_accepted_put",
+    "operationId": "accept_findings",
     "security": [
      {
       "OAuth2PasswordBearer": []
@@ -1858,7 +1858,7 @@
          "items": {
           "type": "string"
          },
-         "title": "Response Accept Findings Api Projects  Pid  Quality Accepted Put"
+         "title": "Response Accept Findings"
         }
        }
       }
@@ -1883,7 +1883,7 @@
     ],
     "summary": "'\u00dcbersetzung freigeben'",
     "description": "Stores the final translation as a release (history). Export is only possible afterwards.",
-    "operationId": "approve_api_projects__pid__approve_post",
+    "operationId": "approve_project",
     "security": [
      {
       "OAuth2PasswordBearer": []
@@ -1930,7 +1930,7 @@
      "Review"
     ],
     "summary": "Reopen a finished project",
-    "operationId": "reopen_api_projects__pid__reopen_post",
+    "operationId": "reopen_project",
     "security": [
      {
       "OAuth2PasswordBearer": []
@@ -1977,7 +1977,7 @@
      "Review"
     ],
     "summary": "Preview and final text of one approved version",
-    "operationId": "release_detail_api_releases__rid__get",
+    "operationId": "release_detail",
     "security": [
      {
       "OAuth2PasswordBearer": []
@@ -2024,7 +2024,7 @@
      "Review"
     ],
     "summary": "Releases and exports of a project",
-    "operationId": "history_api_projects__pid__history_get",
+    "operationId": "project_history",
     "security": [
      {
       "OAuth2PasswordBearer": []
@@ -2071,7 +2071,7 @@
      "Export"
     ],
     "summary": "Export an approved translation",
-    "operationId": "export_project_api_projects__pid__export_post",
+    "operationId": "export_project",
     "security": [
      {
       "OAuth2PasswordBearer": []
@@ -2128,7 +2128,7 @@
      "Export"
     ],
     "summary": "Download Export",
-    "operationId": "download_export_api_exports__eid__download_get",
+    "operationId": "download_export",
     "security": [
      {
       "OAuth2PasswordBearer": []
@@ -2169,7 +2169,7 @@
      "Export templates"
     ],
     "summary": "List Templates",
-    "operationId": "list_templates_api_export_templates_get",
+    "operationId": "list_templates",
     "responses": {
      "200": {
       "description": "Successful Response",
@@ -2180,7 +2180,7 @@
           "$ref": "#/components/schemas/TemplateOut"
          },
          "type": "array",
-         "title": "Response List Templates Api Export Templates Get"
+         "title": "Response List Templates"
         }
        }
       }
@@ -2198,7 +2198,7 @@
      "Export templates"
     ],
     "summary": "Create Template",
-    "operationId": "create_template_api_export_templates_post",
+    "operationId": "create_template",
     "requestBody": {
      "content": {
       "application/json": {
@@ -2245,7 +2245,7 @@
      "Export templates"
     ],
     "summary": "Delete Template",
-    "operationId": "delete_template_api_export_templates__tid__delete",
+    "operationId": "delete_template",
     "security": [
      {
       "OAuth2PasswordBearer": []
@@ -2272,7 +2272,7 @@
          "additionalProperties": {
           "type": "boolean"
          },
-         "title": "Response Delete Template Api Export Templates  Tid  Delete"
+         "title": "Response Delete Template"
         }
        }
       }
@@ -2296,7 +2296,7 @@
      "Admin"
     ],
     "summary": "Liveness: the process answers",
-    "operationId": "health_api_health_get",
+    "operationId": "health",
     "responses": {
      "200": {
       "description": "Successful Response",
@@ -2307,7 +2307,7 @@
           "type": "string"
          },
          "type": "object",
-         "title": "Response Health Api Health Get"
+         "title": "Response Health"
         }
        }
       }
@@ -2321,7 +2321,7 @@
      "Admin"
     ],
     "summary": "Readiness: the database is reachable",
-    "operationId": "ready_api_ready_get",
+    "operationId": "ready",
     "responses": {
      "200": {
       "description": "Successful Response",
@@ -2332,7 +2332,7 @@
           "type": "string"
          },
          "type": "object",
-         "title": "Response Ready Api Ready Get"
+         "title": "Response Ready"
         }
        }
       }
@@ -2383,7 +2383,7 @@
     ],
     "title": "AuthOptions"
    },
-   "Body_create_project_api_projects_post": {
+   "Body_create_project": {
     "properties": {
      "file": {
       "type": "string",
@@ -2411,9 +2411,9 @@
     "required": [
      "file"
     ],
-    "title": "Body_create_project_api_projects_post"
+    "title": "Body_create_project"
    },
-   "Body_import_xlsx_api_glossary_import_xlsx_post": {
+   "Body_import_glossary": {
     "properties": {
      "file": {
       "type": "string",
@@ -2425,9 +2425,9 @@
     "required": [
      "file"
     ],
-    "title": "Body_import_xlsx_api_glossary_import_xlsx_post"
+    "title": "Body_import_glossary"
    },
-   "Body_login_api_auth_login_post": {
+   "Body_login": {
     "properties": {
      "grant_type": {
       "anyOf": [
@@ -2484,7 +2484,7 @@
      "username",
      "password"
     ],
-    "title": "Body_login_api_auth_login_post"
+    "title": "Body_login"
    },
    "CellOut": {
     "properties": {
@@ -2493,16 +2493,29 @@
       "title": "Ref",
       "description": "Cell coordinate, e.g. \"B5\"; text cells match a segment locator \"cell\""
      },
-     "value": {
+     "text": {
       "anyOf": [
        {
         "type": "string"
        },
        {
-        "type": "number"
+        "type": "null"
        }
       ],
-      "title": "Value"
+      "title": "Text",
+      "description": "The text of a text cell"
+     },
+     "number": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Number",
+      "description": "The value of a number cell"
      },
      "decimals": {
       "type": "integer",
@@ -2519,7 +2532,10 @@
     "type": "object",
     "required": [
      "ref",
-     "value"
+     "text",
+     "number",
+     "decimals",
+     "bold"
     ],
     "title": "CellOut"
    },
@@ -2606,7 +2622,7 @@
     "title": "EntryCategory",
     "description": "Category of a glossary entry."
    },
-   "ExcelLayout": {
+   "ExcelLayout-Input": {
     "properties": {
      "sheet_name": {
       "type": "string",
@@ -2653,6 +2669,65 @@
      }
     },
     "type": "object",
+    "title": "ExcelLayout",
+    "description": "Free choice of columns for Excel exports (\"Erweiterte Einstellungen\"). An empty column letter omits it."
+   },
+   "ExcelLayout-Output": {
+    "properties": {
+     "sheet_name": {
+      "type": "string",
+      "maxLength": 31,
+      "minLength": 1,
+      "title": "Sheet Name",
+      "default": "\u00dcbersetzung"
+     },
+     "source_col": {
+      "type": "string",
+      "pattern": "^[A-Za-z]{1,3}$",
+      "title": "Source Col",
+      "default": "A"
+     },
+     "target_col": {
+      "type": "string",
+      "pattern": "^[A-Za-z]{1,3}$",
+      "title": "Target Col",
+      "default": "B"
+     },
+     "comment_col": {
+      "type": "string",
+      "pattern": "^[A-Za-z]{0,3}$",
+      "title": "Comment Col",
+      "default": "C"
+     },
+     "location_col": {
+      "type": "string",
+      "pattern": "^[A-Za-z]{0,3}$",
+      "title": "Location Col",
+      "default": ""
+     },
+     "start_row": {
+      "type": "integer",
+      "maximum": 100000.0,
+      "minimum": 1.0,
+      "title": "Start Row",
+      "default": 2
+     },
+     "header": {
+      "type": "boolean",
+      "title": "Header",
+      "default": true
+     }
+    },
+    "type": "object",
+    "required": [
+     "sheet_name",
+     "source_col",
+     "target_col",
+     "comment_col",
+     "location_col",
+     "start_row",
+     "header"
+    ],
     "title": "ExcelLayout",
     "description": "Free choice of columns for Excel exports (\"Erweiterte Einstellungen\"). An empty column letter omits it."
    },
@@ -2737,7 +2812,7 @@
      "config": {
       "anyOf": [
        {
-        "$ref": "#/components/schemas/ExcelLayout"
+        "$ref": "#/components/schemas/ExcelLayout-Input"
        },
        {
         "type": "null"
@@ -2813,8 +2888,7 @@
        "type": "array"
       },
       "type": "object",
-      "title": "Synonyms",
-      "default": {}
+      "title": "Synonyms"
      },
      "description": {
       "type": "string",
@@ -3111,6 +3185,7 @@
     "type": "object",
     "required": [
      "access_token",
+     "token_type",
      "user"
     ],
     "title": "LoginOut"
@@ -3456,8 +3531,7 @@
        "type": "string"
       },
       "type": "object",
-      "title": "Params",
-      "default": {}
+      "title": "Params"
      },
      "severity": {
       "$ref": "#/components/schemas/Severity"
@@ -3483,8 +3557,12 @@
      "idx",
      "lang",
      "type",
+     "code",
+     "params",
      "severity",
-     "message"
+     "message",
+     "key",
+     "accepted"
     ],
     "title": "QualityWarning"
    },
@@ -3748,7 +3826,8 @@
      "default_source_lang",
      "default_export_format",
      "default_export_mode",
-     "colors"
+     "colors",
+     "gemini_key_configured"
     ],
     "title": "SettingsOut"
    },
@@ -3808,6 +3887,7 @@
     "required": [
      "row",
      "code",
+     "term",
      "reason"
     ],
     "title": "SkippedRow"
@@ -3874,7 +3954,7 @@
       "default": "xlsx"
      },
      "config": {
-      "$ref": "#/components/schemas/ExcelLayout"
+      "$ref": "#/components/schemas/ExcelLayout-Input"
      }
     },
     "type": "object",
@@ -3897,7 +3977,7 @@
       "default": "xlsx"
      },
      "config": {
-      "$ref": "#/components/schemas/ExcelLayout"
+      "$ref": "#/components/schemas/ExcelLayout-Output"
      },
      "id": {
       "type": "integer",
@@ -3907,6 +3987,7 @@
     "type": "object",
     "required": [
      "name",
+     "format",
      "config",
      "id"
     ],
@@ -3931,8 +4012,7 @@
        "type": "string"
       },
       "type": "array",
-      "title": "Alternatives",
-      "default": []
+      "title": "Alternatives"
      },
      "description": {
       "type": "string",
@@ -3964,7 +4044,13 @@
     "type": "object",
     "required": [
      "source",
-     "category"
+     "target",
+     "category",
+     "alternatives",
+     "description",
+     "glossary_id",
+     "dnt",
+     "ok"
     ],
     "title": "Term",
     "description": "A highlighted term. `ok=False` means the glossary target is missing in the translation."
