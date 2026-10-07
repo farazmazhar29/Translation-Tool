@@ -3,6 +3,7 @@
 mode   "translation" = translation only | "both" = original + translation
 opts   include_report (quality report), include_comments
 config Excel layout ("Erweiterte Einstellungen"): free choice of source/target/comment/position columns
+The fixed words (headings, the quality report) are in the language of the translation, see `texts`.
 """
 
 import re
@@ -24,12 +25,12 @@ from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, Tabl
 
 from app.core.config import settings
 from app.core.enums import ExportMode, FileFormat
+from app.export.texts import finding_text, labels, severity
 from app.projects import parsing
 from app.projects.models import Project
 from app.quality.schemas import QualityWarning
 
 XLSX_DEFAULTS: dict[str, Any] = {
-    "sheet_name": "Übersetzung",
     "source_col": "A",
     "target_col": "B",
     "comment_col": "C",
@@ -41,11 +42,13 @@ Exporter = Callable[[Project, str, ExportMode, dict[str, bool], list[QualityWarn
 
 
 def rows(p: Project, lang: str) -> list[dict[str, Any]]:
+    words = labels(lang)
+
     def row(seg_no: int, loc: dict[str, Any], src: str, text: str, comment: str) -> dict[str, Any]:
         place = {
             FileFormat.XLSX: f"{loc.get('sheet')}!{loc.get('cell')}",
-            FileFormat.PDF: f"Seite {loc.get('page')}",
-        }.get(loc["type"], f"Absatz {loc.get('p', 0) + 1}")
+            FileFormat.PDF: words["page"].format(n=loc.get("page")),
+        }.get(loc["type"], words["paragraph"].format(n=loc.get("p", 0) + 1))
         return {"no": seg_no, "locator": loc, "source": src, "target": text, "comment": comment, "location": place}
 
     return [
@@ -66,8 +69,12 @@ def download_name(p: Project, lang: str, mode: ExportMode, ext: FileFormat) -> s
     return f"{stem[:80]}_{lang}_{mode}.{ext}"
 
 
-def report_lines(warnings: list[QualityWarning]) -> list[str]:
-    return [f"[{w.severity.upper()}] Segment {w.idx + 1 if w.idx >= 0 else '-'}: {w.message}" for w in warnings]
+def report_lines(warnings: list[QualityWarning], lang: str) -> list[str]:
+    segment = labels(lang)["segment"]
+    return [
+        f"[{severity(w.severity, lang)}] {segment} {w.idx + 1 if w.idx >= 0 else '-'}: {finding_text(w, lang)}"
+        for w in warnings
+    ]
 
 
 # Word
@@ -83,10 +90,11 @@ def to_docx(
     if mode == ExportMode.TRANSLATION and p.file_type == FileFormat.DOCX and not any(opts.values()):
         parsing.write_docx(Path(p.file_path), path, {r["locator"]["p"]: r["target"] for r in data if r["target"]})
         return path  # original layout and formatting stay intact
+    words = labels(lang)
     doc = Document()
     doc.add_heading(f"{p.name} ({lang.upper()})", level=1)
     if mode == ExportMode.BOTH:
-        head = ["#", "Original", "Übersetzung"] + (["Kommentar"] if opts["include_comments"] else [])
+        head = ["#", words["original"], words["translation"]] + ([words["comment"]] if opts["include_comments"] else [])
         table = doc.add_table(rows=1, cols=len(head), style="Light Grid Accent 1")
         for cell, h in zip(table.rows[0].cells, head, strict=False):
             cell.text = h
@@ -98,12 +106,12 @@ def to_docx(
         for r in data:
             doc.add_paragraph(r["target"])
             if opts["include_comments"] and r["comment"]:
-                run = doc.add_paragraph().add_run(f"Kommentar: {r['comment']}")
+                run = doc.add_paragraph().add_run(f"{words['comment']}: {r['comment']}")
                 run.italic, run.font.size = True, Pt(9)
     if opts["include_report"]:
         doc.add_page_break()
-        doc.add_heading("Prüfbericht", level=1)
-        for line in report_lines(warnings) or ["Keine Warnungen."]:
+        doc.add_heading(words["report"], level=1)
+        for line in report_lines(warnings, lang) or [words["no_findings"]]:
             doc.add_paragraph(line, style="List Bullet")
     doc.save(str(path))
     return path
@@ -126,16 +134,17 @@ def to_xlsx(
             {(r["locator"]["sheet"], r["locator"]["cell"]): r["target"] for r in data if r["target"]},
         )
         return path
-    cfg = {**XLSX_DEFAULTS, **(config or {})}
+    words = labels(lang)
+    cfg = {**XLSX_DEFAULTS, "sheet_name": words["sheet"], **(config or {})}
     wb = Workbook()
     ws = wb.active or wb.create_sheet()
-    ws.title = str(cfg["sheet_name"])[:31] or "Übersetzung"
-    layout = [(str(cfg["source_col"]), "Original", "source")] if mode == ExportMode.BOTH else []
-    layout.append((str(cfg["target_col"]), f"Übersetzung ({lang.upper()})", "target"))
+    ws.title = str(cfg["sheet_name"])[:31] or words["sheet"]
+    layout = [(str(cfg["source_col"]), words["original"], "source")] if mode == ExportMode.BOTH else []
+    layout.append((str(cfg["target_col"]), f"{words['translation']} ({lang.upper()})", "target"))
     if opts["include_comments"] and cfg["comment_col"]:
-        layout.append((str(cfg["comment_col"]), "Kommentar", "comment"))
+        layout.append((str(cfg["comment_col"]), words["comment"], "comment"))
     if cfg["location_col"]:
-        layout.append((str(cfg["location_col"]), "Position", "location"))
+        layout.append((str(cfg["location_col"]), words["position"], "location"))
     start = int(cfg["start_row"])
     for col, head, field in layout:
         ws.column_dimensions[col.upper()].width = 60
@@ -144,11 +153,11 @@ def to_xlsx(
         for i, r in enumerate(data):
             ws.cell(row=start + i, column=column_index_from_string(col.upper()), value=r[field])
     if opts["include_report"]:
-        rs = wb.create_sheet("Prüfbericht")
-        rs.append(["Schweregrad", "Segment", "Typ", "Meldung"])
+        rs = wb.create_sheet(words["report"][:31])
+        rs.append([words["severity"], words["segment"], words["type"], words["message"]])
         rs.column_dimensions["D"].width = 90
         for w in warnings:
-            rs.append([w.severity, w.idx + 1 if w.idx >= 0 else "", w.type, w.message])
+            rs.append([severity(w.severity, lang), w.idx + 1 if w.idx >= 0 else "", w.type, finding_text(w, lang)])
     wb.save(path)
     return path
 
@@ -169,10 +178,13 @@ def to_pdf(
     def para(text: str, style: PropertySet = small) -> Paragraph:
         return Paragraph(escape(text), style)
 
+    words = labels(lang)
     story: list[Any] = [para(f"{p.name} ({lang.upper()})", styles["Title"])]
     if mode == ExportMode.BOTH:
         comments = opts["include_comments"]
-        table: list[list[Any]] = [["#", "Original", "Übersetzung"] + (["Kommentar"] if comments else [])]
+        table: list[list[Any]] = [
+            ["#", words["original"], words["translation"]] + ([words["comment"]] if comments else [])
+        ]
         table += [
             [str(r["no"]), para(r["source"]), para(r["target"])] + ([para(r["comment"])] if comments else [])
             for r in data
@@ -192,10 +204,10 @@ def to_pdf(
         for r in data:
             story.append(para(r["target"], styles["BodyText"]))
             if opts["include_comments"] and r["comment"]:
-                story.append(para("Kommentar: " + r["comment"]))
+                story.append(para(f"{words['comment']}: {r['comment']}"))
     if opts["include_report"]:
-        story += [Spacer(1, 20), para("Prüfbericht", styles["Heading1"])]
-        story += [para(line) for line in report_lines(warnings) or ["Keine Warnungen."]]
+        story += [Spacer(1, 20), para(words["report"], styles["Heading1"])]
+        story += [para(line) for line in report_lines(warnings, lang) or [words["no_findings"]]]
     SimpleDocTemplate(str(path), pagesize=A4, leftMargin=30, rightMargin=30, topMargin=30, bottomMargin=30).build(story)
     return path
 

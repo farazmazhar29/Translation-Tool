@@ -87,6 +87,21 @@ class Severity(StrEnum):
     INFO = "info"
 
 
+class QualityCode(StrEnum):
+    """What the quality check found. The interface writes the sentence for each code in its own language."""
+
+    NO_TRANSLATION = "no_translation"
+    IDENTICAL_TEXT = "identical_text"
+    UNKNOWN_TERM = "unknown_term"
+    AMBIGUOUS_TERM = "ambiguous_term"
+    GLOSSARY_VIOLATION = "glossary_violation"
+    NUMBERS_DIFFER = "numbers_differ"
+    LINE_BREAKS_DIFFER = "line_breaks_differ"
+    TOO_LONG = "too_long"
+    CONTRADICTION = "contradiction"
+    MISSING_GLOSSARY = "missing_glossary"
+
+
 class FileFormat(StrEnum):
     """File types the app reads (uploads) and writes (exports)."""
 

@@ -133,3 +133,46 @@ def test_checking_a_single_language_ignores_the_others() -> None:
     assert check_project(p, "en") == []
     assert kinds(check_project(p, "de")) == ["untranslated"]
     assert kinds(check_project(p)) == ["untranslated"]  # all target languages by default
+
+
+# Codes and values: the interface writes each sentence in the language of the user
+def codes(warnings: list[QualityWarning]) -> list[str]:
+    return [str(w.code) for w in warnings]
+
+
+def test_every_finding_carries_a_code_and_the_values_for_its_sentence() -> None:
+    p = project(
+        ("Der Korpus", "The body", [term("Korpus", "carcass", "glossary", ok=False)]),
+        ("Das ist ein Satz", "Das ist ein Satz", [term("Qxx", "Qxx", "unknown")]),
+        ("Maße 60 x 80", "Dimensions 60", [term("Zarge", "frame", "ambiguous")]),
+    )
+    found = {str(w.code): w for w in check_project(p)}
+    assert set(found) == {"glossary_violation", "identical_text", "unknown_term", "numbers_differ", "ambiguous_term"}
+    assert found["glossary_violation"].params == {"source": "Korpus", "target": "carcass"}
+    assert found["unknown_term"].params["source"] == "Qxx"
+    assert found["ambiguous_term"].params == {"source": "Zarge", "target": "frame"}
+    assert found["numbers_differ"].params == {}  # a sentence without values
+
+
+def test_no_translation_and_the_length_and_line_break_notes_have_codes() -> None:
+    assert codes(check_project(project(("Hallo Welt", None, [])))) == ["no_translation"]
+    assert codes(check_project(project(("a", "a very very very very very very long translation", [])))) == ["too_long"]
+    assert codes(check_project(project(("Zeile 1\nZeile 2", "Line 1 Line 2", [])))) == ["line_breaks_differ"]
+
+
+def test_contradictions_and_missing_glossary_terms_name_their_values() -> None:
+    p = project(
+        ("Der Korpus", "The body", [term("Korpus", "body")]),
+        ("Ein Korpus", "A carcass", [term("Korpus", "carcass")]),
+    )
+    found = {str(w.code): w for w in check_project(p)}
+    assert found["contradiction"].params["term"] == "korpus"
+    assert "„body“" in found["contradiction"].params["variants"]
+    assert found["missing_glossary"].params == {"term": "korpus", "count": "2"}
+
+
+def test_findings_that_were_stored_without_a_code_still_load() -> None:
+    old = {"segment_id": 1, "idx": 0, "lang": "en", "type": "formatting", "severity": "info", "message": "Alt"}
+    w = QualityWarning.model_validate(old)
+    assert w.code is None
+    assert w.params == {}

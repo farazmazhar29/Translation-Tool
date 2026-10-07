@@ -2,7 +2,7 @@
 
 from pydantic import BaseModel
 
-from app.core.enums import Severity
+from app.core.enums import QualityCode, Severity
 
 
 class QualityWarning(BaseModel):
@@ -10,8 +10,10 @@ class QualityWarning(BaseModel):
     idx: int
     lang: str
     type: str
+    code: QualityCode | None = None  # absent in findings stored before the codes existed
+    params: dict[str, str] = {}  # the values of the sentence for `code`
     severity: Severity
-    message: str
+    message: str  # German; reports and exports use it, the interface builds its own from `code`
 
 
 class QualityOut(BaseModel):

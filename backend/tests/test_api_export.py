@@ -15,7 +15,10 @@ from openpyxl.worksheet.worksheet import Worksheet
 
 from app.core.config import settings
 from app.core.db import SessionLocal
+from app.core.enums import QualityCode, Severity
 from app.export.models import ExportFile
+from app.export.service import report_lines
+from app.quality.schemas import QualityWarning
 
 FORMATS = ("docx", "xlsx", "pdf")
 
@@ -106,7 +109,7 @@ def test_word_side_by_side_table_has_the_expected_columns(
         client, translator, export(client, translator, approved, mode="both", include_comments=True)["id"]
     )
     header = [c.text for c in Document(io.BytesIO(content)).tables[0].rows[0].cells]
-    assert header == ["#", "Original", "Übersetzung", "Kommentar"]
+    assert header == ["#", "Original", "Translation", "Comment"]  # an English translation: English words
 
 
 def test_report_and_comments_are_included_on_request(
@@ -126,9 +129,9 @@ def test_report_and_comments_are_included_on_request(
         )
     )
     text = "\n".join(p.text for p in rich.paragraphs)
-    assert "Prüfbericht" in text
-    assert "Kommentar: Prüfen: Maße" in text
-    assert "Prüfbericht" not in "\n".join(p.text for p in plain.paragraphs)
+    assert "Quality report" in text
+    assert "Comment: Prüfen: Maße" in text  # the comment itself is what the user wrote
+    assert "Quality report" not in "\n".join(p.text for p in plain.paragraphs)
 
 
 # Excel layout ("Erweiterte Einstellungen")
@@ -136,8 +139,8 @@ def test_excel_layout_defaults_and_custom_columns(client: TestClient, translator
     default = sheet(
         download(client, translator, export(client, translator, approved, format="xlsx", mode="both")["id"])
     )
-    assert default.title == "Übersetzung"
-    assert [c.value for c in default[1]][:2] == ["Original", "Übersetzung (EN)"]  # header row
+    assert default.title == "Translation"
+    assert [c.value for c in default[1]][:2] == ["Original", "Translation (EN)"]  # header row
     assert default["A2"].value == "Montageanleitung"
 
     layout = {
@@ -158,7 +161,7 @@ def test_excel_layout_defaults_and_custom_columns(client: TestClient, translator
     assert custom["C3"].value == "Original"  # the header sits right above the first data row
     assert custom["C4"].value == "Montageanleitung"
     assert custom["F4"].value == "Montageanleitung"  # the mock leaves unknown words unchanged
-    assert custom["H4"].value == "Absatz 1"
+    assert custom["H4"].value == "Paragraph 1"
     assert custom["A4"].value is None
     assert custom["B4"].value is None
 
@@ -180,7 +183,7 @@ def test_excel_report_goes_to_a_separate_sheet(client: TestClient, translator: H
             download(client, translator, export(client, translator, approved, format="xlsx", include_report=True)["id"])
         )
     )
-    assert wb.sheetnames[-1] == "Prüfbericht"
+    assert wb.sheetnames[-1] == "Quality report"
 
 
 @pytest.mark.parametrize(
@@ -322,3 +325,47 @@ def test_downloading_unknown_or_deleted_exports_is_404(client: TestClient, trans
 def test_export_of_an_unknown_project_and_unauthenticated_access(client: TestClient, translator: Headers) -> None:
     assert client.post("/api/projects/999999/export", headers=translator, json={"lang": "en"}).status_code == 404
     assert client.get("/api/exports/1/download").status_code == 401
+
+
+# The fixed words follow the language of the translation
+def test_a_german_translation_gets_german_headings_and_a_german_report(
+    client: TestClient, translator: Headers, reviewer: Headers
+) -> None:
+    body = "The carcass is white. Price 49.90 EUR."
+    pid: int = upload(client, translator, "en.docx", docx_bytes("Assembly", body), target_langs="de")["id"]
+    client.post(f"/api/projects/{pid}/translate", headers=translator)
+    client.post(f"/api/projects/{pid}/approve", headers=reviewer)
+    content = download(
+        client,
+        translator,
+        export(client, translator, pid, lang="de", format="xlsx", mode="both", include_report=True)["id"],
+    )
+    wb = load_workbook(io.BytesIO(content))
+    ws = wb.worksheets[0]
+    assert ws.title == "Übersetzung"
+    assert [c.value for c in ws[1]][:2] == ["Original", "Übersetzung (DE)"]
+    assert wb.sheetnames[-1] == "Prüfbericht"
+    assert [c.value for c in wb["Prüfbericht"][1]] == ["Schweregrad", "Segment", "Typ", "Meldung"]
+
+
+def test_the_report_writes_the_findings_in_the_language_of_the_translation() -> None:
+    finding = QualityWarning(
+        segment_id=None,
+        idx=-1,
+        lang="en",
+        type="missing_glossary",
+        code=QualityCode.MISSING_GLOSSARY,
+        params={"term": "korpus", "count": "2"},
+        severity=Severity.INFO,
+        message="Fachbegriff „korpus“ kommt 2× vor, fehlt aber im Glossar.",
+    )
+    assert report_lines([finding], "en") == [
+        "[Hint] Segment -: Technical term “korpus” occurs 2× but is missing from the glossary."
+    ]
+    assert report_lines([finding], "de") == [
+        "[Hinweis] Segment -: Fachbegriff „korpus“ kommt 2× vor, fehlt aber im Glossar."
+    ]
+    old = finding.model_copy(update={"code": None, "message": "Alte Meldung"})
+    assert report_lines([old], "en") == ["[Hint] Segment -: Alte Meldung"]  # stored before the codes existed
+    broken = finding.model_copy(update={"params": {}})
+    assert report_lines([broken], "en")[0].endswith(finding.message)  # a missing value: the stored message
