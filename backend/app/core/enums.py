@@ -17,14 +17,16 @@ class Role(StrEnum):
 
 
 class ProjectStatus(StrEnum):
+    """Where a project is in the workflow. Archiving is not a step: it is the separate flag `Project.archived`,
+    so an archived project keeps its status and returns to it when it is taken out of the archive."""
+
     NEW = "new"
     PREVIEW_READY = "preview_ready"
     APPROVED = "approved"
-    ARCHIVED = "archived"
 
 
 EDITABLE_STATUSES = (ProjectStatus.NEW, ProjectStatus.PREVIEW_READY)
-FINISHED_STATUSES = (ProjectStatus.APPROVED, ProjectStatus.ARCHIVED)  # export is possible, edits are not
+FINISHED_STATUSES = (ProjectStatus.APPROVED,)  # export is possible, edits are not
 
 
 class ArchiveFilter(StrEnum):

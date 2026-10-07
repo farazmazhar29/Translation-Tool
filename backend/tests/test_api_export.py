@@ -336,7 +336,7 @@ def test_export_archives_the_project_when_asked(client: TestClient, translator: 
     approved_before = client.get("/api/dashboard", headers=translator).json()["approved"]
     export(client, translator, approved, archive_after=True)
     project = client.get(f"/api/projects/{approved}", headers=translator).json()
-    assert (project["status"], project["archived"]) == ("archived", True)
+    assert (project["status"], project["archived"]) == ("approved", True)  # archived, and still approved
     # archived work is still approved work on the dashboard
     assert client.get("/api/dashboard", headers=translator).json()["approved"] == approved_before
     export(client, translator, approved, archive_after=False)  # exporting again from an archived project is allowed

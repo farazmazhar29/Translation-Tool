@@ -216,6 +216,25 @@ def test_projects_that_were_in_review_wait_for_approval_after_the_upgrade(
     engine.dispose()
 
 
+def test_projects_with_the_status_archived_become_approved_and_archived(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Migration 0006 made archiving only a flag: the old status "archived" meant approved and archived."""
+    url = f"sqlite:///{tmp_path / 'archived.db'}"
+    engine = create_engine(url)
+    monkeypatch.setattr(settings, "database_url", url)
+    monkeypatch.setattr(migrate, "engine", engine)
+    command.upgrade(migrate.alembic_config(), "0005")
+    add_project(engine)
+    run(engine, "UPDATE projects SET status = 'archived', archived = 0")  # allowed before the migration
+    migrate.upgrade_to_head()
+    with engine.connect() as conn:
+        assert tuple(conn.execute(text("SELECT status, archived FROM projects")).one()) == ("approved", 1)
+    with pytest.raises(IntegrityError):
+        run(engine, "UPDATE projects SET status = 'archived'")  # and refused afterwards
+    engine.dispose()
+
+
 def test_downgrade_restores_the_previous_schema(db: Engine) -> None:
     add_project(db)
     add_export(db)  # no release: stored as 0 again after the downgrade

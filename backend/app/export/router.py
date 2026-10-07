@@ -7,7 +7,7 @@ from fastapi.responses import FileResponse
 
 from app.accounts.security import Me, Reviewer, Translator
 from app.core.db import DB
-from app.core.enums import FINISHED_STATUSES, ProjectStatus
+from app.core.enums import FINISHED_STATUSES
 from app.export import service as exporter
 from app.export.models import ExportFile, ExportTemplate
 from app.export.schemas import ExcelLayout, ExportFileOut, ExportIn, TemplateIn, TemplateOut
@@ -43,7 +43,7 @@ def export_project(db: DB, user: Translator, pid: int, body: ExportIn) -> Export
     )
     db.add(ef)
     if body.archive_after:
-        p.archived, p.status = True, ProjectStatus.ARCHIVED
+        p.archived = True  # the same as the archive button: the project stays approved
     db.commit()
     return ef
 
