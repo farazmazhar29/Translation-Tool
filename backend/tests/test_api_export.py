@@ -9,15 +9,17 @@ import pymupdf
 import pytest
 from conftest import Headers, docx_bytes, upload
 from docx import Document
+from docx.enum.text import WD_ALIGN_PARAGRAPH
 from fastapi.testclient import TestClient
-from openpyxl import load_workbook
+from openpyxl import Workbook, load_workbook
+from openpyxl.styles import Font
 from openpyxl.worksheet.worksheet import Worksheet
 
 from app.core.config import settings
 from app.core.db import SessionLocal
 from app.core.enums import QualityCode, Severity
 from app.export.models import ExportFile
-from app.export.service import report_lines
+from app.export.service import number_text, report_lines
 from app.quality.schemas import QualityWarning
 
 FORMATS = ("docx", "xlsx", "pdf")
@@ -99,6 +101,70 @@ def test_word_export_keeps_the_original_formatting(client: TestClient, translato
     doc = Document(io.BytesIO(download(client, translator, export(client, translator, pid)["id"])))
     assert doc.paragraphs[0].text.startswith("The carcass is white")
     assert doc.paragraphs[0].runs[0].bold is True
+
+
+# An Excel file stays a table in Word and PDF
+def parts_list() -> bytes:
+    wb = Workbook()
+    ws = wb.active
+    assert ws is not None
+    ws["A1"] = "Ersatzteilliste"
+    ws["A3"], ws["B3"], ws["C3"] = "Art.-Nr.", "Bezeichnung", "Preis"
+    ws["A4"], ws["B4"], ws["C4"] = "SC-110", "Der Korpus ist weiß und gut.", 12.9
+    ws["C4"].number_format = "#,##0.00"
+    for ref in ("A1", "A3", "B3", "C3"):
+        ws[ref].font = Font(bold=True)
+    buf = io.BytesIO()
+    wb.save(buf)
+    return buf.getvalue()
+
+
+@pytest.fixture
+def approved_sheet(client: TestClient, translator: Headers, reviewer: Headers) -> int:
+    pid: int = upload(client, translator, "teile.xlsx", parts_list())["id"]
+    client.post(f"/api/projects/{pid}/translate", headers=translator)
+    assert client.post(f"/api/projects/{pid}/approve", headers=reviewer).status_code == 200
+    return pid
+
+
+def test_an_excel_file_exported_to_word_is_a_table_of_its_rows_and_columns(
+    client: TestClient, translator: Headers, approved_sheet: int
+) -> None:
+    doc = Document(io.BytesIO(download(client, translator, export(client, translator, approved_sheet)["id"])))
+    (table,) = doc.tables
+    lines = [[c.text for c in row.cells] for row in table.rows]
+    assert len(lines) == 3  # title, column heads, one part; the empty row 2 is left out
+    assert len(set(lines[0])) == 1  # the title spans the table (merged cells repeat their text)
+    assert lines[1] == ["Art.-Nr.", "Bezeichnung", "Preis"] or "Price" in lines[1][2]
+    item, name, price = lines[2]
+    assert (item, price) == ("SC-110", "12.90")  # a number keeps the decimals of its cell format
+    assert "carcass" in name
+    assert table.rows[2].cells[2].paragraphs[0].alignment == WD_ALIGN_PARAGRAPH.RIGHT
+
+
+def test_original_and_translation_of_an_excel_file_share_each_cell(
+    client: TestClient, translator: Headers, approved_sheet: int
+) -> None:
+    content = download(client, translator, export(client, translator, approved_sheet, mode="both")["id"])
+    cell = Document(io.BytesIO(content)).tables[0].rows[2].cells[1]
+    assert [p.text for p in cell.paragraphs][1] == "Der Korpus ist weiß und gut."  # the original below
+
+
+def test_an_excel_file_exported_to_pdf_is_a_table_too(
+    client: TestClient, translator: Headers, approved_sheet: int
+) -> None:
+    content = download(client, translator, export(client, translator, approved_sheet, format="pdf")["id"])
+    with pymupdf.open(stream=content, filetype="pdf") as pdf:  # a table row is one text block, its cells as lines
+        rows = [text.split("\n") for page in pdf for *_, text, _, _ in page.get_text("blocks")]
+    title = next(i for i, row in enumerate(rows) if row[0] == "Ersatzteilliste")
+    part = next(i for i, row in enumerate(rows) if row[0] == "SC-110")
+    assert "12.90" in rows[part]  # the part and its price on one row, as in the sheet
+    assert part > title
+
+
+@pytest.mark.parametrize(("lang", "expected"), [("de", "1.234,50"), ("en", "1,234.50")])
+def test_numbers_are_written_as_the_reader_of_the_translation_writes_them(lang: str, expected: str) -> None:
+    assert number_text(1234.5, 2, lang) == expected
 
 
 def test_word_side_by_side_table_has_the_expected_columns(

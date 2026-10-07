@@ -10,17 +10,23 @@ import re
 import uuid
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any
+from typing import Any, NamedTuple
 from xml.sax.saxutils import escape
 
 from docx import Document
-from docx.shared import Pt
+from docx.enum.section import WD_ORIENT
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.shared import Cm, Pt, RGBColor
+from docx.table import _Cell  # pyright: ignore[reportPrivateUsage]
 from openpyxl import Workbook
 from openpyxl.styles import Font
 from openpyxl.utils import column_index_from_string
+from openpyxl.utils.cell import coordinate_from_string
 from reportlab.lib import colors
-from reportlab.lib.pagesizes import A4
+from reportlab.lib.enums import TA_RIGHT
+from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib.styles import PropertySet, getSampleStyleSheet
+from reportlab.pdfbase.pdfmetrics import stringWidth
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 from app.core.config import settings
@@ -77,7 +83,124 @@ def report_lines(warnings: list[QualityWarning], lang: str) -> list[str]:
     ]
 
 
+# An Excel file exported as Word or PDF stays a table: its rows and columns, the text cells translated.
+class SheetCell(NamedTuple):
+    text: str
+    original: str = ""  # "both": the original below the translation
+    comment: str = ""
+    bold: bool = False
+    number: bool = False
+
+
+class Sheet(NamedTuple):
+    name: str
+    rows: list[list[SheetCell | None]]
+    spans: set[int]  # rows with a single cell in the first column (a title or a group): it spans the table
+    numeric: set[int]  # columns holding numbers: right-aligned, their heads too
+
+
+def right_aligned(sheet: Sheet, col: int, value: SheetCell) -> bool:
+    return value.number or col in sheet.numeric
+
+
+def column_widths(sheet: Sheet, width: float, size: float) -> list[float]:
+    """Widths in points: every column at least as wide as its longest word (a price or an article number must not
+    break), the rest of the line shared by how much text a column holds."""
+    cols = range(len(sheet.rows[0]))
+    cells = [[v for i, line in enumerate(sheet.rows) if i not in sheet.spans and (v := line[c])] for c in cols]
+    pad = 2 * size  # cell padding left and right
+
+    def word(v: SheetCell) -> float:
+        font = "Helvetica-Bold" if v.bold else "Helvetica"
+        return max((stringWidth(w, font, size) for w in v.text.split()), default=0)
+
+    least = [max([3 * size, *(word(v) for v in col)]) + pad for col in cells]
+    share = [max([4, *(min(40, len(v.text)) for v in col)]) for col in cells]
+    rest = max(0.0, width - sum(least))
+    return [low + rest * s / sum(share) for low, s in zip(least, share, strict=True)]
+
+
+def number_text(value: float, decimals: int, lang: str) -> str:
+    """12.9 with 2 decimals: "12,90" in German, "12.90" in English, as the reader of the translation writes it."""
+    text = f"{value:,.{decimals}f}"
+    return text.translate(str.maketrans(",.", ".,")) if lang == "de" else text
+
+
+def sheets(p: Project, lang: str, both: bool, comments: bool) -> list[Sheet]:
+    """The sheets of the original file, every text cell replaced by its translation; empty rows are left out."""
+    by_cell = {(str(s.locator.get("sheet")), str(s.locator.get("cell"))): s for s in p.segments}
+    out: list[Sheet] = []
+    for sheet in parsing.read_cells(Path(p.file_path)):
+        placed: dict[tuple[int, int], SheetCell] = {}
+        for c in sheet["cells"]:
+            letters, row = coordinate_from_string(c["ref"])
+            value = c["value"]
+            if isinstance(value, str):
+                seg = by_cell.get((sheet["name"], c["ref"]))
+                tr = seg.translation(lang) if seg else None
+                text = tr.text if tr and tr.text else value
+                original = seg.source_text if both and seg and seg.source_text != text else ""
+                comment = tr.comment if comments and tr else ""
+                cell = SheetCell(text, original, comment, c["bold"])
+            else:
+                cell = SheetCell(number_text(value, c["decimals"], lang), bold=c["bold"], number=True)
+            placed[(row, column_index_from_string(letters))] = cell
+        if not placed:
+            continue
+        width = max(col for _, col in placed)
+        lines = [[placed.get((row, col)) for col in range(1, width + 1)] for row in sorted({row for row, _ in placed})]
+        spans = {i for i, line in enumerate(lines) if line[0] and sum(c is not None for c in line) == 1}
+        numeric = {col - 1 for (_, col), cell in placed.items() if cell.number}
+        out.append(Sheet(sheet["name"], lines, spans, numeric))
+    return out
+
+
 # Word
+GREY = RGBColor(0x6B, 0x6B, 0x6B)
+
+
+def _docx_cell(cell: _Cell, value: SheetCell, comment_label: str, right: bool = False) -> None:
+    first = cell.paragraphs[0]
+    run = first.add_run(value.text)
+    run.bold, run.font.size = value.bold, Pt(9)
+    if value.original:
+        small = cell.add_paragraph().add_run(value.original)
+        small.font.size, small.font.color.rgb = Pt(7.5), GREY
+    if value.comment:
+        note = cell.add_paragraph().add_run(f"{comment_label}: {value.comment}")
+        note.italic, note.font.size = True, Pt(7.5)
+    if right:
+        for paragraph in cell.paragraphs:
+            paragraph.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+
+
+def _docx_sheets(doc: Any, tables: list[Sheet], comment_label: str) -> None:
+    # A4 instead of python-docx's US Letter; a sheet with many columns gets a landscape page
+    page = doc.sections[0]
+    wide = any(len(s.rows[0]) > 6 for s in tables)
+    page.page_width, page.page_height = (Cm(29.7), Cm(21)) if wide else (Cm(21), Cm(29.7))
+    if wide:
+        page.orientation = WD_ORIENT.LANDSCAPE
+    page.left_margin = page.right_margin = page.top_margin = page.bottom_margin = Cm(2)
+    usable = (page.page_width - page.left_margin - page.right_margin) / 12700  # EMU -> points
+    for sheet in tables:
+        if len(tables) > 1:
+            doc.add_heading(sheet.name, level=2)
+        table = doc.add_table(rows=0, cols=len(sheet.rows[0]))
+        table.style, table.autofit = "Table Grid", False
+        widths = [Pt(w) for w in column_widths(sheet, usable, 9)]
+        for i, line in enumerate(sheet.rows):
+            cells = table.add_row().cells
+            for cell, w in zip(cells, widths, strict=True):
+                cell.width = w  # Word follows the cell widths, not the column's
+            if i in sheet.spans and line[0]:
+                _docx_cell(cells[0].merge(cells[-1]), line[0], comment_label)
+                continue
+            for col, (cell, value) in enumerate(zip(cells, line, strict=True)):
+                if value:
+                    _docx_cell(cell, value, comment_label, right_aligned(sheet, col, value))
+
+
 def to_docx(
     p: Project,
     lang: str,
@@ -93,7 +216,9 @@ def to_docx(
     words = labels(lang)
     doc = Document()
     doc.add_heading(f"{p.name} ({lang.upper()})", level=1)
-    if mode == ExportMode.BOTH:
+    if p.file_type == FileFormat.XLSX:  # a sheet stays a table
+        _docx_sheets(doc, sheets(p, lang, mode == ExportMode.BOTH, opts["include_comments"]), words["comment"])
+    elif mode == ExportMode.BOTH:
         head = ["#", words["original"], words["translation"]] + ([words["comment"]] if opts["include_comments"] else [])
         table = doc.add_table(rows=1, cols=len(head), style="Light Grid Accent 1")
         for cell, h in zip(table.rows[0].cells, head, strict=False):
@@ -163,6 +288,45 @@ def to_xlsx(
 
 
 # PDF
+MARGIN = 30
+
+
+def _pdf_sheets(tables: list[Sheet], width: float, comment_label: str, heading: PropertySet) -> list[Any]:
+    """Each sheet as a table, the columns sized by `column_widths`."""
+    base = getSampleStyleSheet()["BodyText"]
+    left, right = base.clone("cell", fontSize=8.5, leading=10.5), base.clone("num", fontSize=8.5, leading=10.5)
+    right.alignment = TA_RIGHT
+
+    def cell(v: SheetCell | None, align_right: bool) -> Any:
+        if v is None:
+            return ""
+        html = f"<b>{escape(v.text)}</b>" if v.bold else escape(v.text)
+        if v.original:
+            html += f'<br/><font size="7" color="#6b6b6b">{escape(v.original)}</font>'
+        if v.comment:
+            html += f'<br/><font size="7"><i>{escape(comment_label)}: {escape(v.comment)}</i></font>'
+        return Paragraph(html, right if align_right else left)
+
+    story: list[Any] = []
+    for sheet in tables:
+        if len(tables) > 1:
+            story += [Spacer(1, 10), Paragraph(escape(sheet.name), heading)]
+
+        data = [
+            [cell(v, i not in sheet.spans and v is not None and right_aligned(sheet, c, v)) for c, v in enumerate(line)]
+            for i, line in enumerate(sheet.rows)
+        ]
+        style = [
+            ("GRID", (0, 0), (-1, -1), 0.3, colors.grey),
+            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            *[("SPAN", (0, i), (-1, i)) for i in sheet.spans],
+        ]
+        table = Table(data, colWidths=column_widths(sheet, width, 8.5))
+        table.setStyle(TableStyle(style))
+        story.append(table)
+    return story
+
+
 def to_pdf(
     p: Project,
     lang: str,
@@ -180,7 +344,12 @@ def to_pdf(
 
     words = labels(lang)
     story: list[Any] = [para(f"{p.name} ({lang.upper()})", styles["Title"])]
-    if mode == ExportMode.BOTH:
+    page = A4
+    if p.file_type == FileFormat.XLSX:  # a sheet stays a table; a wide one gets a landscape page
+        tables = sheets(p, lang, mode == ExportMode.BOTH, opts["include_comments"])
+        page = landscape(A4) if any(len(s.rows[0]) > 6 for s in tables) else A4
+        story += _pdf_sheets(tables, page[0] - 2 * MARGIN, words["comment"], styles["Heading2"])
+    elif mode == ExportMode.BOTH:
         comments = opts["include_comments"]
         table: list[list[Any]] = [
             ["#", words["original"], words["translation"]] + ([words["comment"]] if comments else [])
@@ -208,7 +377,9 @@ def to_pdf(
     if opts["include_report"]:
         story += [Spacer(1, 20), para(words["report"], styles["Heading1"])]
         story += [para(line) for line in report_lines(warnings, lang) or [words["no_findings"]]]
-    SimpleDocTemplate(str(path), pagesize=A4, leftMargin=30, rightMargin=30, topMargin=30, bottomMargin=30).build(story)
+    SimpleDocTemplate(
+        str(path), pagesize=page, leftMargin=MARGIN, rightMargin=MARGIN, topMargin=MARGIN, bottomMargin=MARGIN
+    ).build(story)
     return path
 
 
