@@ -4,6 +4,7 @@
 set -e
 if [ "$(id -u)" = "0" ]; then
   chown -R app:app /data
+  export HOME=/home/app # setpriv keeps root's HOME; the database driver reads files from there (SSL)
   exec setpriv --reuid=app --regid=app --init-groups "$@"
 fi
 exec "$@"

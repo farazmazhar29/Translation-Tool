@@ -21,7 +21,8 @@ COPY backend/alembic.ini ./
 COPY --from=web /web/dist /srv/frontend/dist
 
 # The app runs as an unprivileged user: the entrypoint starts as root only to fix volume ownership, then drops privileges.
-RUN useradd --system --uid 10001 --no-create-home app && mkdir /data && chown app /data
+# A home of its own: libpq looks for optional client certificates in $HOME/.postgresql, and /root is closed to it.
+RUN useradd --system --uid 10001 --create-home --home-dir /home/app app && mkdir /data && chown app /data
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 VOLUME /data
