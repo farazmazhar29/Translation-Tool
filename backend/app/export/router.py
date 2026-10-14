@@ -1,7 +1,5 @@
 """Export of approved translations and Excel layout templates."""
 
-from pathlib import Path
-
 from fastapi import APIRouter
 from fastapi.responses import FileResponse
 
@@ -40,6 +38,7 @@ def export_project(db: DB, user: Translator, pid: int, body: ExportIn) -> Export
         mode=body.mode,
         filename=exporter.download_name(p, body.lang, body.mode, body.format),
         path=str(path),
+        data=path.read_bytes(),
         created_by=user.username,
     )
     db.add(ef)
@@ -52,9 +51,9 @@ def export_project(db: DB, user: Translator, pid: int, body: ExportIn) -> Export
 @router.get("/exports/{eid}/download", response_class=FileResponse)
 def download_export(db: DB, _: Me, eid: int) -> FileResponse:
     ef = db.get(ExportFile, eid)
-    if ef is None or not Path(ef.path).exists():
+    if ef is None or not ef.file().exists():
         raise AppError(404, ErrorCode.EXPORT_NOT_FOUND, "Export file not found")
-    return FileResponse(ef.path, filename=ef.filename)
+    return FileResponse(ef.file(), filename=ef.filename)
 
 
 @router.get("/export-templates", response_model=list[TemplateOut], tags=["Export templates"])

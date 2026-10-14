@@ -130,7 +130,7 @@ def sheets(p: Project, lang: str, both: bool, comments: bool) -> list[Sheet]:
     """The sheets of the original file, every text cell replaced by its translation; empty rows are left out."""
     by_cell = {(str(s.locator.get("sheet")), str(s.locator.get("cell"))): s for s in p.segments}
     out: list[Sheet] = []
-    for sheet in parsing.read_cells(Path(p.file_path)):
+    for sheet in parsing.read_cells(p.original()):
         placed: dict[tuple[int, int], SheetCell] = {}
         for c in sheet["cells"]:
             letters, row = coordinate_from_string(c["ref"])
@@ -210,7 +210,7 @@ def to_docx(
 ) -> Path:
     data, path = rows(p, lang), out_path(FileFormat.DOCX)
     if mode == ExportMode.TRANSLATION and p.file_type == FileFormat.DOCX and not any(opts.values()):
-        parsing.write_docx(Path(p.file_path), path, {r["locator"]["p"]: r["target"] for r in data if r["target"]})
+        parsing.write_docx(p.original(), path, {r["locator"]["p"]: r["target"] for r in data if r["target"]})
         return path  # original layout and formatting stay intact
     words = labels(lang)
     doc = Document()
@@ -253,7 +253,7 @@ def to_xlsx(
     data, path = rows(p, lang), out_path(FileFormat.XLSX)
     if mode == ExportMode.TRANSLATION and p.file_type == FileFormat.XLSX and not config and not opts["include_report"]:
         parsing.write_xlsx(
-            Path(p.file_path),
+            p.original(),
             path,
             {(r["locator"]["sheet"], r["locator"]["cell"]): r["target"] for r in data if r["target"]},
         )

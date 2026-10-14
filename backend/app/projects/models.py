@@ -1,13 +1,15 @@
 """Projects, their segments and the translation of each segment."""
 
 from datetime import datetime
+from pathlib import Path
 from typing import Any
 
-from sqlalchemy import CheckConstraint, ForeignKey, Index, Text, UniqueConstraint
+from sqlalchemy import CheckConstraint, ForeignKey, Index, LargeBinary, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.db import Base, Choice, now, one_of
 from app.core.enums import FileFormat, JobState, ProjectStatus
+from app.core.files import on_disk
 
 
 class Project(Base):
@@ -23,7 +25,9 @@ class Project(Base):
     name: Mapped[str]
     customer: Mapped[str] = mapped_column(default="")
     filename: Mapped[str] = mapped_column(default="")
-    file_path: Mapped[str] = mapped_column(default="")
+    file_path: Mapped[str] = mapped_column(default="")  # a working copy; see `original()`
+    # the uploaded file itself, so it survives a host that wipes its disk (loaded only when asked for)
+    file_data: Mapped[bytes | None] = mapped_column(LargeBinary, deferred=True, default=None)
     file_type: Mapped[FileFormat] = mapped_column(Choice(FileFormat))
     source_lang: Mapped[str] = mapped_column(default="auto")
     detected_lang: Mapped[str] = mapped_column(default="")
@@ -53,6 +57,10 @@ class Project(Base):
     def targets(self) -> list[str]:
         """Languages that are actually translated: a source-language "target" would make no sense."""
         return [t for t in self.target_langs if t != self.source]
+
+    def original(self) -> Path:
+        """The uploaded file on disk, written back from the database when the disk lost it."""
+        return on_disk(Path(self.file_path), self.file_data)
 
 
 class Segment(Base):

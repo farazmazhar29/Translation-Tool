@@ -129,6 +129,7 @@ def create_project(
         customer=customer.strip()[:200],
         filename=filename,
         file_path=str(stored),
+        file_data=stored.read_bytes(),
         file_type=ftype,
         source_lang=source_lang,
         detected_lang=detected,
@@ -177,13 +178,14 @@ def unarchive_project(db: DB, _: Translator, pid: int) -> Project:
 def copy_project(db: DB, user: Translator, pid: int, with_translations: bool = False) -> Project:
     p = get_project(db, pid)
     new_file = settings.data_dir / "uploads" / f"{uuid.uuid4().hex}{Path(p.file_path).suffix}"
-    shutil.copy(p.file_path, new_file)
+    shutil.copy(p.original(), new_file)
     copied = with_translations and p.status != ProjectStatus.NEW
     c = Project(
         name=f"{p.name} (Kopie)",
         customer=p.customer,
         filename=p.filename,
         file_path=str(new_file),
+        file_data=p.file_data,
         file_type=p.file_type,
         source_lang=p.source_lang,
         detected_lang=p.detected_lang,
@@ -228,7 +230,7 @@ def delete_project(db: DB, _: Admin, pid: int) -> dict[str, bool]:
 @router.get("/{pid}/original", response_class=FileResponse, summary="Download the original file")
 def download_original(db: DB, _: Me, pid: int) -> FileResponse:
     p = get_project(db, pid)
-    return FileResponse(p.file_path, filename=p.filename)
+    return FileResponse(p.original(), filename=p.filename)
 
 
 @router.get("/{pid}/cells", summary="All non-empty cells of an Excel project, for the table view")
@@ -236,4 +238,4 @@ def get_sheet_cells(db: DB, _: Me, pid: int) -> list[SheetOut]:
     p = get_project(db, pid)
     if p.file_type != FileFormat.XLSX:
         raise AppError(400, ErrorCode.NOT_A_SHEET, "Only Excel projects have sheets")
-    return [SheetOut.model_validate(sheet) for sheet in parsing.read_cells(Path(p.file_path))]
+    return [SheetOut.model_validate(sheet) for sheet in parsing.read_cells(p.original())]

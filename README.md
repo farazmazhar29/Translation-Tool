@@ -88,6 +88,25 @@ flowchart LR
   (e.g. `ProjectService.useFetchProject(id)`), which uses the API client generated from the backend's schema.
 * **Docker:** one image serves the API and the built UI; Docker Compose adds PostgreSQL.
 
+## Host online (free)
+
+The app runs as one Docker web service on [Render](https://render.com) with a [Neon](https://neon.tech) Postgres
+database, both on free plans. Uploaded and exported files are kept in the database, because Render's free disk is
+wiped on every restart. A free Render service sleeps after 15 minutes without visitors; the next visit wakes it in
+about a minute.
+
+1. **Database:** create a free project on Neon (region Frankfurt) and copy its connection string
+   (`postgresql://...?sslmode=require`).
+2. **App:** on Render choose *New → Blueprint*, connect this GitHub repository and confirm `render.yaml`. Fill in:
+   `DATABASE_URL` (from Neon), `GEMINI_API_KEY`, `BOOTSTRAP_ADMIN_USERNAME` and `BOOTSTRAP_ADMIN_PASSWORD`
+   (at least 12 characters).
+3. Open the `onrender.com` link Render shows and sign in as that admin.
+4. **Glossary:** *Glossar → Import Excel* with `samples/glossar_beispiel.xlsx`.
+5. **Accounts:** *Benutzer → Neuer Benutzer*, e.g. one translator and one reviewer, and send their names and passwords with
+   the link. Registration is off, so nobody else can use the Gemini key.
+
+Every push to `main` deploys again; the database is migrated on start.
+
 ## Settings
 
 All settings are environment variables, kept in `.env` (see [`.env.example`](.env.example)). The important ones:

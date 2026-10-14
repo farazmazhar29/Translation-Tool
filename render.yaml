@@ -1,0 +1,35 @@
+# Render Blueprint: the app as one free Docker web service. The database is a free Neon Postgres (Render's own free
+# Postgres expires after 30 days). Values marked `sync: false` are secrets: Render asks for them when the Blueprint
+# is created and they never live in the repository.
+services:
+  - type: web
+    name: rotpunkt-translation
+    runtime: docker
+    plan: free
+    region: frankfurt # close to Neon's eu-central-1 and to the users
+    healthCheckPath: /api/ready
+    envVars:
+      - key: PORT # the port the image listens on
+        value: "8000"
+      - key: ENVIRONMENT # refuses to start with the development secret or demo data
+        value: production
+      - key: SECRET_KEY # signs the login tokens
+        generateValue: true
+      - key: SEED_DEMO_DATA # no demo users with well-known passwords
+        value: "false"
+      - key: ALLOW_REGISTRATION # only the admin creates accounts: the link is public, the Gemini quota is not
+        value: "false"
+      - key: ENABLE_HSTS # Render serves HTTPS
+        value: "true"
+      - key: LOG_FORMAT
+        value: json
+      - key: FORWARDED_ALLOW_IPS # trust Render's proxy for the client address (rate limit per user, not per proxy)
+        value: "*"
+      - key: DATABASE_URL # Neon connection string: postgresql://user:password@host/db?sslmode=require
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: BOOTSTRAP_ADMIN_USERNAME # the first administrator, created on the first start
+        sync: false
+      - key: BOOTSTRAP_ADMIN_PASSWORD
+        sync: false

@@ -20,6 +20,7 @@ from app.core.db import SessionLocal
 from app.core.enums import QualityCode, Severity
 from app.export.models import ExportFile
 from app.export.service import number_text, report_lines
+from app.projects.models import Project
 from app.quality.schemas import QualityWarning
 
 FORMATS = ("docx", "xlsx", "pdf")
@@ -382,11 +383,35 @@ def test_download_names_are_sanitised_user_input(
     )  # RFC 5987 for non-ASCII
 
 
-def test_downloading_unknown_or_deleted_exports_is_404(client: TestClient, translator: Headers, approved: int) -> None:
+def test_files_survive_a_host_that_wipes_its_disk(client: TestClient, translator: Headers, approved: int) -> None:
+    """Render's free tier deletes the data directory on every restart; the database keeps a copy of each file."""
+    result = export(client, translator, approved)
+    url = f"/api/exports/{result['id']}/download"
+    exported = client.get(url, headers=translator).content
+    with SessionLocal() as db:
+        ef = db.get(ExportFile, result["id"])
+        project = db.get(Project, approved)
+        assert ef is not None
+        assert project is not None
+        export_path, original_path = Path(ef.path), Path(project.file_path)
+    original = original_path.read_bytes()
+    export_path.unlink()
+    original_path.unlink()
+    assert client.get(url, headers=translator).content == exported  # written back from the database
+    assert client.get(f"/api/projects/{approved}/original", headers=translator).content == original
+    assert export(client, translator, approved, format="docx")["filename"]  # the export reads the original again
+    assert original_path.exists()
+
+
+def test_downloading_an_unknown_or_lost_export_is_404(client: TestClient, translator: Headers, approved: int) -> None:
     assert client.get("/api/exports/999999/download", headers=translator).status_code == 404
     result = export(client, translator, approved)
     with SessionLocal() as db:
-        Path(db.get(ExportFile, result["id"]).path).unlink()  # pyright: ignore[reportOptionalMemberAccess]
+        ef = db.get(ExportFile, result["id"])
+        assert ef is not None
+        ef.data = None  # an export from before the files were kept in the database
+        db.commit()
+        Path(ef.path).unlink()
     assert client.get(f"/api/exports/{result['id']}/download", headers=translator).status_code == 404
 
 

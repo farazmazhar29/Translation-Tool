@@ -1,13 +1,15 @@
 """Exported files and Excel layout templates."""
 
 from datetime import datetime
+from pathlib import Path
 from typing import Any
 
-from sqlalchemy import ForeignKey
+from sqlalchemy import ForeignKey, LargeBinary
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.db import Base, Choice, now, one_of
 from app.core.enums import ExportMode, FileFormat
+from app.core.files import on_disk
 
 
 class ExportFile(Base):
@@ -24,9 +26,14 @@ class ExportFile(Base):
     lang: Mapped[str] = mapped_column(default="")
     mode: Mapped[ExportMode] = mapped_column(Choice(ExportMode))
     filename: Mapped[str]
-    path: Mapped[str]
+    path: Mapped[str]  # a working copy; see `file()`
+    data: Mapped[bytes | None] = mapped_column(LargeBinary, deferred=True, default=None)  # the file itself
     created_by: Mapped[str] = mapped_column(default="")
     created_at: Mapped[datetime] = mapped_column(default=now)
+
+    def file(self) -> Path:
+        """The exported file on disk, written back from the database when the disk lost it."""
+        return on_disk(Path(self.path), self.data)
 
 
 class ExportTemplate(Base):
