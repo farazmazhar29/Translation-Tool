@@ -529,6 +529,7 @@ TanStack Query lint, Knip, `prettier --check` + `npm audit` in CI, Husky + lint-
 * **2026-10-07** - Replacing a term in one segment updates the stored term; highlights cover whole words in the translation; typos can be undone in the term dialog (D-61).
 * **2026-10-07** - Messages in the code are English with an error code; the interface words them in German or English; migration 0008 (D-62).
 * **2026-10-14** - Hosting on Render + Neon; uploaded and exported files kept in the database; migration 0009 (D-63).
+* **2026-10-15** - CI: the API client generator runs as the calling user. On Linux the container wrote its files as root, and the script was then not allowed to delete its bookkeeping folder (`EACCES`); Windows never showed it because Docker Desktop keeps no file owners.
 * **2026-10-07** - README rewritten as a short guide: tools, Docker steps, development commands, AI and architecture in brief; requirement table and links to this log removed.
 
 ## 9. Sources (research, 2026-10-01 and 2026-10-03)

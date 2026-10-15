@@ -10,12 +10,16 @@ const OUTPUT = 'src/shared/api/generated'
 
 // retries: on Windows, Docker's file sharing can hold a just-written file for a moment
 const REMOVE = { recursive: true, force: true, maxRetries: 10, retryDelay: 200 }
+// On Linux (CI) the container would write as root, and this script could not delete or rewrite the files it made;
+// it runs as the calling user instead. Windows has no user ids, and Docker Desktop does not keep owners anyway.
+const AS_ME = process.getuid && process.getgid ? ['--user', `${process.getuid()}:${process.getgid()}`] : []
 rmSync(OUTPUT, REMOVE) // removed endpoints must not linger
 execFileSync(
   'docker',
   [
     'run',
     '--rm',
+    ...AS_ME,
     '-v',
     `${process.cwd()}:/local`,
     IMAGE,
