@@ -1,5 +1,5 @@
 -r requirements.txt
-pytest==8.3.4
+pytest==9.1.1
 pytest-cov==7.1.0
 httpx2==2.13.1  # Starlette's TestClient needs it (httpx is deprecated there)
 ruff==0.16.9
