@@ -2,10 +2,10 @@
 pytest==8.3.4
 pytest-cov==7.1.0
 httpx2==2.13.1  # Starlette's TestClient needs it (httpx is deprecated there)
-ruff==0.16.9
+ruff==0.17.0
 pyright==1.1.414
 pip-audit==2.10.1
 types-openpyxl==3.1.5.20260827
 types-reportlab==5.0.0.20260911
 lxml-stubs==0.5.1
-uv==0.12.22
+uv==0.13.0
